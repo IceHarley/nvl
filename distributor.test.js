@@ -40,4 +40,5 @@ test.serial('запуск: ', async t => {
         "P1 O\n   P2 O\n    P3 O\n" +
         "+1 P\n   Q3! P\n   Q3! P\n" +
         "Q3! Q\n");
+
 });

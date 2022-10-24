@@ -18,7 +18,6 @@ export default class Distributor {
 
     toDistributionRecord = (teamDistribution, params) => ({
         ...teamDistribution,
-        group: teamDistribution.newGroup,
         tournament: params.tournament,
         tour: params.nextTour,
         paramsId: params.id,

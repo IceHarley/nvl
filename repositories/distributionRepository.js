@@ -16,7 +16,7 @@ export default class DistributionRepository {
                 "Турнир": [record.tournament],
                 "Команда": [record.team],
                 "Тур": `${record.tour}`,
-                "Группа": record.group,
+                "Группа": record.newGroup,
                 "Параметры распределения": [record.paramsId]
             }))))
 
@@ -25,7 +25,7 @@ export default class DistributionRepository {
             "Турнир": [record.tournament],
             "Команда": [record.team],
             "Тур": `${record.tour}`,
-            "Группа": record.group,
+            "Группа": record.newGroup,
             "Параметры распределения": [record.paramsId],
         })))
 
