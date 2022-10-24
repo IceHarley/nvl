@@ -4,54 +4,84 @@ import DistributionRepository from "./repositories/distributionRepository.js";
 import ResultsRepository from "./repositories/resultsRepository.js";
 import TournamentsRepository from "./repositories/tournamentsRepository.js";
 import DataLoader from "./dataLoader.js";
-
+import inquirer from 'inquirer';
 
 const paramsRepository = new DistributionParamsRepository();
 const resultsRepository = new ResultsRepository();
 const distributionRepository = new DistributionRepository();
 const tournamentsRepository = new TournamentsRepository();
 
-const dataLoader = new DataLoader({
-    params: paramsRepository,
-    results: resultsRepository,
-    distribution: distributionRepository,
-    tournaments: tournamentsRepository,
-});
-const distributor = new Distributor(dataLoader, distributionRepository);
 
-distributor
-    .distribute(1)
-    .then(result => distributionRepository.saveList2(result))
-    .then(ids => console.log(`Создано ${ids.length} записей`))
-    .catch(error => console.log('Произошла ошибка ' + error));
+const paramsChoices = () => paramsRepository.getReadyForExecution()
+    .then(params => params.map(params => ({
+        name: `${params.code}: сезон ${params.tournamentName}, распределение на ${params.nextTour} тур`,
+        value: params.code,
+        short: `${params.tournamentName}, ${params.nextTour} тур`
+    })));
 
-// const playersRep = new Repository('Игроки', 'Игроки private');
-// const matchesRep = new Repository('Результаты матчей', 'Результаты матчей private');
+const questions = [
+    {
+        type: 'list',
+        name: 'action',
+        message: 'Выбор действия',
+        choices: () => [
+            {name: 'Распределение команд на следующий тур', value: 'distribution', short: 'Распределение'},
+            {name: 'Удалить распределение команд', value: 'removeDistribution', short: 'Удаление распределения'},
+            {name: 'Составить рейтинговую таблицу - в разработке', value: 'rating', short: 'Рейтинговая таблица'},
+        ]
+    },
+    {
+        type: 'list',
+        name: 'distribution.paramsCode',
+        message: 'Код параметров распределения',
+        when: answers => answers.action === 'distribution',
+        choices: paramsChoices
+    },
+    {
+        type: 'confirm',
+        name: 'distribution.saveResults',
+        message: 'Сохранить распределение в БД?',
+        when: answers => answers.action === 'distribution',
+        default: true
+    },
+    {
+        type: 'list',
+        name: 'removeDistribution.paramsCode',
+        message: 'Код параметров распределения',
+        when: answers => answers.action === 'removeDistribution',
+        choices: paramsChoices
+    },
+];
 
-// matchesRep.getAllRecords({
-//     view: 'Осень 2022',
-//     where: {'Тур': '1'}
-// }).then(res => {
-// const map = groupBy(res, r => r. fields['Группа']);
-
-// console.log(groupBy(res, r => r.group));
-// for (const group of map.entries()) {
-//     console.log(group[0]);
-//     console.log(new GroupParser().parseGroup(group[1]));
-// }
-// console.log(new GroupParser().parseGroup(res));
-// });
-
-// console.log(new GroupParser().parseGroup(res))
-
-// const mockResults = new MockResultsRepository();
-// mockResults.getAllRecords()
-//     .then(res => console.log(res.length));
-
-// playersRep.getAllRecords({maxRecords: 4})
-//     .then(res => console.log(res));
-//
-// const mockPlayersRep = new MockPlayersRepository();
-//
-// mockPlayersRep.getAllRecords({maxRecords: 1})
-//     .then(res => console.log(res));
+inquirer.prompt(questions)
+    .then(answers => answers)
+    .catch(error => {
+        if (error.isTtyError) {
+            console.log("Your console environment is not supported!")
+        } else {
+            console.log(error)
+        }
+    })
+    .then(answers => {
+        if (answers.action === 'distribution') {
+            const dataLoader = new DataLoader({
+                params: paramsRepository,
+                results: resultsRepository,
+                distribution: distributionRepository,
+                tournaments: tournamentsRepository,
+            });
+            new Distributor(dataLoader, distributionRepository)
+                .distribute(answers.distribution.paramsCode)
+                .then(result => {
+                    console.log("Начинаем сохранение " + result.length + " записей");
+                    return result;
+                })
+                .then(result => distributionRepository.saveList(result))
+                .then(number => console.log(`Создано ${number.flat().length} записей`))
+                .catch(error => console.log('Произошла ошибка ' + error));
+        } else if (answers.action === 'removeDistribution') {
+            distributionRepository.removeByParamsCode(answers.removeDistribution.paramsCode)
+                .then(number => console.log(`Удалено ${number.flat().length} записей`))
+                .catch(error => console.log('Произошла ошибка ' + error))
+        }
+    });

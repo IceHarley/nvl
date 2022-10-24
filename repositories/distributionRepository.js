@@ -10,33 +10,25 @@ export default class DistributionRepository {
         filterByFormula: `AND({ID турнира}='${tournament}', {Тур} = ${tour})`
     }).then(records => records.map(record => minify(record)));
 
-    saveList = async records => chunkArray(records)
-        .forEach(chunk =>
-            asyncAirtable.bulkCreate(TABLE, chunk.map(record => ({
-                "Турнир": [record.tournament],
-                "Команда": [record.team],
-                "Тур": `${record.tour}`,
-                "Группа": record.newGroup,
-                "Параметры распределения": [record.paramsId]
-            }))))
+    getByParamsCode = async code => await asyncAirtable.select(TABLE, {
+        view: VIEW,
+        filterByFormula: `{Код параметров распределения}='${code}'`
+    }).then(records => records.map(record => minify(record)));
 
-    saveList2 = async records =>
-        asyncAirtable.bulkCreate(TABLE, records.slice(0, 9).map(record => ({
+    saveList = async records => Promise.all(chunkArray(records)
+        .map(chunk => asyncAirtable.bulkCreate(TABLE, chunk.map(record => ({
             "Турнир": [record.tournament],
             "Команда": [record.team],
             "Тур": `${record.tour}`,
             "Группа": record.newGroup,
-            "Параметры распределения": [record.paramsId],
-        })))
+            "Параметры распределения": [record.paramsId]
+        })))));
 
-    // saveList2 = async records =>
-    //     console.log(records.slice(0, 9).map(record => ({
-    //         "Турнир": [record.tournament],
-    //         "Команда": [record.team],
-    //         "Тур": `${record.tour}`,
-    //         "Группа": record.group,
-    //         "Параметры распределения": [record.paramsId]
-    //     })));
+    removeList = async records => Promise.all(
+        chunkArray(records).map(chunk => asyncAirtable.bulkDelete(TABLE, chunk)));
+
+    removeByParamsCode = async code => this.getByParamsCode(code)
+        .then(records => this.removeList(records.map(record => record.id)));
 }
 
 export const minify = record => ({
