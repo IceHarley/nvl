@@ -10,6 +10,9 @@ export default class DistributionParamsRepository {
         maxRecords: 1
     }).then(records => minify(records[0]));
 
+    getById = async id => await asyncAirtable.find(TABLE, id)
+        .then(record => minify(record));
+
     getReadyForExecution = async () => asyncAirtable.select(TABLE, {
         view: VIEW,
         filterByFormula: '{Статус}="Готово к запуску"',

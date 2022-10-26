@@ -15,7 +15,7 @@ const tournamentsRepository = new TournamentsRepository();
 const paramsChoices = () => paramsRepository.getReadyForExecution()
     .then(params => params.map(params => ({
         name: `${params.code}: сезон ${params.tournamentName}, распределение на ${params.nextTour} тур`,
-        value: params.code,
+        value: params.id,
         short: `${params.tournamentName}, ${params.nextTour} тур`
     })));
 
@@ -32,7 +32,7 @@ const questions = [
     },
     {
         type: 'list',
-        name: 'distribution.paramsCode',
+        name: 'distribution.paramsId',
         message: 'Код параметров распределения',
         when: answers => answers.action === 'distribution',
         choices: paramsChoices
@@ -46,7 +46,7 @@ const questions = [
     },
     {
         type: 'list',
-        name: 'removeDistribution.paramsCode',
+        name: 'removeDistribution.paramsId',
         message: 'Код параметров распределения',
         when: answers => answers.action === 'removeDistribution',
         choices: paramsChoices
@@ -71,7 +71,7 @@ inquirer.prompt(questions)
                 tournaments: tournamentsRepository,
             });
             new Distributor(dataLoader, distributionRepository)
-                .distribute(answers.distribution.paramsCode)
+                .distribute(answers.distribution.paramsId)
                 .then(result => {
                     console.log("Начинаем сохранение " + result.length + " записей");
                     return result;
@@ -80,7 +80,7 @@ inquirer.prompt(questions)
                 .then(number => console.log(`Создано ${number.flat().length} записей`))
                 .catch(error => console.log('Произошла ошибка ' + error));
         } else if (answers.action === 'removeDistribution') {
-            distributionRepository.removeByParamsCode(answers.removeDistribution.paramsCode)
+            distributionRepository.removeByParamsId(answers.removeDistribution.paramsId)
                 .then(number => console.log(`Удалено ${number.flat().length} записей`))
                 .catch(error => console.log('Произошла ошибка ' + error))
         }

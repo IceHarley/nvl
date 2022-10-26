@@ -11,7 +11,9 @@ export default class MockDistributionParamsRepository {
 
     #initialData = () => JSON.parse(JSON.stringify(distributionParams)).map(p => minify(p));
 
-    getByCode = code => Promise.resolve(this.#data.find(p => p.code === code))
+    getByCode = code => Promise.resolve(this.#data.find(p => p.code === code));
+
+    getById = id => Promise.resolve(this.#data.find(p => p.id === id));
 }
 
 const distributionParams = [

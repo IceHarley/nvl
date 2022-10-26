@@ -7,9 +7,9 @@ export default class DataLoader {
         this.#repositories = repositories;
     }
 
-    loadData = async paramsCode => this.#repositories.params.getByCode(paramsCode)
+    loadData = async paramsId => this.#repositories.params.getById(paramsId)
         .then(params => Promise.all([
-            this.#validateParams(params, paramsCode),
+            this.#validateParams(params, paramsId),
             this.#repositories.tournaments.getById(params.tournament)
         ]))
         .then(([params, tournament]) => Promise.all([
@@ -28,18 +28,18 @@ export default class DataLoader {
             this.#repositories.distribution.getByTournamentAndTour(...params.distribution),
         ]));
 
-    #validateParams = (params, paramsCode) => {
+    #validateParams = (params, paramsId) => {
         if (!params) {
-            throw new Error(`Параметры с кодом ${paramsCode} не найдены`);
+            throw new Error(`Параметры с идентификатором ${paramsId} не найдены`);
         }
         if (params.state !== 'Готово к запуску') {
-            throw new Error(`Параметры с кодом ${paramsCode} в статусе '${params.state}' отличном от 'Готово к запуску'`);
+            throw new Error(`Параметры с кодом ${params.code} в статусе '${params.state}' отличном от 'Готово к запуску'`);
         }
         if (!params.tournament) {
-            throw new Error(`В параметрах с кодом ${paramsCode} не заполнен турнир`);
+            throw new Error(`В параметрах с кодом ${params.code} не заполнен турнир`);
         }
         if (!params.nextTour) {
-            throw new Error(`В параметрах с кодом ${paramsCode} не заполнен тур`);
+            throw new Error(`В параметрах с кодом ${params.code} не заполнен тур`);
         }
         return params;
     }

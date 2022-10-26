@@ -10,9 +10,9 @@ export default class DistributionRepository {
         filterByFormula: `AND({ID турнира}='${tournament}', {Тур} = ${tour})`
     }).then(records => records.map(record => minify(record)));
 
-    getByParamsCode = async code => await asyncAirtable.select(TABLE, {
+    getByParamsId = async paramsId => await asyncAirtable.select(TABLE, {
         view: VIEW,
-        filterByFormula: `{Код параметров распределения}='${code}'`
+        filterByFormula: `{Идентификатор параметров распределения}='${paramsId}'`
     }).then(records => records.map(record => minify(record)));
 
     saveList = async records => Promise.all(chunkArray(records)
@@ -27,7 +27,7 @@ export default class DistributionRepository {
     removeList = async records => Promise.all(
         chunkArray(records).map(chunk => asyncAirtable.bulkDelete(TABLE, chunk)));
 
-    removeByParamsCode = async code => this.getByParamsCode(code)
+    removeByParamsId = async paramsId => this.getByParamsId(paramsId)
         .then(records => this.removeList(records.map(record => record.id)));
 }
 
