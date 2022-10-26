@@ -5,6 +5,7 @@ import ResultsRepository from "./repositories/resultsRepository.js";
 import TournamentsRepository from "./repositories/tournamentsRepository.js";
 import DataLoader from "./dataLoader.js";
 import inquirer from 'inquirer';
+import {dataSaverBuilder} from "./distributionSaver.js";
 
 const paramsRepository = new DistributionParamsRepository();
 const resultsRepository = new ResultsRepository();
@@ -70,15 +71,9 @@ inquirer.prompt(questions)
                 distribution: distributionRepository,
                 tournaments: tournamentsRepository,
             });
-            new Distributor(dataLoader, distributionRepository)
-                .distribute(answers.distribution.paramsId)
-                .then(result => {
-                    console.log("Начинаем сохранение " + result.length + " записей");
-                    return result;
-                })
-                .then(result => distributionRepository.saveList(result))
-                .then(number => console.log(`Создано ${number.flat().length} записей`))
-                .catch(error => console.log('Произошла ошибка ' + error));
+            const dataSaver = dataSaverBuilder(answers.distribution.saveResults, {distribution: distributionRepository});
+            new Distributor(dataLoader, distributionRepository, dataSaver)
+                .distribute(answers.distribution.paramsId);
         } else if (answers.action === 'removeDistribution') {
             distributionRepository.removeByParamsId(answers.removeDistribution.paramsId)
                 .then(number => console.log(`Удалено ${number.flat().length} записей`))

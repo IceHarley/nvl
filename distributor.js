@@ -3,18 +3,21 @@ import TeamsDistribution from "./teamsDistribution.js";
 export default class Distributor {
     #teamsDistribution = new TeamsDistribution();
     #dataLoader;
+    #dataSaver;
     #distributionRepository;
 
-    constructor(dataLoader, distributionRepository) {
+    constructor(dataLoader, distributionRepository, dataSaver) {
         this.#dataLoader = dataLoader;
+        this.#dataSaver = dataSaver;
         this.#distributionRepository = distributionRepository;
     }
 
-    distribute = async paramsCode =>
-        this.#dataLoader.loadData(paramsCode)
+    distribute = async paramsId =>
+        this.#dataLoader.loadData(paramsId)
             .then(([params, results, lastDistribution]) =>
                 this.#teamsDistribution.distribute(results, lastDistribution, params.newTeams, params.withdrawed)
-                    .map(d => this.toDistributionRecord(d, params)));
+                    .map(d => this.toDistributionRecord(d, params)))
+            .then(result => this.#dataSaver.saveData(result));
 
     toDistributionRecord = (teamDistribution, params) => ({
         ...teamDistribution,
