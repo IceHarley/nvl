@@ -4,13 +4,13 @@ const TABLE = 'Параметры распределения';
 const VIEW = 'main';
 
 export default class DistributionParamsRepository {
-    getByCode = async code => await asyncAirtable.select(TABLE, {
+    getByCode = async code => asyncAirtable.select(TABLE, {
         view: VIEW,
         filterByFormula: `{Код}=${code}`,
         maxRecords: 1
     }).then(records => minify(records[0]));
 
-    getById = async id => await asyncAirtable.find(TABLE, id)
+    getById = async id => asyncAirtable.find(TABLE, id)
         .then(record => minify(record));
 
     getReadyForExecution = async () => asyncAirtable.select(TABLE, {

@@ -16,6 +16,6 @@ export default class Repository {
             ...params,
             view: params.view || this.defaultView,
         }
-        return await asyncAirtable.select(this.table, params)
+        return asyncAirtable.select(this.table, params)
     };
 }

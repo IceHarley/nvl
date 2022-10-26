@@ -5,12 +5,12 @@ const TABLE = 'Распределение команд';
 const VIEW = 'main';
 
 export default class DistributionRepository {
-    getByTournamentAndTour = async (tournament, tour) => await asyncAirtable.select(TABLE, {
+    getByTournamentAndTour = async (tournament, tour) => asyncAirtable.select(TABLE, {
         view: VIEW,
         filterByFormula: `AND({ID турнира}='${tournament}', {Тур} = ${tour})`
     }).then(records => records.map(record => minify(record)));
 
-    getByParamsId = async paramsId => await asyncAirtable.select(TABLE, {
+    getByParamsId = async paramsId => asyncAirtable.select(TABLE, {
         view: VIEW,
         filterByFormula: `{Идентификатор параметров распределения}='${paramsId}'`
     }).then(records => records.map(record => minify(record)));

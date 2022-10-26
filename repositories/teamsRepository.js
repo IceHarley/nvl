@@ -4,7 +4,7 @@ const TABLE = 'Команды';
 const VIEW = TABLE + ' private';
 
 export default class TeamsRepository {
-    getById = async id => await asyncAirtable.find(TABLE, id).then(record => minify(record));
+    getById = async id => asyncAirtable.find(TABLE, id).then(record => minify(record));
 }
 
 export const minify = record => ({
