@@ -1,22 +1,22 @@
-export default class DistributionDBSaver {
+export class DistributionDBSaver {
     #repositories = {};
 
     constructor(repositories) {
         this.#repositories = repositories;
     }
 
-    saveData = distributionData =>
-        Promise.resolve(distributionData)
-            .then(result => {
-                console.log("Начинаем сохранение " + result.length + " записей");
-                return result;
-            })
-            .then(result => this.#repositories.distribution.saveList(result))
-            .then(number => {
-                console.log(`Создано ${number.flat().length} записей`);
-                return distributionData;
-            })
+    saveData = distributionData => {
+        if (!distributionData || distributionData.length === 0) {
+            console.log("Нет данных для сохранения");
+            return Promise.reject("Нет данных для сохранения");
+        }
+        console.log("Начинаем сохранение " + distributionData.length + " записей");
+        return this.#repositories.distribution.saveList(distributionData)
+            .then(result => console.log(`Создано ${result.flat().length} записей`))
+            .then(() => this.#repositories.params.updateState(distributionData[0].paramsId, "Завершено"))
             .catch(error => console.log('Произошла ошибка ' + error))
+            .then(() => distributionData);
+    }
 }
 
 export const mockDataSaver = {

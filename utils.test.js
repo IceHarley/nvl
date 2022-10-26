@@ -21,5 +21,5 @@ test('разбивка массива на части', t => {
     t.deepEqual(chunkArray([1], 1), [[1]]);
     t.deepEqual(chunkArray([1, 2], 1), [[1], [2]]);
     t.deepEqual(chunkArray([1, 2], 2), [[1, 2]]);
-    t.deepEqual(chunkArray([1, 2, 3, 4, 5, 6, 7], 3), [[1, 2, 3], [4, 5, 6], [7]]);
+    t.deepEqual(chunkArray([1, 2, 3, 4, 5, 6, 7], 3), [[1, 2, 3], [4, 5, 6], [7]])
 });

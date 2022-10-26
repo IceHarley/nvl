@@ -49,5 +49,9 @@ export const getTournamentAndTour = params => {
     }
 };
 
-export const chunkArray = (array, chunkSize = 10) =>
-    Array.from({length: Math.ceil(array.length / chunkSize)}, () => array.splice(0, chunkSize));
+export const clone = obj => JSON.parse(JSON.stringify(obj));
+
+export const chunkArray = (array, chunkSize = 10) => {
+    const clonedArray = clone(array);
+    return Array.from({length: Math.ceil(clonedArray.length / chunkSize)}, () => clonedArray.splice(0, chunkSize));
+};

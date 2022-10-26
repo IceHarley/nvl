@@ -4,12 +4,10 @@ export default class Distributor {
     #teamsDistribution = new TeamsDistribution();
     #dataLoader;
     #dataSaver;
-    #distributionRepository;
 
-    constructor(dataLoader, distributionRepository, dataSaver) {
+    constructor(dataLoader, dataSaver) {
         this.#dataLoader = dataLoader;
         this.#dataSaver = dataSaver;
-        this.#distributionRepository = distributionRepository;
     }
 
     distribute = async paramsId =>

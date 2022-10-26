@@ -13,9 +13,17 @@ export default class DistributionParamsRepository {
     getById = async id => asyncAirtable.find(TABLE, id)
         .then(record => minify(record));
 
-    getReadyForExecution = async () => asyncAirtable.select(TABLE, {
+    updateState = async (id, newState) => asyncAirtable.updateRecord(TABLE, {
+        id: id,
+        fields: {
+            "Статус": newState
+        }
+    })
+        .then(record => minify(record));
+
+    getByState = async state => asyncAirtable.select(TABLE, {
         view: VIEW,
-        filterByFormula: '{Статус}="Готово к запуску"',
+        filterByFormula: `{Статус}="${state}"`,
     }).then(records => records.map(record => minify(record)));
 }
 

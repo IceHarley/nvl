@@ -19,7 +19,7 @@ const dataLoader = new DataLoader({
     tournaments: mockTournamentsRepository,
 });
 
-const distributor = new Distributor(dataLoader, mockDistributionRepository, {saveData: data => data});
+const distributor = new Distributor(dataLoader, {saveData: data => data});
 
 test.serial('запуск: ', async t => {
     assertDistribution(t, await distributor.distribute('recqUk1lPBnwz4s41'),

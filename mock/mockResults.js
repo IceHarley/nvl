@@ -1,4 +1,5 @@
 import {minify} from "../repositories/resultsRepository.js";
+import {clone} from "../utils.js";
 
 export default class MockResultsRepository {
     #data
@@ -9,7 +10,7 @@ export default class MockResultsRepository {
 
     reset = () => this.#data = this.#initialData();
 
-    #initialData = () => JSON.parse(JSON.stringify(mockResults)).map(p => minify(p));
+    #initialData = () => clone(mockResults).map(p => minify(p));
 
     getAllRecordsPromise = params => Promise.resolve(this.getAllRecords(params));
 
@@ -18,9 +19,9 @@ export default class MockResultsRepository {
 
     getAllRecords = params => params && params.maxRecords ? this.#data.slice(0, params.maxRecords) : this.#data;
 
-    getGroup = group => this.#data.filter(r => r.group === group).map(r => JSON.parse(JSON.stringify(r)))
+    getGroup = group => this.#data.filter(r => r.group === group).map(r => clone(r))
 
-    getGroups = groups => this.#data.filter(r => groups.includes(r.group)).map(r => JSON.parse(JSON.stringify(r)))
+    getGroups = groups => this.#data.filter(r => groups.includes(r.group)).map(r => clone(r))
 }
 
 const mockResults =

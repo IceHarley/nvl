@@ -1,4 +1,5 @@
 import {minify} from "../repositories/distributionRepository.js";
+import {clone} from "../utils.js";
 
 export default class MockDistributionRepository {
     #data
@@ -9,7 +10,7 @@ export default class MockDistributionRepository {
 
     reset = () => this.#data = this.#initialData();
 
-    #initialData = () => JSON.parse(JSON.stringify(distribution)).map(p => minify(p));
+    #initialData = () => clone(distribution).map(p => minify(p));
 
     getAllRecords = () => this.#data;
 

@@ -1,4 +1,5 @@
 import {minify} from "../repositories/teamsRepository.js";
+import {clone} from "../utils.js";
 
 export default class MockTeamsRepository {
     #data
@@ -9,7 +10,7 @@ export default class MockTeamsRepository {
 
     reset = () => this.#data = this.#initialData();
 
-    #initialData = () => JSON.parse(JSON.stringify(teams)).map(p => minify(p));
+    #initialData = () => clone(teams).map(p => minify(p));
 
     getAllRecords = () => this.#data;
 

@@ -6,6 +6,7 @@ import TournamentsRepository from "./repositories/tournamentsRepository.js";
 import DataLoader from "./dataLoader.js";
 import inquirer from 'inquirer';
 import {dataSaverBuilder} from "./distributionSaver.js";
+import {DistributionRemover} from "./distributionRemover.js";
 
 const paramsRepository = new DistributionParamsRepository();
 const resultsRepository = new ResultsRepository();
@@ -13,7 +14,7 @@ const distributionRepository = new DistributionRepository();
 const tournamentsRepository = new TournamentsRepository();
 
 
-const paramsChoices = () => paramsRepository.getReadyForExecution()
+const paramsChoices = state => () => paramsRepository.getByState(state)
     .then(params => params.map(params => ({
         name: `${params.code}: сезон ${params.tournamentName}, распределение на ${params.nextTour} тур`,
         value: params.id,
@@ -36,7 +37,7 @@ const questions = [
         name: 'distribution.paramsId',
         message: 'Код параметров распределения',
         when: answers => answers.action === 'distribution',
-        choices: paramsChoices
+        choices: paramsChoices("Готово к запуску")
     },
     {
         type: 'confirm',
@@ -50,9 +51,16 @@ const questions = [
         name: 'removeDistribution.paramsId',
         message: 'Код параметров распределения',
         when: answers => answers.action === 'removeDistribution',
-        choices: paramsChoices
+        choices: paramsChoices("Завершено")
     },
 ];
+
+const repositories = {
+    params: paramsRepository,
+    results: resultsRepository,
+    distribution: distributionRepository,
+    tournaments: tournamentsRepository,
+};
 
 inquirer.prompt(questions)
     .then(answers => answers)
@@ -65,18 +73,10 @@ inquirer.prompt(questions)
     })
     .then(answers => {
         if (answers.action === 'distribution') {
-            const dataLoader = new DataLoader({
-                params: paramsRepository,
-                results: resultsRepository,
-                distribution: distributionRepository,
-                tournaments: tournamentsRepository,
-            });
-            const dataSaver = dataSaverBuilder(answers.distribution.saveResults, {distribution: distributionRepository});
-            new Distributor(dataLoader, distributionRepository, dataSaver)
-                .distribute(answers.distribution.paramsId);
+            const dataLoader = new DataLoader(repositories);
+            const dataSaver = dataSaverBuilder(answers.distribution.saveResults, repositories);
+            new Distributor(dataLoader, dataSaver).distribute(answers.distribution.paramsId);
         } else if (answers.action === 'removeDistribution') {
-            distributionRepository.removeByParamsId(answers.removeDistribution.paramsId)
-                .then(number => console.log(`Удалено ${number.flat().length} записей`))
-                .catch(error => console.log('Произошла ошибка ' + error))
+            new DistributionRemover(repositories).removeDistribution(answers.removeDistribution.paramsId);
         }
     });
