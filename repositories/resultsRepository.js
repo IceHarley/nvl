@@ -4,7 +4,7 @@ const TABLE = 'Результаты матчей';
 const VIEW = TABLE + ' private';
 
 export default class ResultsRepository {
-    getByTournamentAndTour = async (tournament, tour) => await asyncAirtable.select(TABLE, {
+    getByTournamentAndTour = async (tournament, tour) => asyncAirtable.select(TABLE, {
         view: VIEW,
         filterByFormula: `AND({ID турнира}='${tournament}', {Тур} = ${tour})`
     }).then(records => records.map(r => minify(r)));

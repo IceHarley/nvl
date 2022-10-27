@@ -5,38 +5,30 @@ const TABLE = 'Распределение команд';
 const VIEW = 'main';
 
 export default class DistributionRepository {
-    getByTournamentAndTour = async (tournament, tour) => await asyncAirtable.select(TABLE, {
+    getByTournamentAndTour = async (tournament, tour) => asyncAirtable.select(TABLE, {
         view: VIEW,
         filterByFormula: `AND({ID турнира}='${tournament}', {Тур} = ${tour})`
     }).then(records => records.map(record => minify(record)));
 
-    saveList = async records => chunkArray(records)
-        .forEach(chunk =>
-            asyncAirtable.bulkCreate(TABLE, chunk.map(record => ({
-                "Турнир": [record.tournament],
-                "Команда": [record.team],
-                "Тур": `${record.tour}`,
-                "Группа": record.newGroup,
-                "Параметры распределения": [record.paramsId]
-            }))))
+    getByParamsId = async paramsId => asyncAirtable.select(TABLE, {
+        view: VIEW,
+        filterByFormula: `{Идентификатор параметров распределения}='${paramsId}'`
+    }).then(records => records.map(record => minify(record)));
 
-    saveList2 = async records =>
-        asyncAirtable.bulkCreate(TABLE, records.slice(0, 9).map(record => ({
+    saveList = async records => Promise.all(chunkArray(records)
+        .map(chunk => asyncAirtable.bulkCreate(TABLE, chunk.map(record => ({
             "Турнир": [record.tournament],
             "Команда": [record.team],
             "Тур": `${record.tour}`,
             "Группа": record.newGroup,
-            "Параметры распределения": [record.paramsId],
-        })))
+            "Параметры распределения": [record.paramsId]
+        })))));
 
-    // saveList2 = async records =>
-    //     console.log(records.slice(0, 9).map(record => ({
-    //         "Турнир": [record.tournament],
-    //         "Команда": [record.team],
-    //         "Тур": `${record.tour}`,
-    //         "Группа": record.group,
-    //         "Параметры распределения": [record.paramsId]
-    //     })));
+    removeList = async records => Promise.all(
+        chunkArray(records).map(chunk => asyncAirtable.bulkDelete(TABLE, chunk)));
+
+    removeByParamsId = async paramsId => this.getByParamsId(paramsId)
+        .then(records => this.removeList(records.map(record => record.id)));
 }
 
 export const minify = record => ({

@@ -4,10 +4,10 @@ const TABLE = 'Турниры';
 const VIEW = TABLE + ' private';
 
 export default class TournamentsRepository {
-    getById = async id => await asyncAirtable.find(TABLE, id)
+    getById = async id => asyncAirtable.find(TABLE, id)
         .then(record => minify(record));
 
-    getPrevious = async tournament => await asyncAirtable.select(TABLE, {
+    getPrevious = async tournament => asyncAirtable.select(TABLE, {
         view: VIEW,
         filterByFormula: `AND({Код}<'${tournament.code}', {Формат} = '${tournament.format}', {Тип турнира} = '${tournament.type}')`,
         fields: ['Название', 'Код', 'Формат', 'Тип турнира', 'Статус'],

@@ -19,10 +19,10 @@ const dataLoader = new DataLoader({
     tournaments: mockTournamentsRepository,
 });
 
-const distributor = new Distributor(dataLoader);
+const distributor = new Distributor(dataLoader, {saveData: data => data});
 
 test.serial('запуск: ', async t => {
-    assertDistribution(t, await distributor.distribute(1),
+    assertDistribution(t, await distributor.distribute('recqUk1lPBnwz4s41'),
         "A1 A\n   A2 A\n    B1 A\n" +
         "A3 B\n   B2 B\n    C1 B\n" +
         "B3 C\n   C2 C\n    D1 C\n" +

@@ -1,4 +1,5 @@
 import {minify} from "../repositories/tournamentsRepository.js"
+import {clone} from "../utils.js";
 
 export default class MockTournamentsRepository {
     #data
@@ -9,7 +10,7 @@ export default class MockTournamentsRepository {
 
     reset = () => this.#data = this.#initialData();
 
-    #initialData = () => JSON.parse(JSON.stringify(tournaments)).map(p => minify(p));
+    #initialData = () => clone(tournaments).map(p => minify(p));
 
     getAllRecords = () => this.#data;
 

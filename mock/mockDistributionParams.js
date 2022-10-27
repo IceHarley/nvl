@@ -1,4 +1,5 @@
 import {minify} from "../repositories/distributionParamsRepository.js";
+import {clone} from "../utils.js";
 
 export default class MockDistributionParamsRepository {
     #data;
@@ -9,9 +10,11 @@ export default class MockDistributionParamsRepository {
 
     reset = () => this.#data = this.#initialData();
 
-    #initialData = () => JSON.parse(JSON.stringify(distributionParams)).map(p => minify(p));
+    #initialData = () => clone(distributionParams).map(p => minify(p));
 
-    getByCode = code => Promise.resolve(this.#data.find(p => p.code === code))
+    getByCode = code => Promise.resolve(this.#data.find(p => p.code === code));
+
+    getById = id => Promise.resolve(this.#data.find(p => p.id === id));
 }
 
 const distributionParams = [
