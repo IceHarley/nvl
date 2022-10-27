@@ -1,3 +1,5 @@
+import cli from "clui";
+
 export const groupBy = (list, keyGetter) => {
     const map = new Map();
     list.forEach((item) => {
@@ -55,3 +57,12 @@ export const chunkArray = (array, chunkSize = 10) => {
     const clonedArray = clone(array);
     return Array.from({length: Math.ceil(clonedArray.length / chunkSize)}, () => clonedArray.splice(0, chunkSize));
 };
+
+export const withSpinner = (func, message = "Загрузка данных...") => (...args) => {
+    const spinner = new cli.Spinner(message, ['◜', '◠', '◝', '◞', '◡', '◟']);
+    spinner.start();
+    return func(...args).then(res => {
+        spinner.stop();
+        return res;
+    });
+}

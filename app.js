@@ -3,7 +3,7 @@ import DistributionParamsRepository from "./repositories/distributionParamsRepos
 import DistributionRepository from "./repositories/distributionRepository.js";
 import ResultsRepository from "./repositories/resultsRepository.js";
 import TournamentsRepository from "./repositories/tournamentsRepository.js";
-import DataLoader from "./dataLoader.js";
+import {SpinnerDataLoader} from "./dataLoader.js";
 import inquirer from 'inquirer';
 import {dataSaverBuilder} from "./distributionSaver.js";
 import {DistributionRemover} from "./distributionRemover.js";
@@ -63,20 +63,19 @@ const repositories = {
 };
 
 inquirer.prompt(questions)
-    .then(answers => answers)
+    .then(answers => {
+        if (answers.action === 'distribution') {
+            const dataLoader = new SpinnerDataLoader(repositories);
+            const dataSaver = dataSaverBuilder(answers.distribution.saveResults, repositories);
+            new Distributor(dataLoader, dataSaver).distribute(answers.distribution.paramsId);
+        } else if (answers.action === 'removeDistribution') {
+            new DistributionRemover(repositories).removeDistribution(answers.removeDistribution.paramsId);
+        }
+    })
     .catch(error => {
         if (error.isTtyError) {
             console.log("Your console environment is not supported!")
         } else {
             console.log(error)
-        }
-    })
-    .then(answers => {
-        if (answers.action === 'distribution') {
-            const dataLoader = new DataLoader(repositories);
-            const dataSaver = dataSaverBuilder(answers.distribution.saveResults, repositories);
-            new Distributor(dataLoader, dataSaver).distribute(answers.distribution.paramsId);
-        } else if (answers.action === 'removeDistribution') {
-            new DistributionRemover(repositories).removeDistribution(answers.removeDistribution.paramsId);
         }
     });

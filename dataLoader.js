@@ -1,4 +1,4 @@
-import {getTournamentAndTour} from "./utils.js";
+import {getTournamentAndTour, withSpinner} from "./utils.js";
 
 export default class DataLoader {
     #repositories = {};
@@ -42,5 +42,14 @@ export default class DataLoader {
             throw new Error(`В параметрах с кодом ${params.code} не заполнен тур`);
         }
         return params;
+    }
+}
+
+export class SpinnerDataLoader {
+    #dataLoader
+
+    constructor(repositories) {
+        this.#dataLoader = new DataLoader(repositories);
+        this.loadData = withSpinner(this.#dataLoader.loadData);
     }
 }
