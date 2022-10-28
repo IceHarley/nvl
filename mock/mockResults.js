@@ -17,6 +17,9 @@ export default class MockResultsRepository {
     getByTournamentAndTour = (tournament, tour) => Promise
         .resolve(this.#data.filter(r => r.tournament === tournament && r.tour === tour))
 
+    getByTournament = tournament => Promise
+        .resolve(this.#data.filter(r => r.tournament === tournament))
+
     getAllRecords = params => params && params.maxRecords ? this.#data.slice(0, params.maxRecords) : this.#data;
 
     getGroup = group => this.#data.filter(r => r.group === group).map(r => clone(r))
