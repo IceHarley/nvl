@@ -14,7 +14,10 @@ export class DistributionDBSaver {
         return this.#repositories.distribution.saveList(distributionData)
             .then(result => console.log(`Создано ${result.flat().length} записей`))
             .then(() => this.#repositories.params.updateState(distributionData[0].paramsId, "Завершено"))
-            .catch(error => console.log('Произошла ошибка ' + error))
+            .catch(error =>  {
+                console.log('Произошла ошибка ' + error);
+                return this.#repositories.params.updateState(distributionData[0].paramsId, "Ошибка");
+            })
             .then(() => distributionData);
     }
 }

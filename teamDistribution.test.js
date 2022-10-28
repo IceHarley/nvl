@@ -263,7 +263,7 @@ test('в последней группе 2 неявки и 2 новые кома
 
 test('обычные группы - ротация третьих и первых мест, команда А3 сыграла, но снялась', t => {
     assertDistribution(t, teamsDistribution.distribute(mockResults.getGroups(['A', 'B', 'C']), [], [],
-        [{team: 'recwdXiTwfieWJ2zl'}]),
+        ['recwdXiTwfieWJ2zl']),
         `A1 A
          A2 A
          B1 A
@@ -274,6 +274,17 @@ test('обычные группы - ротация третьих и первы�
          
          C2 C
          C3 C`);
+});
+
+test('команда одновременно в новых и в снявшихся командах - ошибка', t => {
+    t.throws(() => teamsDistribution.distribute(mockResults.getGroups(['A', 'B', 'C']), [],
+        ['teamId'],
+        ['teamId']));
+});
+
+test('команда несколько раз в новых командах - ошибка', t => {
+    t.throws(() => teamsDistribution.distribute(mockResults.getGroups(['A', 'B', 'C']), [],
+        ['duplicateTeamId', 'uniqueTeamId', 'duplicateTeamId']));
 });
 
 test('весь тур', t => {

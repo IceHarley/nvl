@@ -7,7 +7,7 @@ export default class TeamsDistribution {
     #groupParser = new GroupParser();
 
     distribute = (tourResults, lastDistribution = [], newTeams = [], withdrawedTeams = []) => {
-        TeamsDistribution.#validateTourResults(tourResults);
+        TeamsDistribution.#validate(tourResults, newTeams, withdrawedTeams);
         let teams = this.#makeTeamsList(tourResults, lastDistribution, withdrawedTeams);
         teams = TeamsDistribution.#appendNewTeams(teams, newTeams);
         TeamsDistribution.#fillHighestNewGroup(teams);
@@ -86,7 +86,7 @@ export default class TeamsDistribution {
         .map(this.#addGroupIndices(lastDistribution));
 
     #excludeWithdrawed = withdrawedTeams => team =>
-        team.tech !== 'снятие' && !withdrawedTeams.find(w => w.team === team.team);
+        team.tech !== 'снятие' && !withdrawedTeams.find(withdrawedId => withdrawedId === team.team);
 
     #addGroupIndices = lastDistribution => team => ({
         ...team,
@@ -106,9 +106,15 @@ export default class TeamsDistribution {
     #getPreviousGroup = (lastDistribution, team) =>
         (lastDistribution.find(d => d.team === team.team) || {}).group;
 
-    static #validateTourResults = tourResults => {
+    static #validate = (tourResults, newTeams, withdrawedTeams) => {
         if (!tourResults || tourResults.length === 0) {
             throw new Error('Пустой список результатов группы');
+        }
+        if (newTeams.some((teamId, index) => index !== newTeams.indexOf(teamId))) {
+            throw new Error('Команда дублируется в списке новых команд');
+        }
+        if (newTeams.some(teamId => withdrawedTeams.includes(teamId))) {
+            throw new Error('Команда не может одновременно присутствовать в списке новых и в списке снявшихся команд');
         }
     };
 
