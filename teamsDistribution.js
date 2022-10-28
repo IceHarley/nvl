@@ -116,6 +116,12 @@ export default class TeamsDistribution {
         if (newTeams.some(teamId => withdrawedTeams.includes(teamId))) {
             throw new Error('Команда не может одновременно присутствовать в списке новых и в списке снявшихся команд');
         }
+        if (tourResults
+            .map(r => [r.winner, r.loser])
+            .flat()
+            .some(teamId => newTeams.includes(teamId))) {
+            throw new Error('Команда не может одновременно присутствовать в списке новых и в результатах предыдущего тура');
+        }
     };
 
     static #appendNewTeams = (teams, newTeams) =>

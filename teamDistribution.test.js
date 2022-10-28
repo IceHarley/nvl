@@ -282,6 +282,11 @@ test('команда одновременно в новых и в снявших
         ['teamId']));
 });
 
+test('команда одновременно в новых и в командах прошлого тура - ошибка', t => {
+    t.throws(() => teamsDistribution.distribute(mockResults.getGroups(['A', 'B', 'C']), [],
+        ['recV5nUenQAEGrXcU']));
+});
+
 test('команда несколько раз в новых командах - ошибка', t => {
     t.throws(() => teamsDistribution.distribute(mockResults.getGroups(['A', 'B', 'C']), [],
         ['duplicateTeamId', 'uniqueTeamId', 'duplicateTeamId']));
