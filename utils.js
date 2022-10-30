@@ -14,7 +14,7 @@ export const groupBy = (list, keyGetter) => {
     return map;
 };
 
-export const alphabetPosition = char => !!char ? parseInt(char, 36) - 10 : undefined;
+export const alphabetPosition = char => char ? parseInt(char, 36) - 10 : undefined;
 
 export const positionToChar = position => String.fromCharCode('A'.charCodeAt(0) + position)
 

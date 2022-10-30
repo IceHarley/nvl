@@ -28,7 +28,7 @@ export default class GroupParser {
                 }
                 team.points += teamResult.points;
                 team.score += teamResult.score;
-                if (!!teamResult.tech) {
+                if (teamResult.tech) {
                     team.tech = teamResult.tech;
                 }
             }

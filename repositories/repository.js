@@ -1,10 +1,5 @@
 import {asyncAirtable} from "../config.js";
 
-const minifyRecord = record => ({
-    id: record.id,
-    fields: record.fields,
-})
-
 export default class Repository {
     constructor(table, defaultView) {
         this.table = table;
