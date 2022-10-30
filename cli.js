@@ -23,7 +23,7 @@ export const questions = [
         choices: () => [
             {name: 'Распределение команд на следующий тур', value: 'distribution', short: 'Распределение'},
             {name: 'Удалить распределение команд', value: 'removeDistribution', short: 'Удаление распределения'},
-            {name: 'Составить рейтинговую таблицу - в разработке', value: 'rating', short: 'Рейтинговая таблица'},
+            {name: 'Составить рейтинговую таблицу', value: 'rating', short: 'Рейтинговая таблица'},
         ]
     },
     {

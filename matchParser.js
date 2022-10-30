@@ -1,3 +1,5 @@
+import {format} from "./utils.js";
+
 const SCORE_REGEXP = /(\d{1,2}):(\d{1,2})/;
 const COMMON_MATCH_REGEXP = /(\d)\s*:\s*(\d)\s*\((\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*\)/;
 
@@ -75,6 +77,6 @@ export default class MatchParser {
     };
 
     static #invalidMatch = match => {
-        throw new Error(`Некорректный формат матча ${JSON.stringify(match, null, 2)}`);
+        throw new Error(`Некорректный формат матча ${format(match)}`);
     }
 }

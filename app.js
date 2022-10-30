@@ -4,6 +4,7 @@ import inquirer from 'inquirer';
 import {dataSaverBuilder} from "./distributionSaver.js";
 import {DistributionRemover} from "./distributionRemover.js";
 import {questions, repositories} from "./cli.js";
+import RatingCalculator from "./ratingCalculator.js";
 
 
 inquirer.prompt(questions)
@@ -14,6 +15,8 @@ inquirer.prompt(questions)
             new Distributor(dataLoader, dataSaver).distribute(answers.distribution.paramsId);
         } else if (answers.action === 'removeDistribution') {
             new DistributionRemover(repositories).removeDistribution(answers.removeDistribution.paramsId);
+        } else if (answers.action === 'rating') {
+            new RatingCalculator();
         }
     })
     .catch(error => {

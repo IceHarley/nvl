@@ -1,11 +1,9 @@
-import {alphabetPosition, groupBy, positionToChar} from "./utils.js";
-import GroupParser from "./groupParser.js";
+import {alphabetPosition, positionToChar} from "./utils.js";
+import GroupsParser from "./groupsParser.js";
 
 const NEW_TEAM = '+';
 
 export default class TeamsDistribution {
-    #groupParser = new GroupParser();
-
     distribute = (tourResults, lastDistribution = [], newTeams = [], withdrawedTeams = []) => {
         TeamsDistribution.#validate(tourResults, newTeams, withdrawedTeams);
         let teams = this.#makeTeamsList(tourResults, lastDistribution, withdrawedTeams);
@@ -78,8 +76,8 @@ export default class TeamsDistribution {
     static #fillHighestNewGroup = teams => teams
         .forEach(team => team.highestNewGroup = !team.tech ? 0 : alphabetPosition(team.group) + 1);
 
-    #makeTeamsList = (tourResults, lastDistribution, withdrawedTeams) => Array
-        .from(groupBy(tourResults, this.#groupKeyGetter()).values(), this.#parseGroup())
+    #makeTeamsList = (tourResults, lastDistribution, withdrawedTeams) => new GroupsParser()
+        .parseGroups(tourResults)
         .map(this.#fillLastGroupField())
         .flat()
         .filter(this.#excludeWithdrawed(withdrawedTeams))
@@ -94,14 +92,10 @@ export default class TeamsDistribution {
         previousGroupIndex: alphabetPosition(this.#getPreviousGroup(lastDistribution, team)),
     });
 
-    #groupKeyGetter = () => matchResult => matchResult.group
-
     #fillLastGroupField = () => (group, index, groups) => group.map(team => ({
         ...team,
         isLastGroup: index === groups.length - 1
     }));
-
-    #parseGroup = () => group => this.#groupParser.parseGroup(group);
 
     #getPreviousGroup = (lastDistribution, team) =>
         (lastDistribution.find(d => d.team === team.team) || {}).group;

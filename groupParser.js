@@ -1,4 +1,6 @@
 import MatchParser from "./matchParser.js";
+import {alphabetPosition} from "./utils.js";
+import {DEFAULT_RATING_INCREASE} from "./config.js";
 
 export default class GroupParser {
     #parsedResults = [];
@@ -83,7 +85,25 @@ export default class GroupParser {
 
     #fillTeamPlaces = () => {
         for (let i = 0; i < this.#parsedResults.length; i++) {
-            this.#parsedResults[i].place = !this.#parsedResults[i].tech ? i + 1 : 3;
+            const item = this.#parsedResults[i];
+            item.place = !item.tech ? i + 1 : 3;
+            item.rating = this.#calcRating(this.#group, item.place, item.tech)
         }
+    };
+
+    #calcRating = (group, place, tech) => {
+        if (group.length > 1) {
+            return 0;
+        }
+        for (const increase of DEFAULT_RATING_INCREASE) {
+            if (alphabetPosition(group) <= alphabetPosition(increase[0])) {
+                if (!!tech) {
+                    return increase[4]
+                } else {
+                    return increase[place];
+                }
+            }
+        }
+        throw new Error("Некорректная группа " + group);
     };
 }
