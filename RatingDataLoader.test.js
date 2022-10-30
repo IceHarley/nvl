@@ -2,9 +2,9 @@ import test from 'ava';
 import MockResultsRepository from "./mock/mockResults.js";
 import MockTournamentsRepository from "./mock/mockTournaments.js";
 import RatingDataLoader from "./RatingDataLoader.js";
-import MockTournamentResultsRepository from "./mock/mockTournamentResults.js";
+import MockTournamentOutcomesRepository from "./mock/mockTournamentOutcomes.js";
 
-const mockTournamentResultsRepository = new MockTournamentResultsRepository();
+const mockTournamentOutcomesRepository = new MockTournamentOutcomesRepository();
 const mockResultsRepository = new MockResultsRepository();
 const mockTournamentsRepository = new MockTournamentsRepository();
 
@@ -12,12 +12,12 @@ const TOURNAMENT_ID = 'recTBtRUiBwh3avjf';
 
 const dataLoader = new RatingDataLoader({
     results: mockResultsRepository,
-    tournamentResults: mockTournamentResultsRepository,
+    tournamentOutcomes: mockTournamentOutcomesRepository,
     tournaments: mockTournamentsRepository,
 });
 
 test.beforeEach(() => {
-    mockTournamentResultsRepository.reset();
+    mockTournamentOutcomesRepository.reset();
     mockResultsRepository.reset();
     mockTournamentsRepository.reset();
 });
@@ -35,9 +35,9 @@ test.serial('для не найденного id турнира - ошибка',
 });
 
 test.serial('результаты считаны', async t => {
-    const [tournament, previousTournament, results, tournamentResults] = await dataLoader.loadData(TOURNAMENT_ID);
+    const [tournament, results, tournamentOutcomes, previousTournamentOutcomes] = await dataLoader.loadData(TOURNAMENT_ID);
     t.truthy(tournament);
-    t.truthy(previousTournament);
     t.truthy(results.length > 0);
-    t.truthy(tournamentResults.length > 0);
+    t.truthy(tournamentOutcomes.length > 0);
+    t.truthy(previousTournamentOutcomes.length > 0);
 });

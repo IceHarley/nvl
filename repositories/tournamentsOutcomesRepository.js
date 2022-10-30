@@ -3,7 +3,7 @@ import {asyncAirtable} from "../config.js";
 const TABLE = 'Результаты турниров';
 const VIEW = TABLE + 'private';
 
-export default class TournamentResultsRepository {
+export default class TournamentOutcomesRepository {
     getByTournament = async tournamentId => asyncAirtable.select(TABLE, {
         view: VIEW,
         filterByFormula: `{Идентификатор турнира}='${tournamentId}'`
@@ -15,5 +15,5 @@ export const minify = record => ({
     tournamentId: record.fields['Идентификатор турнира'][0],
     teamId: record.fields['Команды'][0],
     teamName: record.fields['Команда'][0],
-    result: record.fields['Результат (место)'],
+    place: record.fields['Результат (место)'],
 });

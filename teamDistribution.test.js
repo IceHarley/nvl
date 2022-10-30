@@ -4,7 +4,6 @@ import MockResultsRepository from "./mock/mockResults.js";
 import MockDistributionRepository from "./mock/mockDistribution.js";
 import {assertDistribution} from "./utils.js";
 
-
 const mockResults = new MockResultsRepository();
 const mockDistribution = new MockDistributionRepository();
 const teamsDistribution = new TeamsDistribution();
@@ -293,7 +292,8 @@ test('команда несколько раз в новых командах - 
 });
 
 test('весь тур', t => {
-    assertDistribution(t, teamsDistribution.distribute(mockResults.getAllRecords(), [], ['recM6djz83jZzezYJ']),
+    assertDistribution(t, teamsDistribution
+            .distribute(mockResults.getByTournamentAndTourDirect('recTBtRUiBwh3avjf', 1), [], ['recM6djz83jZzezYJ']),
         "A1 A\n   A2 A\n    B1 A\n" +
         "A3 B\n   B2 B\n    C1 B\n" +
         "B3 C\n   C2 C\n    D1 C\n" +

@@ -1,4 +1,5 @@
 import {asyncAirtable} from "../config.js";
+import {isRegularTour} from "../utils.js";
 
 const TABLE = 'Результаты матчей';
 const VIEW = TABLE + ' private';
@@ -24,6 +25,6 @@ export const minify = record => ({
     loser: record.fields['Команда-проигравший'] && record.fields['Команда-проигравший'].length > 0
         ? record.fields['Команда-проигравший'][0] : undefined,
     result: record.fields['Результат'],
-    tour: parseInt(record.fields['Тур']),
+    tour: isRegularTour(record.fields['Тур']) ? parseInt(record.fields['Тур']) : record.fields['Тур'],
     fullResult: record.fields['Результат полностью']
 });

@@ -1,7 +1,7 @@
 import {clone} from "../utils.js";
-import {minify} from "../repositories/tournamersResultsRepository.js";
+import {minify} from "../repositories/tournamentsOutcomesRepository.js";
 
-export default class MockTournamentResultsRepository {
+export default class MockTournamentOutcomesRepository {
     #data
 
     constructor() {
@@ -12,10 +12,14 @@ export default class MockTournamentResultsRepository {
 
     #initialData = () => clone(tournamentResults).map(p => minify(p));
 
-    getAllRecords = () => this.#data;
-
     getByTournament = tournamentId => Promise
         .resolve(this.#data.filter(r => r.tournamentId === tournamentId))
+
+    getByTournamentLimit = (tournamentId, limit) => this.#data.filter(r => r.tournamentId === tournamentId).slice(0, limit);
+
+    getByTournamentTeams = (tournamentId, teams) => this.#data
+        .filter(o => o.tournamentId === tournamentId)
+        .filter(o => teams.indexOf(o.teamName) >= 0);
 }
 
 const tournamentResults = [

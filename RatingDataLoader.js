@@ -16,9 +16,15 @@ export default class RatingDataLoader {
                 tournament,
                 this.#repositories.tournaments.getPrevious(tournament),
                 this.#repositories.results.getByTournament(tournament.id),
-                this.#repositories.tournamentResults.getByTournament(tournament.id),
+                this.#repositories.tournamentOutcomes.getByTournament(tournament.id),
             ]);
-        });
+        })
+        .then(([tournament, previousTournament, results, tournamentOutcomes]) => Promise.all([
+            tournament,
+            results,
+            tournamentOutcomes,
+            this.#repositories.tournamentOutcomes.getByTournament(previousTournament.id),
+        ]));
 
     static #validate = tournamentId => {
         if (!tournamentId) {

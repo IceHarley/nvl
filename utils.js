@@ -66,3 +66,7 @@ export const withSpinner = (func, message = "Загрузка данных...") 
         return res;
     });
 }
+
+export const format = obj => JSON.stringify(obj, null, 2);
+
+export const isRegularTour = tour => Number.isInteger(parseFloat(tour));
