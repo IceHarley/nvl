@@ -1,8 +1,6 @@
 import {asyncAirtable} from "../config.js";
 
 const TABLE = 'Команды';
-const VIEW = TABLE + ' private';
-
 export default class TeamsRepository {
     getById = async id => asyncAirtable.find(TABLE, id).then(record => minify(record));
 }

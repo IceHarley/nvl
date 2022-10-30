@@ -5,7 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "test": "ava"
+    "test": "ava",
+    "lint": "npx eslint ./",
+    "fix": "npx eslint ./ --fix"
   },
   "keywords": [],
   "author": "",
@@ -17,6 +19,11 @@
     "inquirer": "^9.1.4"
   },
   "devDependencies": {
-    "ava": "5.0.1"
+    "ava": "5.0.1",
+    "eslint": "^8.26.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.26.0",
+    "eslint-plugin-n": "^15.3.0",
+    "eslint-plugin-promise": "^6.1.1"
   }
 }
