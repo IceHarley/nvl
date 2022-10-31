@@ -75,3 +75,8 @@ test('матч -:- (неявка) когда все 3 команды групп�
         {team: 'rec9HmVM1YlrsaUR6', points: 0, score: -50, tech: 'неявка'}
     ])
 });
+
+test('для пустого матча с настройкой skipEmpty возвращается пустой массив', t => {
+    t.deepEqual(new MatchParser( true)
+        .parseMatch(mockResults.getGroup('C', 2, 'recTBtRUiBwh3avjf')[0]), [])
+});

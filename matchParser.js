@@ -4,8 +4,17 @@ const SCORE_REGEXP = /(\d{1,2}):(\d{1,2})/;
 const COMMON_MATCH_REGEXP = /(\d)\s*:\s*(\d)\s*\((\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*\)/;
 
 export default class MatchParser {
+    #skipEmpty;
+
+    constructor(skipEmpty = false) {
+        this.#skipEmpty = skipEmpty;
+    }
+
     parseMatch = match => {
-        MatchParser.#validateMatch(match);
+        this.#validateMatch(match)
+        if (MatchParser.#isEmpty(match) && this.#skipEmpty) {
+            return [];
+        }
         const parsedMatchData = this.#parseCommonMatch(match.result);
         if (parsedMatchData) {
             return this.#processCommonMatch(parsedMatchData, match);
@@ -70,11 +79,13 @@ export default class MatchParser {
         }];
     };
 
-    static #validateMatch = match => {
-        if (!match || !match.result) {
-            this.#invalidMatch(match);
+    #validateMatch = match => {
+        if (!match || (MatchParser.#isEmpty(match) && !this.#skipEmpty)) {
+            MatchParser.#invalidMatch(match);
         }
     };
+
+    static #isEmpty = match => !match.result && !match.winner && !match.loser;
 
     static #invalidMatch = match => {
         throw new Error(`Некорректный формат матча ${format(match)}`);

@@ -1,7 +1,7 @@
 import {asyncAirtable} from "../config.js";
 
 const TABLE = 'Результаты турниров';
-const VIEW = TABLE + 'private';
+const VIEW = TABLE + ' private';
 
 export default class TournamentOutcomesRepository {
     getByTournament = async tournamentId => asyncAirtable.select(TABLE, {

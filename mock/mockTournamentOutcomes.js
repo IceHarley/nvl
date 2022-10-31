@@ -1,5 +1,5 @@
 import {clone} from "../utils.js";
-import {minify} from "../repositories/tournamentsOutcomesRepository.js";
+import {minify} from "../repositories/tournamentOutcomesRepository.js";
 
 export default class MockTournamentOutcomesRepository {
     #data

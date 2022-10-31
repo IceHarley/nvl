@@ -7,6 +7,7 @@ const {firstBy} = pkg;
 const STAGE_FINAL = 'финал';
 const STAGE_SEMIFINAL = 'полуфинал';
 const STAGE_CONSOLATION_FINAL = 'за 3 место';
+
 export default class RatingCalculator {
     calculate = (tournament, results = [], tournamentOutcomes, previousTournamentOutcomes = []) => {
         RatingCalculator.#validateGroupResults(tournament, tournamentOutcomes);
@@ -58,7 +59,7 @@ export default class RatingCalculator {
     };
 
     #getPreviousTournamentPlace = (previousTournamentOutcomes, outcome) =>
-        (previousTournamentOutcomes.find(prev => prev.teamId === outcome.teamId) || {place: 0}).place;
+        (previousTournamentOutcomes.find(prev => prev.teamId === outcome.teamId) || {}).place;
 
     #getComparator = maxTour => {
         let comparator = firstBy(row => this.#inFinal(row), "desc")
@@ -68,13 +69,13 @@ export default class RatingCalculator {
             .thenBy(row => this.#inSemiFinal(row), "desc")
             .thenBy(row => this.#placeInSemiFinal(row))
             .thenBy("rating", "desc")
-            .thenBy("previousTournamentPlace")
             .thenBy(row => row.tours.length);
         for (let tour = maxTour - 1; tour >= 0; tour--) {
             comparator = comparator
                 .thenBy(row => row.tours.length > tour ? alphabetPosition(row.tours[tour].group) : 0)
                 .thenBy(row => row.tours.length > tour ? row.tours[tour].groupPlace : 0)
         }
+        comparator = comparator.thenBy("previousTournamentPlace");
         return comparator;
     };
 

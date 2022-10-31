@@ -227,6 +227,34 @@ test('команды игравшие в финале - сортируются �
     assertRatingTable(t, actual, expected);
 });
 
+test('две команды с одинаковым рейтингом и разными местами в прошлом турнире - смотрим по последней группе', async t => {
+    const outcomes = mockTournamentOutcomes.getByTournamentTeams(TOURNAMENT_ID, ['Дивизион'])
+        .concat(mockTournamentOutcomes.getByTournamentTeams(TOURNAMENT_ID, ['Астра']));
+    const expected = [
+        {teamName: 'Астра', rating: 3 + 2},
+        {teamName: 'Дивизион', rating: 3 + 2},
+    ];
+    const results = mockResults.getGroups(['J', 'I'])
+        .concat(mockResults.getGroups(['H', 'I'], 2));
+    const actual = await calculator.calculate(tournament, results, outcomes, [
+        {
+            id: 'id',
+            tournamentId: PREV_TOURNAMENT_ID,
+            teamId: 'rec7V4fSrk0kxRBcR',
+            teamName: 'Астра',
+            place: 22
+        },
+        {
+            id: 'id',
+            tournamentId: PREV_TOURNAMENT_ID,
+            teamId: 'recmIPtfETs7wIh6N',
+            teamName: 'Дивизион',
+            place: 0
+        }]);
+    assertRatingTable(t, actual, expected);
+    console.log(actual);
+});
+
 const assertRatingTable = (t, actual, expected) => {
     for (let i = 0; i < expected.length; i++) {
         t.like(actual[i], expected[i]);

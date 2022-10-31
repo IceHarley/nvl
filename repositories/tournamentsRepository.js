@@ -15,6 +15,10 @@ export default class TournamentsRepository {
         maxRecords: 1
     }).then(records => minify(records[0]));
 
+    getByState = async state => asyncAirtable.select(TABLE, {
+        view: VIEW,
+        filterByFormula: `{Статус}="${state}"`,
+    }).then(records => records.map(record => minify(record)));
 }
 
 export const minify = record => ({

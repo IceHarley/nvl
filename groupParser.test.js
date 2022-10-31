@@ -112,3 +112,35 @@ test('для финала возвращается 2 записи: 1 место 
     t.is(actual[0].place, 1);
     t.is(actual[1].place, 2);
 });
+
+test('SkipEmptyMatches=true группа, где матчи еще не сыграны', t => {
+    const groupResults = mockResults.getGroup('C', 2, 'recTBtRUiBwh3avjf');
+    const actual = new GroupParser(true).parseGroup(groupResults);
+    t.deepEqual(actual, []);
+});
+
+test('SkipEmptyMatches=true группа, где сыгран 1 матч, а 2 еще не сыграны - результаты по сыгранному матчу', t => {
+    const groupResults = mockResults.getGroup('A');
+    groupResults[1].result = undefined;
+    groupResults[1].winner = undefined;
+    groupResults[1].loser = undefined;
+    groupResults[2].result = undefined;
+    groupResults[2].winner = undefined;
+    groupResults[2].loser = undefined;
+    const actual = new GroupParser(true).parseGroup(groupResults);
+    t.deepEqual(actual.length, 2);
+    t.deepEqual(actual[0], {group: 'A', team: 'recV5nUenQAEGrXcU', place: 1, points: 4, score: 8, rating: 6});
+    t.deepEqual(actual[1], {group: 'A', team: 'recwdXiTwfieWJ2zl', place: 2, points: 0, score: -8, rating: 5});
+});
+
+test('SkipEmptyMatches=true группа, где сыграно 2 матч, а 1 еще не сыгран - результаты по сыгранным матчам', t => {
+    const groupResults = mockResults.getGroup('A');
+    groupResults[2].result = undefined;
+    groupResults[2].winner = undefined;
+    groupResults[2].loser = undefined;
+    const actual = new GroupParser(true).parseGroup(groupResults);
+    t.deepEqual(actual.length, 3);
+    t.deepEqual(actual[0], {group: 'A', team: 'recV5nUenQAEGrXcU', place: 1, points: 4, score: 8, rating: 6});
+    t.deepEqual(actual[1], {group: 'A', team: 'recf5jCoQc4ebLckG', place: 2, points: 3, score: 5, rating: 5});
+    t.deepEqual(actual[2], {group: 'A', team: 'recwdXiTwfieWJ2zl', place: 3, points: 1, score: -8-5, rating: 4});
+});
