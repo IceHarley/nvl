@@ -101,7 +101,7 @@ export default class GroupParser {
         }
         for (const increase of DEFAULT_RATING_INCREASE) {
             if (alphabetPosition(group) <= alphabetPosition(increase[0])) {
-                if (!!tech) {
+                if (tech) {
                     return increase[4]
                 } else {
                     return increase[place];
