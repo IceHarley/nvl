@@ -1,7 +1,6 @@
 import {alphabetPosition, positionToChar} from "./utils.js";
 import GroupsParser from "./groupsParser.js";
-
-const NEW_TEAM = '+';
+import {NEW_TEAM} from "./constants.js";
 
 export default class TeamsDistribution {
     distribute = (tourResults, lastDistribution = [], newTeams = [], withdrawedTeams = []) => {
