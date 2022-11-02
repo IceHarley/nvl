@@ -1,4 +1,5 @@
 import {format} from "./utils.js";
+import {ABSENCE, WITHDRAW} from "./constants.js";
 
 const SCORE_REGEXP = /(\d{1,2}):(\d{1,2})/;
 const COMMON_MATCH_REGEXP = /(\d)\s*:\s*(\d)\s*\((\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*(\d{1,2}:\d{1,2})?,?\s*\)/;
@@ -66,7 +67,7 @@ export default class MatchParser {
     #isTechMatch = matchResult => new RegExp(/^[+-]:-/).test(matchResult);
 
     #processTechMatch = (matchResult, match) => {
-        const tech = matchResult.match(/(неявка|снятие)/);
+        const tech = matchResult.match(new RegExp(`(${ABSENCE}|${WITHDRAW})`));
         return [matchResult.startsWith('+') ? {
             team: match.winner,
             points: 4,

@@ -1,7 +1,14 @@
 import GroupsParser from "./groupsParser.js";
 import {alphabetPosition, groupBy, isRegularTour} from "./utils.js";
 import pkg from 'thenby';
-import {NEW_TEAM, PLAYOFF_STAGES, STAGE_CONSOLATION_FINAL, STAGE_FINAL, STAGE_SEMIFINAL} from "./constants.js";
+import {
+    NEW_TEAM,
+    PLAYOFF_STAGES,
+    STAGE_CONSOLATION_FINAL,
+    STAGE_FINAL,
+    STAGE_SEMIFINAL,
+    WITHDRAW
+} from "./constants.js";
 
 const {firstBy} = pkg;
 
@@ -36,6 +43,7 @@ export default class RatingCalculator {
             teamId: outcome.teamId,
             teamName: outcome.teamName,
             rating: 0,
+            withdraw: false,
             regularTours: [],
             playoffTours: [],
         }));
@@ -63,22 +71,13 @@ export default class RatingCalculator {
         const team = ratingTable.find(row => row.teamId === result.team);
         if (team) {
             team.rating = team.rating + result.rating;
-            if (isRegularTour(tour)) {
-                team.regularTours.push({
-                    tour: tour,
-                    group: result.group,
-                    groupPlace: result.place,
-                    rating: result.rating
-                });
-            } else {
-                team.playoffTours.push({
-                    tour: tour,
-                    group: result.group,
-                    groupPlace: result.place,
-                    rating: result.rating
-                });
-            }
-
+            team.withdraw = team.withdraw || !!result.tech && result.tech === WITHDRAW,
+            team[isRegularTour(tour) ? 'regularTours' : 'playoffTours'].push({
+                tour: tour,
+                group: result.group,
+                groupPlace: result.place,
+                rating: result.rating,
+            });
         }
     };
 
@@ -93,6 +92,7 @@ export default class RatingCalculator {
             .thenBy(row => this.#inSemiFinal(row), "desc")
             .thenBy(row => this.#placeInSemiFinal(row))
             .thenBy("rating", "desc")
+            .thenBy("withdraw")
             .thenBy(row => row.tours.length);
         for (let tour = maxTour - 1; tour >= 0; tour--) {
             comparator = comparator

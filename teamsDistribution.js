@@ -1,6 +1,6 @@
 import {alphabetPosition, positionToChar} from "./utils.js";
 import GroupsParser from "./groupsParser.js";
-import {NEW_TEAM} from "./constants.js";
+import {NEW_TEAM, WITHDRAW} from "./constants.js";
 
 export default class TeamsDistribution {
     distribute = (tourResults, lastDistribution = [], newTeams = [], withdrawedTeams = []) => {
@@ -83,7 +83,7 @@ export default class TeamsDistribution {
         .map(this.#addGroupIndices(lastDistribution));
 
     #excludeWithdrawed = withdrawedTeams => team =>
-        team.tech !== 'снятие' && !withdrawedTeams.find(withdrawedId => withdrawedId === team.team);
+        team.tech !== WITHDRAW && !withdrawedTeams.find(withdrawedId => withdrawedId === team.team);
 
     #addGroupIndices = lastDistribution => team => ({
         ...team,

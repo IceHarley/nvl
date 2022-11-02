@@ -7,6 +7,8 @@ export const DEFAULT_RATING_INCREASE = [
 ];
 
 export const NEW_TEAM = '+';
+export const WITHDRAW = 'снятие';
+export const ABSENCE = 'неявка';
 
 export const STAGE_FINAL = 'финал';
 export const STAGE_SEMIFINAL = 'полуфинал';
