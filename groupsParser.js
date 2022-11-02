@@ -2,7 +2,7 @@ import GroupParser from "./groupParser.js";
 import {groupBy} from "./utils.js";
 
 export default class GroupsParser {
-    #groupParser = new GroupParser();
+    #groupParser = new GroupParser(true);
 
     parseGroups = tourResults => Array
         .from(groupBy(tourResults, this.#groupKeyGetter()).values(), this.#parseGroup());

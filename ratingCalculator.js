@@ -1,19 +1,40 @@
 import GroupsParser from "./groupsParser.js";
 import {alphabetPosition, groupBy, isRegularTour} from "./utils.js";
 import pkg from 'thenby';
+import {
+    NEW_TEAM,
+    PLAYOFF_STAGES,
+    STAGE_CONSOLATION_FINAL,
+    STAGE_FINAL,
+    STAGE_SEMIFINAL,
+    WITHDRAW
+} from "./constants.js";
 
 const {firstBy} = pkg;
 
-const STAGE_FINAL = 'финал';
-const STAGE_SEMIFINAL = 'полуфинал';
-const STAGE_CONSOLATION_FINAL = 'за 3 место';
 export default class RatingCalculator {
     calculate = (tournament, results = [], tournamentOutcomes, previousTournamentOutcomes = []) => {
         RatingCalculator.#validateGroupResults(tournament, tournamentOutcomes);
         const ratingTable = this.#makeRatingTable(tournamentOutcomes, previousTournamentOutcomes)
         let maxTour = this.#fillRatingTable(ratingTable, results);
-        return this.#sortRatingTable(ratingTable, maxTour);
+        this.#fillTeamTours(ratingTable, maxTour);
+        return this.#fillPlace(this.#sortRatingTable(ratingTable, maxTour));
     }
+
+    #fillTeamTours = (ratingTable, maxTour) => ratingTable.forEach(team => {
+        team.tours = this.#initTours(maxTour);
+        team.regularTours.forEach(regularTour => team.tours[regularTour.tour - 1] = regularTour);
+        team.tours = team.tours.concat(team.playoffTours.sort(firstBy(t => PLAYOFF_STAGES.indexOf(t.tour))));
+        delete team.regularTours;
+        delete team.playoffTours;
+    });
+
+    #initTours = maxTour => Array(maxTour).fill({}).map((_, index) => ({
+        tour: index + 1,
+        group: NEW_TEAM,
+        groupPlace: 0,
+        rating: 0
+    }));
 
     #makeRatingTable = (tournamentOutcomes, previousTournamentOutcomes) => tournamentOutcomes
         .map(outcome => ({
@@ -22,7 +43,9 @@ export default class RatingCalculator {
             teamId: outcome.teamId,
             teamName: outcome.teamName,
             rating: 0,
-            tours: [],
+            withdraw: false,
+            regularTours: [],
+            playoffTours: [],
         }));
 
     #fillRatingTable = (ratingTable, results) => {
@@ -48,17 +71,18 @@ export default class RatingCalculator {
         const team = ratingTable.find(row => row.teamId === result.team);
         if (team) {
             team.rating = team.rating + result.rating;
-            team.tours.push({
+            team.withdraw = team.withdraw || !!result.tech && result.tech === WITHDRAW,
+            team[isRegularTour(tour) ? 'regularTours' : 'playoffTours'].push({
                 tour: tour,
                 group: result.group,
                 groupPlace: result.place,
-                rating: result.rating
+                rating: result.rating,
             });
         }
     };
 
     #getPreviousTournamentPlace = (previousTournamentOutcomes, outcome) =>
-        (previousTournamentOutcomes.find(prev => prev.teamId === outcome.teamId) || {place: 0}).place;
+        (previousTournamentOutcomes.find(prev => prev.teamId === outcome.teamId) || {}).place;
 
     #getComparator = maxTour => {
         let comparator = firstBy(row => this.#inFinal(row), "desc")
@@ -68,13 +92,14 @@ export default class RatingCalculator {
             .thenBy(row => this.#inSemiFinal(row), "desc")
             .thenBy(row => this.#placeInSemiFinal(row))
             .thenBy("rating", "desc")
-            .thenBy("previousTournamentPlace")
+            .thenBy("withdraw")
             .thenBy(row => row.tours.length);
         for (let tour = maxTour - 1; tour >= 0; tour--) {
             comparator = comparator
                 .thenBy(row => row.tours.length > tour ? alphabetPosition(row.tours[tour].group) : 0)
                 .thenBy(row => row.tours.length > tour ? row.tours[tour].groupPlace : 0)
         }
+        comparator = comparator.thenBy("previousTournamentPlace");
         return comparator;
     };
 
@@ -102,4 +127,6 @@ export default class RatingCalculator {
             throw new Error('Результаты турнира не найдены');
         }
     };
+
+    #fillPlace = ratingTable => ratingTable.map((team, index) => ({...team, place: index + 1}));
 }

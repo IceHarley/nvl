@@ -1,10 +1,18 @@
 import MatchParser from "./matchParser.js";
 import {alphabetPosition} from "./utils.js";
-import {DEFAULT_RATING_INCREASE} from "./config.js";
+import pkg from 'thenby';
+import {DEFAULT_RATING_INCREASE} from "./constants.js";
+
+const {firstBy} = pkg;
 
 export default class GroupParser {
     #parsedResults = [];
     #group;
+    #skipEmptyMatches
+
+    constructor(skipEmptyMatches = false) {
+        this.#skipEmptyMatches = skipEmptyMatches;
+    }
 
     parseGroup = groupResults => {
         GroupParser.#validateGroupResults(groupResults);
@@ -17,7 +25,7 @@ export default class GroupParser {
     }
 
     #parseMatches = groupResults => {
-        const matchParser = new MatchParser();
+        const matchParser = new MatchParser(this.#skipEmptyMatches);
         groupResults.forEach(match => {
             const parsedMatch = matchParser.parseMatch(match);
             for (const teamResult of parsedMatch) {
@@ -54,11 +62,7 @@ export default class GroupParser {
         throw new Error(`${message} ${JSON.stringify(groupResults, null, 2)}`);
     };
 
-    #sortTeams = () => {
-        this.#parsedResults.sort((r1, r2) => r1.points === r2.points
-            ? r1.score > r2.score ? -1 : 1
-            : r1.points > r2.points ? -1 : 1);
-    };
+    #sortTeams = () => this.#parsedResults.sort(firstBy('points', 'desc').thenBy('score', 'desc'));
 
     #getTeam = key => this.#parsedResults.filter(t => t.team === key)[0];
 
@@ -68,6 +72,7 @@ export default class GroupParser {
             match.winner && teamsKeys.add(match.winner);
             teamsKeys.add(match.loser);
         });
+        teamsKeys.delete(undefined);
         this.#fillResults(teamsKeys);
     };
 
@@ -97,7 +102,7 @@ export default class GroupParser {
         }
         for (const increase of DEFAULT_RATING_INCREASE) {
             if (alphabetPosition(group) <= alphabetPosition(increase[0])) {
-                if (!!tech) {
+                if (tech) {
                     return increase[4]
                 } else {
                     return increase[place];

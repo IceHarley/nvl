@@ -6,8 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "ava",
-    "lint": "npx eslint ./",
-    "fix": "npx eslint ./ --fix"
+    "lint": "eslint ./",
+    "fix": "eslint ./ --fix"
   },
   "keywords": [],
   "author": "",
