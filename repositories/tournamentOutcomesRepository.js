@@ -1,4 +1,5 @@
 import {asyncAirtable} from "../config.js";
+import {chunkArray} from "../utils.js";
 
 const TABLE = 'Результаты турниров';
 const VIEW = TABLE + ' private';
@@ -8,6 +9,15 @@ export default class TournamentOutcomesRepository {
         view: VIEW,
         filterByFormula: `{Идентификатор турнира}='${tournamentId}'`
     }).then(records => records.map(record => minify(record)));
+
+    updateRatingList = async records => Promise.all(chunkArray(records)
+        .map(chunk => asyncAirtable.bulkUpdate(TABLE, chunk.map(record => ({
+            id: record.id,
+            fields: {
+                "Результат (место)": record.place,
+                "Рейтинг": record.rating,
+            }
+        })))));
 }
 
 export const minify = record => ({

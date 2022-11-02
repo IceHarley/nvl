@@ -18,8 +18,7 @@ export default class DistributionParamsRepository {
         fields: {
             "Статус": newState
         }
-    })
-        .then(record => minify(record));
+    }).then(record => minify(record));
 
     getByState = async state => asyncAirtable.select(TABLE, {
         view: VIEW,

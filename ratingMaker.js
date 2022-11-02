@@ -12,8 +12,9 @@ export default class RatingMaker {
 
     makeRating = async tournamentId =>
         this.#dataLoader.loadData(tournamentId)
-            .then(([tournament, results, tournamentOutcomes, previousTournamentOutcomes]) =>
-                this.#ratingCalculator.calculate(tournament, results, tournamentOutcomes, previousTournamentOutcomes))
-            .then(result => this.#dataSaver.saveData(result));
+            .then(([tournament, results, tournamentOutcomes, previousTournamentOutcomes]) => Promise.all([
+                tournamentOutcomes,
+                this.#ratingCalculator.calculate(tournament, results, tournamentOutcomes, previousTournamentOutcomes)]))
+            .then(([tournamentOutcomes, result]) => this.#dataSaver.saveData(result, tournamentOutcomes));
 }
 
