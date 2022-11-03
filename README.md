@@ -2,6 +2,8 @@
 
 Приложения для автоматизации работы волейбольной Лиги НВЛ с помощью БД [Airtable](https://airtable.com/app1MljghZX5136lh)
 
+[![Node.js CI](https://github.com/IceHarley/nvl/actions/workflows/node.js.yml/badge.svg)](https://github.com/IceHarley/nvl/actions/workflows/node.js.yml)
+
 Запуск приложения: 
 ```
 node app.js
