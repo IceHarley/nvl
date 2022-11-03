@@ -1,5 +1,5 @@
+import {chunkArray} from "../common/utils.js";
 import {asyncAirtable} from "../config.js";
-import {chunkArray} from "../utils.js";
 
 const TABLE = 'Результаты турниров';
 const VIEW = TABLE + ' private';

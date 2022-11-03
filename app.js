@@ -1,12 +1,12 @@
-import Distributor from "./distributor.js";
+import Distributor from "./distribution/distributor.js";
 import inquirer from 'inquirer';
-import {dataSaverBuilder} from "./distributionSaver.js";
-import {DistributionRemover} from "./distributionRemover.js";
-import {questions, repositories} from "./cli.js";
-import {SpinnerRatingDataLoader} from "./RatingDataLoader.js";
-import RatingMaker from "./ratingMaker.js";
-import {ratingDataSaverBuilder} from "./ratingSaver.js";
-import {SpinnerDataLoader} from "./dataLoader.js";
+import {dataSaverBuilder} from "./distribution/distributionSaver.js";
+import {DistributionRemover} from "./distribution/distributionRemover.js";
+import {questions, repositories} from "./cli/cli.js";
+import {SpinnerRatingDataLoader} from "./rating/ratingDataLoader.js";
+import RatingMaker from "./rating/ratingMaker.js";
+import {ratingDataSaverBuilder} from "./rating/ratingSaver.js";
+import {SpinnerDataLoader} from "./distribution/dataLoader.js";
 
 inquirer.prompt(questions)
     .then(answers => {

@@ -1,4 +1,4 @@
-import {asyncAirtable} from "../config.js";
+import {asyncAirtable} from "../common/constants.js";
 
 export default class Repository {
     constructor(table, defaultView) {

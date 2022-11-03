@@ -1,6 +1,6 @@
 import test from 'ava';
 import MatchParser from "./matchParser.js";
-import MockResultsRepository from "./mock/mockResults.js";
+import MockResultsRepository from "../mock/mockResults.js";
 
 const mockResults = new MockResultsRepository();
 

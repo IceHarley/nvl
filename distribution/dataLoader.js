@@ -1,4 +1,4 @@
-import {getTournamentAndTour, withSpinner} from "./utils.js";
+import {getTournamentAndTour, withSpinner} from "../common/utils.js";
 
 export default class DataLoader {
     #repositories = {};
