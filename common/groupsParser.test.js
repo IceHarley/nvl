@@ -1,6 +1,6 @@
 import test from 'ava';
 import GroupsParser from "./groupsParser.js";
-import MockResultsRepository from "./mock/mockResults.js";
+import MockResultsRepository from "../mock/mockResults.js";
 
 const mockResults = new MockResultsRepository();
 

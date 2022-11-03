@@ -1,8 +1,8 @@
 import test from 'ava';
 import TeamsDistribution from "./teamsDistribution.js";
-import MockResultsRepository from "./mock/mockResults.js";
-import MockDistributionRepository from "./mock/mockDistribution.js";
-import {assertDistribution} from "./utils.js";
+import MockResultsRepository from "../mock/mockResults.js";
+import MockDistributionRepository from "../mock/mockDistribution.js";
+import {assertDistribution} from "../common/utils.js";
 
 const mockResults = new MockResultsRepository();
 const mockDistribution = new MockDistributionRepository();

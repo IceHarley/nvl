@@ -1,10 +1,10 @@
 import test from 'ava';
 import Distributor from "./distributor.js";
-import MockResultsRepository from "./mock/mockResults.js";
-import MockDistributionRepository from "./mock/mockDistribution.js";
-import MockTournamentsRepository from "./mock/mockTournaments.js";
-import {assertDistribution} from "./utils.js";
-import MockDistributionParamsRepository from "./mock/mockDistributionParams.js";
+import MockResultsRepository from "../mock/mockResults.js";
+import MockDistributionRepository from "../mock/mockDistribution.js";
+import MockTournamentsRepository from "../mock/mockTournaments.js";
+import {assertDistribution} from "../common/utils.js";
+import MockDistributionParamsRepository from "../mock/mockDistributionParams.js";
 import DataLoader from "./dataLoader.js";
 
 const mockParamsRepository = new MockDistributionParamsRepository();

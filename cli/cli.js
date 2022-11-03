@@ -1,8 +1,9 @@
-import ResultsRepository from "./repositories/resultsRepository.js";
-import DistributionRepository from "./repositories/distributionRepository.js";
-import TournamentsRepository from "./repositories/tournamentsRepository.js";
-import DistributionParamsRepository from "./repositories/distributionParamsRepository.js";
-import TournamentOutcomesRepository from "./repositories/tournamentOutcomesRepository.js";
+import ResultsRepository from "../repositories/resultsRepository.js";
+import DistributionRepository from "../repositories/distributionRepository.js";
+import TournamentsRepository from "../repositories/tournamentsRepository.js";
+import DistributionParamsRepository from "../repositories/distributionParamsRepository.js";
+import TournamentOutcomesRepository from "../repositories/tournamentOutcomesRepository.js";
+import {withSpinner} from "../common/utils.js";
 
 const paramsRepository = new DistributionParamsRepository();
 const resultsRepository = new ResultsRepository();
@@ -17,7 +18,7 @@ const paramsChoices = state => () => paramsRepository.getByState(state)
         short: `${params.tournamentName}, ${params.nextTour} тур`
     })));
 
-const tournamentsChoices = state => () => tournamentsRepository.getByState(state)
+const tournamentsChoices = state => () => withSpinner(tournamentsRepository.getByState, 'Загрузка турниров')(state)
     .then(tournaments => tournaments.map(tournament => ({
         name: tournament.name,
         value: tournament.id,
@@ -59,7 +60,7 @@ export const questions = [
     {
         type: 'list',
         name: 'rating.tournamentId',
-        message: 'Параметры распределения',
+        message: 'Выбор турнира',
         when: answers => answers.action === 'rating',
         choices: tournamentsChoices("В процессе")
     },

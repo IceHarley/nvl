@@ -1,6 +1,6 @@
-import {alphabetPosition, positionToChar} from "./utils.js";
-import GroupsParser from "./groupsParser.js";
-import {NEW_TEAM, WITHDRAW} from "./constants.js";
+import {alphabetPosition, positionToChar} from "../common/utils.js";
+import GroupsParser from "../common/groupsParser.js";
+import {NEW_TEAM, WITHDRAW} from "../common/constants.js";
 
 export default class TeamsDistribution {
     distribute = (tourResults, lastDistribution = [], newTeams = [], withdrawedTeams = []) => {

@@ -1,5 +1,5 @@
 import {minify} from "../repositories/resultsRepository.js";
-import {clone} from "../utils.js";
+import {clone} from "../common/utils.js";
 
 export default class MockResultsRepository {
     #data

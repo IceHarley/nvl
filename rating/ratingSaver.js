@@ -1,4 +1,4 @@
-import {withSpinner} from "./utils.js";
+import {withSpinner} from "../common/utils.js";
 
 export class RatingDBSaver {
     #repositories = {};

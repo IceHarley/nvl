@@ -1,8 +1,8 @@
 import test from 'ava';
-import MockResultsRepository from "./mock/mockResults.js";
-import MockTournamentsRepository from "./mock/mockTournaments.js";
-import RatingDataLoader from "./RatingDataLoader.js";
-import MockTournamentOutcomesRepository from "./mock/mockTournamentOutcomes.js";
+import MockResultsRepository from "../mock/mockResults.js";
+import MockTournamentsRepository from "../mock/mockTournaments.js";
+import RatingDataLoader from "./ratingDataLoader.js";
+import MockTournamentOutcomesRepository from "../mock/mockTournamentOutcomes.js";
 
 const mockTournamentOutcomesRepository = new MockTournamentOutcomesRepository();
 const mockResultsRepository = new MockResultsRepository();

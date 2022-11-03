@@ -1,5 +1,5 @@
-import GroupsParser from "./groupsParser.js";
-import {alphabetPosition, groupBy, isRegularTour} from "./utils.js";
+import GroupsParser from "../common/groupsParser.js";
+import {alphabetPosition, groupBy, isRegularTour} from "../common/utils.js";
 import pkg from 'thenby';
 import {
     NEW_TEAM,
@@ -8,7 +8,7 @@ import {
     STAGE_FINAL,
     STAGE_SEMIFINAL,
     WITHDRAW
-} from "./constants.js";
+} from "../common/constants.js";
 
 const {firstBy} = pkg;
 

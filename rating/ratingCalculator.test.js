@@ -1,10 +1,10 @@
 import test from 'ava';
 import RatingCalculator from "./ratingCalculator.js";
-import MockResultsRepository from "./mock/mockResults.js";
-import MockTournamentsRepository from "./mock/mockTournaments.js";
-import MockTournamentOutcomesRepository from "./mock/mockTournamentOutcomes.js";
-import {NEW_TEAM} from "./constants.js";
-import {format} from "./utils.js";
+import MockResultsRepository from "../mock/mockResults.js";
+import MockTournamentsRepository from "../mock/mockTournaments.js";
+import MockTournamentOutcomesRepository from "../mock/mockTournamentOutcomes.js";
+import {NEW_TEAM} from "../common/constants.js";
+import {format} from "../common/utils.js";
 
 const TOURNAMENT_ID = 'recTBtRUiBwh3avjf';
 const PREV_TOURNAMENT_ID = 'recC6cmCroZm6Rjb6';
@@ -249,28 +249,24 @@ test('команды игравшие в финале - сортируются �
             "group": "+",
             "groupPlace": 0,
             "rating": 0,
-            withdraw: false,
         },
         {
             "tour": 2,
             "group": "+",
             "groupPlace": 0,
             "rating": 0,
-            withdraw: false,
         },
         {
             "tour": "Финал четырех",
             "group": "полуфинал",
             "groupPlace": 2,
             "rating": 0,
-            withdraw: false,
         },
         {
             "tour": "Финал четырех",
             "group": "финал",
             "groupPlace": 1,
             "rating": 0,
-            withdraw: false,
         }
     ])
 });
@@ -318,14 +314,12 @@ test('новая команда, сыгравшая только во второ
                 group: NEW_TEAM,
                 groupPlace: 0,
                 rating: 0,
-                withdraw: false,
             },
             {
                 tour: 2,
                 group: 'J',
                 groupPlace: 1,
                 rating: 3,
-                withdraw: false,
             }
         ]
     }];
@@ -350,21 +344,18 @@ test('новая команда, сыгравшая только в третье
                 group: NEW_TEAM,
                 groupPlace: 0,
                 rating: 0,
-                withdraw: false,
             },
             {
                 tour: 2,
                 group: NEW_TEAM,
                 groupPlace: 0,
                 rating: 0,
-                withdraw: false,
             },
             {
                 tour: 3,
                 group: 'J',
                 groupPlace: 1,
                 rating: 3,
-                withdraw: false,
             }
         ]
     }];
@@ -380,12 +371,12 @@ test('новая команда, сыгравшая только в третье
     assertRatingTable(t, actual, expected);
 });
 
-test.only('команда с неявкой - ниже других с таким же рейтингом', async t => {
+test('команда с неявкой - ниже других с таким же рейтингом', async t => {
     const outcomes = mockTournamentOutcomes.getByTournamentTeams(TOURNAMENT_ID, ['Коралл', 'ФВМ+1', 'Хром']);
     const expected = [
-        {teamName: 'Коралл', rating: 0},
-        {teamName: 'ФВМ+1', rating: 0},
-        {teamName: 'Хром', rating: 0},
+        {teamName: 'Коралл', rating: 0, withdraw: false},
+        {teamName: 'ФВМ+1', rating: 0, withdraw: false},
+        {teamName: 'Хром', rating: 0, withdraw: true},
     ];
     const actual = await calculator.calculate(tournament, mockResults.getGroup('K'), outcomes);
     console.log(format(actual));
