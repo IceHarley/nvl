@@ -71,6 +71,13 @@ export const questions = [
         when: answers => answers.action === 'rating',
         default: true
     },
+    {
+        type: 'confirm',
+        name: 'rating.exportToExcel',
+        message: 'Выгрузить рейтинговую таблицу в файл Excel',
+        when: answers => answers.action === 'rating',
+        default: true
+    },
 ];
 export const repositories = {
     params: paramsRepository,

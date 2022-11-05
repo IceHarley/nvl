@@ -7,6 +7,7 @@ import {SpinnerRatingDataLoader} from "./rating/ratingDataLoader.js";
 import RatingMaker from "./rating/ratingMaker.js";
 import {ratingDataSaverBuilder} from "./rating/ratingSaver.js";
 import {SpinnerDataLoader} from "./distribution/dataLoader.js";
+import ExcelSaver from "./excel/excelSaver.js";
 
 inquirer.prompt(questions)
     .then(answers => {
@@ -19,7 +20,15 @@ inquirer.prompt(questions)
         } else if (answers.action === 'rating') {
             const dataLoader = new SpinnerRatingDataLoader(repositories);
             const dataSaver = ratingDataSaverBuilder(answers.rating.saveResults, repositories);
-            new RatingMaker(dataLoader, dataSaver).makeRating(answers.rating.tournamentId);
+            new RatingMaker(dataLoader, dataSaver).makeRating(answers.rating.tournamentId)
+                .then(ratingData => {
+                    if (answers.rating.exportToExcel) {
+                        new ExcelSaver().save({
+                            tournamentName: 'Осень 2022',
+                            fileName: 'd:\\Users\\levin\\Documents\\NVL\\2022 осень\\Рейтинг Осень 2022 сгенерированный.xlsx',
+                        }, ratingData);
+                    }
+                })
         }
     })
     .catch(error => {
