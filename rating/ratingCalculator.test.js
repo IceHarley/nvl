@@ -4,7 +4,6 @@ import MockResultsRepository from "../mock/mockResults.js";
 import MockTournamentsRepository from "../mock/mockTournaments.js";
 import MockTournamentOutcomesRepository from "../mock/mockTournamentOutcomes.js";
 import {NEW_TEAM} from "../common/constants.js";
-import {format} from "../common/utils.js";
 
 const TOURNAMENT_ID = 'recTBtRUiBwh3avjf';
 const PREV_TOURNAMENT_ID = 'recC6cmCroZm6Rjb6';
@@ -42,11 +41,11 @@ test('пустые результаты матчей - возвращаем ит
 
 test('пустые результаты матчей и есть итоги прошлого турнира - возвращаем итоги по итогам прошлого турнира', async t => {
     const expected = [
-        {teamName: 'Легион-2'},
-        {teamName: 'Легион'},
-        {teamName: 'Мстители'},
-        {teamName: 'Спарта'},
-        {teamName: 'Матчбол'},
+        {teamName: 'Легион-2', delta: 0, previousTournamentPlace: 1},
+        {teamName: 'Легион', delta: 0, previousTournamentPlace: 2},
+        {teamName: 'Мстители', delta: 0, previousTournamentPlace: 3},
+        {teamName: 'Спарта', delta: 0, previousTournamentPlace: 4},
+        {teamName: 'Матчбол', delta: 0, previousTournamentPlace: 5},
     ];
     const actual = await calculator.calculate(tournament, [], outcomes, prevOutcomes);
     assertRatingTable(t, actual, expected);
@@ -54,13 +53,13 @@ test('пустые результаты матчей и есть итоги пр
 
 test('сыгран турнир одной группы - сортировка по рейтингу', async t => {
     const expected = [
-        {teamName: 'Легион', rating: 5},
-        {teamName: 'Матчбол', rating: 4},
-        {teamName: 'Спарта'},
-        {teamName: 'Мстители'},
-        {teamName: 'Легион-2'},
+        {teamName: 'Легион', rating: 5, delta: 1, previousTournamentPlace: 2},
+        {teamName: 'Матчбол', rating: 4, delta: 3, previousTournamentPlace: 5},
+        {teamName: 'Легион-2', rating: 0, delta: -2, previousTournamentPlace: 1},
+        {teamName: 'Мстители', rating: 0, delta: -1, previousTournamentPlace: 3},
+        {teamName: 'Спарта', rating: 0, delta: -1, previousTournamentPlace: 4},
     ];
-    const actual = await calculator.calculate(tournament, mockResults.getGroup('B'), outcomes);
+    const actual = await calculator.calculate(tournament, mockResults.getGroup('B'), outcomes, prevOutcomes);
     assertRatingTable(t, actual, expected);
 });
 
@@ -300,7 +299,7 @@ test('две команды с одинаковым рейтингом и раз
 
 test('новая команда, еще не игравшая - рейтинг 0', async t => {
     const outcomes = mockTournamentOutcomes.getByTournamentTeams(TOURNAMENT_ID, ['7 пределов']);
-    const expected = [{teamName: '7 пределов', rating: 0}];
+    const expected = [{teamName: '7 пределов', rating: 0, delta: null, previousTournamentPlace: undefined}];
     const actual = await calculator.calculate(tournament, mockResults.getGroup('B'), outcomes);
     assertRatingTable(t, actual, expected);
 });
@@ -367,7 +366,137 @@ test('новая команда, сыгравшая только в третье
         loser: 'recmfw38VhgmGHSxC',
         result: '3:0 (25:20, 25:20, 25:20)'
     }];
-    const actual = await calculator.calculate(tournament, results, outcomes);
+    const actual = await calculator.calculate(tournament, results, outcomes, []);
+    assertRatingTable(t, actual, expected);
+});
+
+test('новая команда, сыгравшая только во втором туре и еще не сыгравшая в третьем - рейтинг 0', async t => {
+    const outcomes = mockTournamentOutcomes.getByTournamentTeams(TOURNAMENT_ID, ['7 пределов']);
+    const expected = [{
+        teamName: '7 пределов', rating: 3, tours: [
+            {
+                tour: 1,
+                group: NEW_TEAM,
+                groupPlace: 0,
+                rating: 0,
+            },
+            {
+                tour: 2,
+                group: 'J',
+                groupPlace: 1,
+                rating: 3,
+            },
+            {
+                tour: 3,
+                group: null,
+                groupPlace: 0,
+                rating: null,
+            },
+        ]
+    }];
+    const results = [{
+        tournament: TOURNAMENT_ID,
+        tour: 2,
+        group: 'J',
+        winner: 'recM6djz83jZzezYJ',
+        loser: 'recmfw38VhgmGHSxC',
+        result: '3:0 (25:20, 25:20, 25:20)'
+    }, {
+        tournament: TOURNAMENT_ID,
+        tour: 3,
+        group: 'C',
+        winner: 'recnEELXiDFrxIPix',
+        loser: 'recmfw38VhgmGHSxC',
+        result: '3:0 (25:20, 25:20, 25:20)'
+    }];
+    const actual = await calculator.calculate(tournament, results, outcomes, []);
+    assertRatingTable(t, actual, expected);
+});
+
+test('не новая команда, сыгравшая только в первом туре - рейтинг 0', async t => {
+    const outcomes = mockTournamentOutcomes.getByTournamentTeams(TOURNAMENT_ID, ['Комус']);
+    const expected = [{
+        teamName: 'Комус', rating: 3, tours: [
+            {
+                tour: 1,
+                group: 'J',
+                groupPlace: 1,
+                rating: 3,
+            },
+            {
+                tour: 2,
+                group: null,
+                groupPlace: 0,
+                rating: null,
+            },
+            {
+                tour: 3,
+                group: null,
+                groupPlace: 0,
+                rating: null,
+            }
+        ]
+    }];
+    const results = [{
+        tournament: TOURNAMENT_ID,
+        tour: 1,
+        group: 'J',
+        winner: 'recst39AJwl7Edi0c',
+        loser: 'recmfw38VhgmGHSxC',
+        result: '3:0 (25:20, 25:20, 25:20)'
+    }, {
+        tournament: TOURNAMENT_ID,
+        tour: 3,
+        group: 'C',
+        winner: 'recnEELXiDFrxIPix',
+        loser: 'recmfw38VhgmGHSxC',
+        result: '3:0 (25:20, 25:20, 25:20)'
+    }];
+    const actual = await calculator.calculate(tournament, results, outcomes, [{
+        teamId: 'recst39AJwl7Edi0c',
+        teamName: 'Комус',
+        place: 10
+    }]);
+    assertRatingTable(t, actual, expected);
+});
+
+test('не новая команда, сыгравшая только в третьем туре - рейтинг 0', async t => {
+    const outcomes = mockTournamentOutcomes.getByTournamentTeams(TOURNAMENT_ID, ['Комус']);
+    const expected = [{
+        teamName: 'Комус', rating: 3, tours: [
+            {
+                tour: 1,
+                group: null,
+                groupPlace: 0,
+                rating: null,
+            },
+            {
+                tour: 2,
+                group: null,
+                groupPlace: 0,
+                rating: null,
+            },
+            {
+                tour: 3,
+                group: 'J',
+                groupPlace: 1,
+                rating: 3,
+            }
+        ]
+    }];
+    const results = [{
+        tournament: TOURNAMENT_ID,
+        tour: 3,
+        group: 'J',
+        winner: 'recst39AJwl7Edi0c',
+        loser: 'recmfw38VhgmGHSxC',
+        result: '3:0 (25:20, 25:20, 25:20)'
+    }];
+    const actual = await calculator.calculate(tournament, results, outcomes, [{
+        teamId: 'recst39AJwl7Edi0c',
+        teamName: 'Комус',
+        place: 10
+    }]);
     assertRatingTable(t, actual, expected);
 });
 
@@ -379,7 +508,6 @@ test('команда с неявкой - ниже других с таким ж�
         {teamName: 'Хром', rating: 0, withdraw: true},
     ];
     const actual = await calculator.calculate(tournament, mockResults.getGroup('K'), outcomes);
-    console.log(format(actual));
     assertRatingTable(t, actual, expected);
 });
 
