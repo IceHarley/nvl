@@ -332,9 +332,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 14,
@@ -356,9 +356,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 15,
@@ -524,9 +524,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 22,
@@ -548,9 +548,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 23,
@@ -572,9 +572,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 24,
@@ -692,9 +692,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 29,
@@ -739,8 +739,8 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
-                        "groupPlace": 0,
+                        "group": "K",
+                        "groupPlace": 3,
                         "rating": 0
                     }
                 ],
@@ -771,54 +771,6 @@ test('сохранение в файл', async t => {
                 "delta": null
             },
             {
-                "outcomeId": "rec7n18nKOu7jNzIZ",
-                "previousTournamentPlace": 31,
-                "teamId": "recsucLBwtB8WNkC6",
-                "teamName": "Карасуно",
-                "rating": 0,
-                "withdraw": false,
-                "tours": [
-                    {
-                        "tour": 1,
-                        "group": "L",
-                        "groupPlace": 1,
-                        "rating": 0
-                    },
-                    {
-                        "tour": 2,
-                        "group": "+",
-                        "groupPlace": 0,
-                        "rating": 0
-                    }
-                ],
-                "place": 33,
-                "delta": -2
-            },
-            {
-                "outcomeId": "rec2pXCZZi7xGM1Hq",
-                "previousTournamentPlace": 30,
-                "teamId": "recMYX0UQ505TwwQL",
-                "teamName": "Стрела",
-                "rating": 0,
-                "withdraw": false,
-                "tours": [
-                    {
-                        "tour": 1,
-                        "group": "L",
-                        "groupPlace": 2,
-                        "rating": 0
-                    },
-                    {
-                        "tour": 2,
-                        "group": "+",
-                        "groupPlace": 0,
-                        "rating": 0
-                    }
-                ],
-                "place": 34,
-                "delta": -4
-            },
-            {
                 "outcomeId": "reccotMvp4MevJQ0t",
                 "teamId": "rec5bpX1gX6m9koGz",
                 "teamName": "Шторм",
@@ -838,7 +790,7 @@ test('сохранение в файл', async t => {
                         "rating": 0
                     }
                 ],
-                "place": 35,
+                "place": 33,
                 "delta": null
             },
             {
@@ -861,7 +813,7 @@ test('сохранение в файл', async t => {
                         "rating": 0
                     }
                 ],
-                "place": 36,
+                "place": 34,
                 "delta": null
             },
             {
@@ -884,8 +836,56 @@ test('сохранение в файл', async t => {
                         "rating": 0
                     }
                 ],
-                "place": 37,
+                "place": 35,
                 "delta": null
+            },
+            {
+                "outcomeId": "rec7n18nKOu7jNzIZ",
+                "previousTournamentPlace": 31,
+                "teamId": "recsucLBwtB8WNkC6",
+                "teamName": "Карасуно",
+                "rating": 0,
+                "withdraw": false,
+                "tours": [
+                    {
+                        "tour": 1,
+                        "group": "L",
+                        "groupPlace": 1,
+                        "rating": 0
+                    },
+                    {
+                        "tour": 2,
+                        "group": "K",
+                        "groupPlace": 1,
+                        "rating": 0
+                    }
+                ],
+                "place": 36,
+                "delta": -5
+            },
+            {
+                "outcomeId": "rec2pXCZZi7xGM1Hq",
+                "previousTournamentPlace": 30,
+                "teamId": "recMYX0UQ505TwwQL",
+                "teamName": "Стрела",
+                "rating": 0,
+                "withdraw": false,
+                "tours": [
+                    {
+                        "tour": 1,
+                        "group": "L",
+                        "groupPlace": 2,
+                        "rating": 0
+                    },
+                    {
+                        "tour": 2,
+                        "group": "K",
+                        "groupPlace": 2,
+                        "rating": 0
+                    }
+                ],
+                "place": 37,
+                "delta": -7
             },
             {
                 "outcomeId": "recaUmAseRIIXQ09G",

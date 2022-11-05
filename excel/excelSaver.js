@@ -1,4 +1,5 @@
 import writeXlsxFile from 'write-excel-file/node'
+import {NEW_TEAM} from "../common/constants.js";
 
 const TOURS = 3;
 
@@ -227,7 +228,7 @@ export default class ExcelSaver {
     ]);
 
     prepareGroupColumn = tour => ({
-        value: tour.group,
+        value: tour.group === NEW_TEAM ? null : tour.group,
         align: 'center',
         alignVertical: 'center',
         fontSize: 16,

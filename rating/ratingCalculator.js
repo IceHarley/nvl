@@ -24,10 +24,23 @@ export default class RatingCalculator {
     #fillTeamTours = (ratingTable, maxTour) => ratingTable.forEach(team => {
         team.tours = this.#initTours(maxTour);
         team.regularTours.forEach(regularTour => team.tours[regularTour.tour - 1] = regularTour);
+        this.#processNewTeams(maxTour, team);
         team.tours = team.tours.concat(team.playoffTours.sort(firstBy(t => PLAYOFF_STAGES.indexOf(t.tour))));
         delete team.regularTours;
         delete team.playoffTours;
     });
+
+    #processNewTeams = (maxTour, team) => {
+        let tourPlayed = false;
+        for (let i = 0; i < maxTour; i++) {
+            if (team.tours[i].groupPlace) {
+                tourPlayed = true;
+            } else {
+                team.tours[i].group = team.previousTournamentPlace || tourPlayed ? null : NEW_TEAM;
+                team.tours[i].rating = team.previousTournamentPlace || tourPlayed ? null : 0;
+            }
+        }
+    };
 
     #initTours = maxTour => Array(maxTour).fill({}).map((_, index) => ({
         tour: index + 1,
@@ -72,12 +85,12 @@ export default class RatingCalculator {
         if (team) {
             team.rating = team.rating + result.rating;
             team.withdraw = team.withdraw || !!result.tech && result.tech === WITHDRAW,
-            team[isRegularTour(tour) ? 'regularTours' : 'playoffTours'].push({
-                tour: tour,
-                group: result.group,
-                groupPlace: result.place,
-                rating: result.rating,
-            });
+                team[isRegularTour(tour) ? 'regularTours' : 'playoffTours'].push({
+                    tour: tour,
+                    group: result.group,
+                    groupPlace: result.place,
+                    rating: result.rating,
+                });
         }
     };
 
@@ -128,5 +141,9 @@ export default class RatingCalculator {
         }
     };
 
-    #fillPlace = ratingTable => ratingTable.map((team, index) => ({...team, place: index + 1}));
+    #fillPlace = ratingTable => ratingTable.map((team, index) => ({
+        ...team,
+        place: index + 1,
+        delta: !team.previousTournamentPlace ? null : team.previousTournamentPlace - index - 1,
+    }));
 }
