@@ -188,7 +188,6 @@ export default class ExcelSaver {
         align: 'right',
         alignVertical: 'center',
         fontSize: 16,
-        fontWeight: 'regular',
         leftBorderStyle: 'medium',
         rightBorderStyle: 'none',
     });
@@ -212,7 +211,6 @@ export default class ExcelSaver {
         align: 'left',
         alignVertical: 'center',
         fontSize: 16,
-        fontWeight: 'regular',
         leftBorderStyle: 'medium',
         rightBorderStyle: 'medium',
     });
@@ -232,7 +230,6 @@ export default class ExcelSaver {
         align: 'center',
         alignVertical: 'center',
         fontSize: 16,
-        fontWeight: 'regular',
         leftBorderStyle: 'medium',
         rightBorderStyle: 'thin',
     });
@@ -242,7 +239,6 @@ export default class ExcelSaver {
         align: 'center',
         alignVertical: 'center',
         fontSize: 16,
-        fontWeight: 'regular',
         leftBorderStyle: 'thin',
         rightBorderStyle: 'medium',
     });
