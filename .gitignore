@@ -1,1 +1,3 @@
 /node_modules/
+/test-output/file.xlsx
+/test-output/~$file.xlsx
