@@ -3,18 +3,33 @@ import {NEW_TEAM} from "../common/constants.js";
 
 const TOURS = 3;
 
+const SUBSCRIPT = '₁₂₃₄₅₆₇₈';
+
 const COLUMNS_WIDTH = [
     {width: 0.7}, {width: 5}, {width: 4}, {width: 30}, Array.from({length: TOURS * 2}, () => ({width: 8})), {width: 8}, {width: 90}
 ].flat();
 
 export default class ExcelSaver {
-    save = async (meta, data) => writeXlsxFile(this.prepareTable(meta, data), {
+    save = async (meta, data, distributions = []) => writeXlsxFile(this.prepareTable(meta, this.mergeDistributions(data, distributions)), {
         columns: COLUMNS_WIDTH,
         filePath: meta.fileName || './test-output/file.xlsx',
         fontFamily: 'Calibri',
         fontSize: 12,
         sheet: 'Рейтинг'
-    })
+    }).then(() => console.log(`Рейтинговая таблица турнира ${meta.tournamentName} сохранена в файл ${meta.fileName}`))
+
+    mergeDistributions = (data, distributions) => {
+        data.forEach(team =>
+            team.tours.forEach(tour => {
+                if (!tour.group || tour.group === NEW_TEAM) {
+                    let distribution = distributions.find(d => d.team === team.teamId && d.tour === tour.tour);
+                    if (distribution) {
+                        tour.group = distribution.group;
+                    }
+                }
+            }));
+        return data;
+    }
 
     prepareTable = (meta, data) => ([
         this.emptyLine(3.75),
@@ -226,13 +241,17 @@ export default class ExcelSaver {
     ]);
 
     prepareGroupColumn = tour => ({
-        value: tour.group === NEW_TEAM ? null : tour.group,
+        value: this.getGroupWithPlace(tour),
         align: 'center',
         alignVertical: 'center',
         fontSize: 16,
         leftBorderStyle: 'medium',
         rightBorderStyle: 'thin',
     });
+
+    getGroupWithPlace = tour => !tour.group || tour.group === NEW_TEAM
+        ? null
+        : tour.group.concat(tour.groupPlace ? SUBSCRIPT.charAt(tour.groupPlace - 1) : '');
 
     prepareTourRatingColumn = tour => ({
         value: tour.rating,

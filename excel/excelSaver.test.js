@@ -785,9 +785,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 33,
@@ -808,9 +808,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 34,
@@ -831,9 +831,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 35,
@@ -1109,9 +1109,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 47,
@@ -1132,9 +1132,9 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 48,
@@ -1155,15 +1155,36 @@ test('сохранение в файл', async t => {
                     },
                     {
                         "tour": 2,
-                        "group": "+",
+                        "group": null,
                         "groupPlace": 0,
-                        "rating": 0
+                        "rating": null
                     }
                 ],
                 "place": 49,
                 "delta": null
             }
-        ]
+        ],
+        [
+            {
+                team: 'rectlFHt9jokhoEon', //Сурож
+                tour: 2,
+                group: 'C'
+            },
+            {
+                team: 'recQCcUcWqfasbeAr', //Бастион
+                tour: 2,
+                group: 'C'
+            },
+            {
+                team: 'recnEELXiDFrxIPix', //Алушта
+                tour: 2,
+                group: 'C'
+            },
+            {
+                team: 'recst39AJwl7Edi0c', //Комус
+                tour: 2,
+                group: 'E'
+            }]
     )
     t.pass();
 });
