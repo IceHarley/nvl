@@ -28,4 +28,5 @@ export const minify = record => ({
     code: parseFloat(record.fields['Код']),
     format: record.fields['Формат'],
     type: record.fields['Тип турнира'],
+    lastDistributedTour: record.fields['Последний распределенный тур'],
 });

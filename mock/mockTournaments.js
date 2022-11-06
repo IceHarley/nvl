@@ -14,7 +14,9 @@ export default class MockTournamentsRepository {
 
     getAllRecords = () => this.#data;
 
-    getById = id => Promise.resolve(this.#data.find(t => t.id === id));
+    getById = id => Promise.resolve(this.getByIdDirect(id));
+
+    getByIdDirect = id => this.#data.find(t => t.id === id);
 
     getPrevious = tournament => Promise
         .resolve([...this.#data]
@@ -31,7 +33,8 @@ const tournaments = [
             "Статус": "В процессе",
             "Код": "22.4",
             "Формат": "mix",
-            "Тип турнира": "Сезон"
+            "Тип турнира": "Сезон",
+            "Последний распределенный тур": 2,
         }
     },
     {
@@ -64,7 +67,8 @@ const tournaments = [
             "Статус": "Завершен",
             "Формат": "mix",
             "Код": "22.1",
-            "Тип турнира": "Сезон"
+            "Тип турнира": "Сезон",
+            "Последний распределенный тур": 3,
         }
     },
     {

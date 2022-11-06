@@ -8,16 +8,19 @@ import RatingMaker from "./rating/ratingMaker.js";
 import {ratingDataSaverBuilder} from "./rating/ratingSaver.js";
 import {SpinnerDataLoader} from "./distribution/dataLoader.js";
 import ExcelSaver from "./excel/excelSaver.js";
+import {GENERATED_PATH} from "./config.js";
 
 const exportToExcel = (answers, ratingData) => {
     if (answers.rating.exportToExcel) {
-        Promise.all([
-            repositories.distribution.getByTournamentAndTour(answers.rating.tournamentId, ratingData[0].tours.length),
-            repositories.tournaments.getById(answers.rating.tournamentId)
-        ]).then(([distributions, tournament]) => new ExcelSaver().save({
-            tournamentName: tournament.name,
-            fileName: 'd:\\Users\\levin\\Documents\\NVL\\2022 осень\\Рейтинг Осень 2022 сгенерированный.xlsx',
-        }, ratingData, distributions));
+        repositories.tournaments.getById(answers.rating.tournamentId)
+            .then(tournament => Promise.all([
+                repositories.distribution.getByTournamentAndTour(answers.rating.tournamentId, tournament.lastDistributedTour),
+                tournament,
+            ]))
+            .then(([distributions, tournament]) => new ExcelSaver().save({
+                tournamentName: tournament.name,
+                fileName: GENERATED_PATH.concat(`Рейтинг ${tournament.name} generatedВ турнирах теперь .xlsx`)
+            }, ratingData, distributions));
     }
 };
 

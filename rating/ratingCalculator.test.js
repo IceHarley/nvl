@@ -12,7 +12,7 @@ const mockResults = new MockResultsRepository();
 const mockTournaments = new MockTournamentsRepository();
 const mockTournamentOutcomes = new MockTournamentOutcomesRepository();
 
-const tournament = mockTournaments.getById(TOURNAMENT_ID);
+const tournament = mockTournaments.getByIdDirect(TOURNAMENT_ID);
 const outcomes = mockTournamentOutcomes.getByTournamentLimit(TOURNAMENT_ID, 5);
 const prevOutcomes = mockTournamentOutcomes.getByTournamentLimit(PREV_TOURNAMENT_ID, 10);
 
@@ -251,9 +251,9 @@ test('команды игравшие в финале - сортируются �
         },
         {
             "tour": 2,
-            "group": "+",
+            "group": null,
             "groupPlace": 0,
-            "rating": 0,
+            "rating": null,
         },
         {
             "tour": "Финал четырех",
@@ -366,7 +366,7 @@ test('новая команда, сыгравшая только в третье
         loser: 'recmfw38VhgmGHSxC',
         result: '3:0 (25:20, 25:20, 25:20)'
     }];
-    const actual = await calculator.calculate(tournament, results, outcomes, []);
+    const actual = await calculator.calculate({lastDistributedTour: 3}, results, outcomes, []);
     assertRatingTable(t, actual, expected);
 });
 
@@ -409,7 +409,36 @@ test('новая команда, сыгравшая только во второ
         loser: 'recmfw38VhgmGHSxC',
         result: '3:0 (25:20, 25:20, 25:20)'
     }];
-    const actual = await calculator.calculate(tournament, results, outcomes, []);
+    const actual = await calculator.calculate({lastDistributedTour: 3}, results, outcomes, []);
+    assertRatingTable(t, actual, expected);
+});
+
+test('новая команда, еще не игравшая, но распределенная на третий тур - пустой рейтинг в третьем туре', async t => {
+    const outcomes = mockTournamentOutcomes.getByTournamentTeams(TOURNAMENT_ID, ['7 пределов']);
+    const expected = [{
+        teamName: '7 пределов', rating: 0, tours: [
+            {
+                tour: 1,
+                group: NEW_TEAM,
+                groupPlace: 0,
+                rating: 0,
+            },
+            {
+                tour: 2,
+                group: NEW_TEAM,
+                groupPlace: 0,
+                rating: 0,
+            },
+            {
+                tour: 3,
+                group: null,
+                groupPlace: 0,
+                rating: null,
+            }
+        ]
+    }];
+    const results = [];
+    const actual = await calculator.calculate({lastDistributedTour: 3}, results, outcomes, []);
     assertRatingTable(t, actual, expected);
 });
 
@@ -452,7 +481,7 @@ test('не новая команда, сыгравшая только в пер�
         loser: 'recmfw38VhgmGHSxC',
         result: '3:0 (25:20, 25:20, 25:20)'
     }];
-    const actual = await calculator.calculate(tournament, results, outcomes, [{
+    const actual = await calculator.calculate({lastDistributedTour: 3}, results, outcomes, [{
         teamId: 'recst39AJwl7Edi0c',
         teamName: 'Комус',
         place: 10

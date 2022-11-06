@@ -16,9 +16,9 @@ export default class RatingCalculator {
     calculate = (tournament, results = [], tournamentOutcomes, previousTournamentOutcomes = []) => {
         RatingCalculator.#validateGroupResults(tournament, tournamentOutcomes);
         const ratingTable = this.#makeRatingTable(tournamentOutcomes, previousTournamentOutcomes)
-        let maxTour = this.#fillRatingTable(ratingTable, results);
-        this.#fillTeamTours(ratingTable, maxTour);
-        return this.#fillPlace(this.#sortRatingTable(ratingTable, maxTour));
+        this.#fillRatingTable(ratingTable, results);
+        this.#fillTeamTours(ratingTable, tournament.lastDistributedTour);
+        return this.#fillPlace(this.#sortRatingTable(ratingTable, tournament.lastDistributedTour));
     }
 
     #fillTeamTours = (ratingTable, maxTour) => ratingTable.forEach(team => {
@@ -36,8 +36,8 @@ export default class RatingCalculator {
             if (team.tours[i].groupPlace) {
                 tourPlayed = true;
             } else {
-                team.tours[i].group = team.previousTournamentPlace || tourPlayed ? null : NEW_TEAM;
-                team.tours[i].rating = team.previousTournamentPlace || tourPlayed ? null : 0;
+                team.tours[i].group = team.previousTournamentPlace || tourPlayed || i === maxTour - 1 ? null : NEW_TEAM;
+                team.tours[i].rating = team.previousTournamentPlace || tourPlayed || i === maxTour - 1 ? null : 0;
             }
         }
     };
@@ -63,13 +63,9 @@ export default class RatingCalculator {
 
     #fillRatingTable = (ratingTable, results) => {
         const groupedResults = groupBy(results, r => r.tour);
-
-        let maxTour = 0;
         for (const tour of groupedResults.keys()) {
-            maxTour = isRegularTour(tour) && tour > maxTour ? tour : maxTour;
             this.#parseTourGroups(groupedResults, tour, ratingTable);
         }
-        return maxTour;
     };
 
     #sortRatingTable = (ratingTable, maxTour) => ratingTable.sort(this.#getComparator(maxTour));
