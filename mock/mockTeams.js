@@ -15,6 +15,8 @@ export default class MockTeamsRepository {
     getAllRecords = () => this.#data;
 
     getById = id => Promise.resolve(this.#data.find(t => id === t.id));
+
+    getActiveTeams = () => this.getAllRecords();
 }
 
 const teams = [

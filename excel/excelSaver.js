@@ -12,7 +12,7 @@ const COLUMNS_WIDTH = [
 export default class ExcelSaver {
     save = async (meta, data, distributions = []) => writeXlsxFile(this.prepareTable(meta, this.mergeDistributions(data, distributions)), {
         columns: COLUMNS_WIDTH,
-        filePath: meta.fileName || './test-output/file.xlsx',
+        filePath: meta.fileName,
         fontFamily: 'Calibri',
         fontSize: 12,
         sheet: 'Рейтинг'

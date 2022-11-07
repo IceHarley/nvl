@@ -4,12 +4,14 @@ import TournamentsRepository from "../repositories/tournamentsRepository.js";
 import DistributionParamsRepository from "../repositories/distributionParamsRepository.js";
 import TournamentOutcomesRepository from "../repositories/tournamentOutcomesRepository.js";
 import {withSpinner} from "../common/utils.js";
+import TeamsRepository from "../repositories/teamsRepository.js";
 
 const paramsRepository = new DistributionParamsRepository();
 const resultsRepository = new ResultsRepository();
 const distributionRepository = new DistributionRepository();
 const tournamentsRepository = new TournamentsRepository();
 const tournamentOutcomesRepository = new TournamentOutcomesRepository();
+const teamsRepository = new TeamsRepository();
 
 const paramsChoices = state => () => paramsRepository.getByState(state)
     .then(params => params.map(params => ({
@@ -34,6 +36,7 @@ export const questions = [
             {name: 'Распределение команд на следующий тур', value: 'distribution', short: 'Распределение'},
             {name: 'Удалить распределение команд', value: 'removeDistribution', short: 'Удаление распределения'},
             {name: 'Составить рейтинговую таблицу', value: 'rating', short: 'Рейтинговая таблица'},
+            {name: 'Экспорт групп для расписания', value: 'groupsExport', short: 'Экспорт групп'},
         ]
     },
     {
@@ -78,11 +81,20 @@ export const questions = [
         when: answers => answers.action === 'rating',
         default: true
     },
+    {
+        type: 'list',
+        name: 'groupsExport.tournamentId',
+        message: 'Выбор турнира',
+        when: answers => answers.action === 'groupsExport',
+        choices: tournamentsChoices("В процессе")
+    },
 ];
+
 export const repositories = {
     params: paramsRepository,
     results: resultsRepository,
     distribution: distributionRepository,
     tournaments: tournamentsRepository,
     tournamentOutcomes: tournamentOutcomesRepository,
+    teams: teamsRepository,
 };
