@@ -33,8 +33,9 @@ export default class DistributionRepository {
 
 export const minify = record => ({
     id: record.id,
-    tournament: record.fields['ID турнира'],
+    tournament: record.fields['ID турнира'][0],
     team: record.fields['Команда'][0],
     tour: parseInt(record.fields['Тур']),
     group: record.fields['Группа'],
+    schedule: record.fields['Расписание'],
 });

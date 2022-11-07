@@ -4,7 +4,7 @@ import ExcelSaver from "./excelSaver.js";
 const excelSaver = new ExcelSaver();
 
 test('сохранение в файл', async t => {
-    await excelSaver.save({tournamentName: 'Весна 2022', fileName: './test-output/file.xlsx'}, [
+    await excelSaver.save({tournamentName: 'Весна 2022', fileName: './test-output/rating.xlsx'}, [
             {
                 "outcomeId": "reclhsYWkkw4hnUCI",
                 "previousTournamentPlace": 4,
