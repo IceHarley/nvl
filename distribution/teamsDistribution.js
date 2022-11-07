@@ -13,6 +13,7 @@ export default class TeamsDistribution {
         TeamsDistribution.#fillNewGroup(teams);
         TeamsDistribution.#sortInGroups(teams);
         TeamsDistribution.#clearHighestNewGroup(teams);
+        TeamsDistribution.#fillPositions(teams);
         return teams;
     };
 
@@ -131,4 +132,6 @@ export default class TeamsDistribution {
     static #isLastTeam = team => team.isLastGroup && team.place === 3;
 
     static #isFirstNewTeam = team => team.group === NEW_TEAM && team.place === 1;
+
+    static #fillPositions = teams => teams.forEach((team, index) => team.position = index % 3 + 1);
 }

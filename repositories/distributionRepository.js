@@ -7,7 +7,8 @@ const VIEW = 'main';
 export default class DistributionRepository {
     getByTournamentAndTour = async (tournament, tour) => asyncAirtable.select(TABLE, {
         view: VIEW,
-        filterByFormula: `AND({ID турнира}='${tournament}', {Тур} = ${tour})`
+        filterByFormula: `AND({ID турнира}='${tournament}', {Тур} = ${tour})`,
+        sort:[{field: 'Группа', direction: 'asc'}, {field: 'Позиция в группе', direction: 'asc'}],
     }).then(records => records.map(record => minify(record)));
 
     getByParamsId = async paramsId => asyncAirtable.select(TABLE, {
@@ -21,7 +22,8 @@ export default class DistributionRepository {
             "Команда": [record.team],
             "Тур": `${record.tour}`,
             "Группа": record.newGroup,
-            "Параметры распределения": [record.paramsId]
+            "Параметры распределения": [record.paramsId],
+            'Позиция в группе': record.position,
         })))));
 
     removeList = async records => Promise.all(
@@ -38,4 +40,5 @@ export const minify = record => ({
     tour: parseInt(record.fields['Тур']),
     group: record.fields['Группа'],
     schedule: record.fields['Расписание'],
+    position: record.fields['Позиция в группе'],
 });

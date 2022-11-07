@@ -26,7 +26,8 @@ export const assertDistribution = (t, actual, expected) => {
             group: distribution[i][0],
             place: parseInt(distribution[i][1]),
             newGroup: distribution[i].length === 3 ? distribution[i][2] : distribution[i][3],
-            tech: distribution[i].length === 4 && distribution[i][2] === '!' ? 'неявка' : undefined
+            tech: distribution[i].length === 4 && distribution[i][2] === '!' ? 'неявка' : undefined,
+            position: i % 3 + 1,
         });
     }
 };
