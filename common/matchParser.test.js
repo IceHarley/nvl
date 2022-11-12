@@ -77,6 +77,15 @@ test('матч -:- (неявка) когда все 3 команды групп�
 });
 
 test('для пустого матча с настройкой skipEmpty возвращается пустой массив', t => {
-    t.deepEqual(new MatchParser( true)
+    t.deepEqual(new MatchParser(true)
         .parseMatch(mockResults.getGroup('C', 2, 'recTBtRUiBwh3avjf')[0]), [])
+});
+
+test('матч +:- (нет соперника) - единственная команда в группе', t => {
+    const result = {
+        group: 'P',
+        winner: 'teamId',
+        result: '+:- (нет соперника)',
+    };
+    t.deepEqual(new MatchParser().parseMatch(result), [{team: 'teamId', points: 4, score: 50}]);
 });

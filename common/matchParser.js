@@ -66,19 +66,28 @@ export default class MatchParser {
 
     #isTechMatch = matchResult => new RegExp(/^[+-]:-/).test(matchResult);
 
-    #processTechMatch = (matchResult, match) => {
+    #processTechMatch = (matchResult, match) => [
+        this.#getTechWinner(matchResult, match),
+        this.#getTechLoser(matchResult, match)
+    ].filter(team => team);
+
+    #getTechWinner = (matchResult, match) => matchResult.startsWith('+') ? {
+        team: match.winner,
+        points: 4,
+        score: 50
+    } : {};
+
+    #getTechLoser = (matchResult, match) => !match.loser ? undefined : {
+        team: match.loser,
+        points: 0,
+        score: -50,
+        tech: this.#getTech(matchResult),
+    }
+
+    #getTech = matchResult => {
         const tech = matchResult.match(new RegExp(`(${ABSENCE}|${WITHDRAW})`));
-        return [matchResult.startsWith('+') ? {
-            team: match.winner,
-            points: 4,
-            score: 50
-        } : {}, {
-            team: match.loser,
-            points: 0,
-            score: -50,
-            tech: !tech || tech.length < 1 ? 'иное' : tech[0]
-        }];
-    };
+        return !tech || tech.length < 1 ? 'иное' : tech[0];
+    }
 
     #validateMatch = match => {
         if (!match || (MatchParser.#isEmpty(match) && !this.#skipEmpty)) {

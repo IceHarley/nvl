@@ -144,3 +144,14 @@ test('SkipEmptyMatches=true группа, где сыграно 2 матч, а 1
     t.deepEqual(actual[1], {group: 'A', team: 'recf5jCoQc4ebLckG', place: 2, points: 3, score: 5, rating: 5});
     t.deepEqual(actual[2], {group: 'A', team: 'recwdXiTwfieWJ2zl', place: 3, points: 1, score: -8-5, rating: 4});
 });
+
+test('нижняя группа, в которой только одна команда', t => {
+    const groupResults = [{
+        group: 'P',
+        winner: 'teamId',
+        result: '+:- (нет соперника)',
+        tour: '3',
+    }];
+    const actual = new GroupParser().parseGroup(groupResults);
+    t.deepEqual(actual[0], {group: 'P', team: 'teamId', place: 1, points: 4, score: 50, rating: 0});
+});
