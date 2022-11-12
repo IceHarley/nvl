@@ -1,22 +1,30 @@
 import writeXlsxFile from 'write-excel-file/node'
 import {NEW_TEAM} from "../common/constants.js";
+import {isRegularTour} from "../common/utils.js";
 
 const TOURS = 3;
 
 const SUBSCRIPT = '₁₂₃₄₅₆₇₈';
+const ROME = ["", "I", "II", "III", "IV"];
 
 const COLUMNS_WIDTH = [
     {width: 0.7}, {width: 5}, {width: 4}, {width: 30}, Array.from({length: TOURS * 2}, () => ({width: 8})), {width: 8}, {width: 90}
 ].flat();
 
 export default class ExcelSaver {
+    #silent
+
+    constructor(silent) {
+        this.#silent = silent;
+    }
+
     save = async (meta, data, distributions = []) => writeXlsxFile(this.prepareTable(meta, this.mergeDistributions(data, distributions)), {
         columns: COLUMNS_WIDTH,
         filePath: meta.fileName,
         fontFamily: 'Calibri',
         fontSize: 12,
         sheet: 'Рейтинг'
-    }).then(() => console.log(`Рейтинговая таблица турнира ${meta.tournamentName} сохранена в файл ${meta.fileName}`))
+    }).then(() => !this.#silent && console.log(`Рейтинговая таблица турнира ${meta.tournamentName} сохранена в файл ${meta.fileName}`))
 
     mergeDistributions = (data, distributions) => {
         data.forEach(team =>
@@ -175,6 +183,7 @@ export default class ExcelSaver {
 
     mainData = data => data.map((row, index) => this.prepareDataRow({
         ...row,
+        isPlayoffTeam: row.tours.some(tour => !isRegularTour(tour.tour)),
         isFirst: index === 0,
         isLast: index === data.length - 1
     }));
@@ -205,7 +214,10 @@ export default class ExcelSaver {
         fontSize: 16,
         leftBorderStyle: 'medium',
         rightBorderStyle: 'none',
+        backgroundColor: this.getBackgroundColor(row)
     });
+
+    getBackgroundColor = row => row.isPlayoffTeam ? '#92D050' : '#FFFFFF';
 
     prepareDeltaColumn = row => ({
         value: row.delta ? row.delta : null,
@@ -217,8 +229,9 @@ export default class ExcelSaver {
         format: '+###0;-###0',
         color: row.delta < 0 ? '#9C0006' : '#375623',
         leftBorderStyle: 'thin',
-        leftBorderColor: '#FFFFFF',
+        leftBorderColor: this.getBackgroundColor(row),
         rightBorderStyle: 'medium',
+        backgroundColor: this.getBackgroundColor(row)
     });
 
     prepareTeamColumn = row => ({
@@ -228,16 +241,32 @@ export default class ExcelSaver {
         fontSize: 16,
         leftBorderStyle: 'medium',
         rightBorderStyle: 'medium',
+        backgroundColor: this.getBackgroundColor(row)
     });
 
-    prepareToursColumns = row => row.tours.map(tour => ([
-        this.prepareGroupColumn({...tour, isFirst: row.isFirst, isLast: row.isLast}),
-        this.prepareTourRatingColumn({...tour, isFirst: row.isFirst, isLast: row.isLast})
+    prepareToursColumns = row => row.tours.filter(tour => isRegularTour(tour.tour)).map(tour => ([
+        this.prepareGroupColumn({...tour, isFirst: row.isFirst, isLast: row.isLast, isPlayoffTeam: row.isPlayoffTeam}),
+        this.prepareTourRatingColumn({
+            ...tour,
+            isFirst: row.isFirst,
+            isLast: row.isLast,
+            isPlayoffTeam: row.isPlayoffTeam
+        })
     ]));
 
     prepareEmptyToursColumns = row => Array.from({length: TOURS - (row.tours.length || 0)}, () => [
-        this.prepareGroupColumn({group: null, isFirst: row.isFirst, isLast: row.isLast}),
-        this.prepareTourRatingColumn({rating: null, isFirst: row.isFirst, isLast: row.isLast})
+        this.prepareGroupColumn({
+            group: null,
+            isFirst: row.isFirst,
+            isLast: row.isLast,
+            isPlayoffTeam: row.isPlayoffTeam
+        }),
+        this.prepareTourRatingColumn({
+            rating: null,
+            isFirst: row.isFirst,
+            isLast: row.isLast,
+            isPlayoffTeam: row.isPlayoffTeam
+        })
     ]);
 
     prepareGroupColumn = tour => ({
@@ -247,6 +276,7 @@ export default class ExcelSaver {
         fontSize: 16,
         leftBorderStyle: 'medium',
         rightBorderStyle: 'thin',
+        backgroundColor: this.getBackgroundColor(tour)
     });
 
     getGroupWithPlace = tour => !tour.group || tour.group === NEW_TEAM
@@ -260,15 +290,19 @@ export default class ExcelSaver {
         fontSize: 16,
         leftBorderStyle: 'thin',
         rightBorderStyle: 'medium',
+        backgroundColor: this.getBackgroundColor(tour)
     });
 
     prepareRatingColumn = row => ({
-        value: row.rating,
+        value: row.isPlayoffTeam ? this.getPlayoffPlace(row) : row.rating,
         align: 'center',
         alignVertical: 'center',
         fontSize: 16,
         fontWeight: 'bold',
         leftBorderStyle: 'medium',
         rightBorderStyle: 'medium',
+        backgroundColor: this.getBackgroundColor(row)
     });
+
+    getPlayoffPlace = row => ROME[row.place];
 }

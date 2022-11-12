@@ -2,11 +2,17 @@ import writeXlsxFile from 'write-excel-file/node'
 import {groupBy} from "../common/utils.js";
 
 export default class GroupsExporter {
+    #silent
+
+    constructor(silent) {
+        this.#silent = silent;
+    }
+
     export = async (meta, distributions, teams) => writeXlsxFile(this.prepareTable(meta, distributions, teams), {
         columns: [{width: 30}, {width: 30}, {width: 30}, {width: 30}],
         filePath: meta.fileName,
         sheet: 'Группы'
-    }).then(() => console.log(`Рейтинговая таблица турнира ${meta.tournamentName} сохранена в файл ${meta.fileName}`))
+    }).then(() => !this.#silent && console.log(`Группы турнира ${meta.tournamentName} сохранены в файл ${meta.fileName}`))
 
     prepareTable = (meta, distributions, teams) => {
         distributions = distributions.map(distribution => ({
