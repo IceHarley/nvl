@@ -8,7 +8,7 @@ const SUBSCRIPT = '₁₂₃₄₅₆₇₈';
 const ROME = ["", "I", "II", "III", "IV"];
 
 const COLUMNS_WIDTH = [
-    {width: 0.7}, {width: 5}, {width: 4}, {width: 30}, Array.from({length: TOURS * 2}, () => ({width: 8})), {width: 8}, {width: 90}
+    {width: 0.7}, {width: 5}, {width: 4}, {width: 30}, Array.from({length: TOURS * 2}, () => ({width: 8})), {width: 8}, {width: 0.7}
 ].flat();
 
 export default class ExcelSaver {
@@ -46,7 +46,7 @@ export default class ExcelSaver {
         [this.emptyColumn(), this.preparePlaceHeader(), null, this.prepareTeamHeader(), this.prepareToursHeaders(), this.prepareRatingHeader(), this.emptyColumn()].flat(),
         [this.emptyColumn(), null, null, null, this.prepareToursSubheaders(), null, this.emptyColumn()].flat()]
         .concat(this.mainData(data))
-        .concat([this.emptyLine(200, true)]));
+        .concat([this.emptyLine(3.75, true)]));
 
     prepareToursHeaders = () => Array.from({length: TOURS}, (a, index) => this.prepareTourHeader(index + 1)).flat();
 
@@ -208,10 +208,10 @@ export default class ExcelSaver {
 
     preparePlaceColumn = row => ({
         value: row.place,
-        height: 30,
+        height: 15,
         align: 'right',
         alignVertical: 'center',
-        fontSize: 16,
+        fontSize: 14,
         leftBorderStyle: 'medium',
         rightBorderStyle: 'none',
         backgroundColor: this.getBackgroundColor(row)
@@ -238,7 +238,7 @@ export default class ExcelSaver {
         value: row.teamName,
         align: 'left',
         alignVertical: 'center',
-        fontSize: 16,
+        fontSize: 14,
         leftBorderStyle: 'medium',
         rightBorderStyle: 'medium',
         backgroundColor: this.getBackgroundColor(row)
@@ -273,7 +273,7 @@ export default class ExcelSaver {
         value: this.getGroupWithPlace(tour),
         align: 'center',
         alignVertical: 'center',
-        fontSize: 16,
+        fontSize: 14,
         leftBorderStyle: 'medium',
         rightBorderStyle: 'thin',
         backgroundColor: this.getBackgroundColor(tour)
@@ -287,7 +287,7 @@ export default class ExcelSaver {
         value: tour.rating,
         align: 'center',
         alignVertical: 'center',
-        fontSize: 16,
+        fontSize: 14,
         leftBorderStyle: 'thin',
         rightBorderStyle: 'medium',
         backgroundColor: this.getBackgroundColor(tour)
@@ -297,7 +297,7 @@ export default class ExcelSaver {
         value: row.isPlayoffTeam ? this.getPlayoffPlace(row) : row.rating,
         align: 'center',
         alignVertical: 'center',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: 'bold',
         leftBorderStyle: 'medium',
         rightBorderStyle: 'medium',
