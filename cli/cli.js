@@ -5,6 +5,7 @@ import DistributionParamsRepository from "../repositories/distributionParamsRepo
 import TournamentOutcomesRepository from "../repositories/tournamentOutcomesRepository.js";
 import {withSpinner} from "../common/utils.js";
 import TeamsRepository from "../repositories/teamsRepository.js";
+import {FORMAT_CSV, FORMAT_EXCEL} from "../common/constants.js";
 
 const paramsRepository = new DistributionParamsRepository();
 const resultsRepository = new ResultsRepository();
@@ -88,6 +89,16 @@ export const questions = [
         when: answers => answers.action === 'groupsExport',
         choices: tournamentsChoices("В процессе")
     },
+    {
+        type: 'list',
+        name: 'groupsExport.format',
+        message: 'Выбор формата файла',
+        when: answers => answers.action === 'groupsExport',
+        choices: () => [
+            {name: 'csv - для импорта в Illustrator', value: FORMAT_CSV, short: 'csv'},
+            {name: 'Excel - для копирования в InDesign', value: FORMAT_EXCEL, short: 'Excel'},
+        ]
+    }
 ];
 
 export const repositories = {

@@ -1,7 +1,7 @@
 import writeXlsxFile from 'write-excel-file/node'
 import {groupBy} from "../common/utils.js";
 
-export default class GroupsExporter {
+export default class ExcelGroupsExporter {
     #silent
 
     constructor(silent) {

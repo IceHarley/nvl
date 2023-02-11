@@ -1,9 +1,9 @@
 import test from 'ava';
-import GroupsExporter from "./groupsExporter.js";
+import ExcelGroupsExporter from "./excelGroupsExporter.js";
 import MockDistributionRepository from "../mock/mockDistribution.js";
 import MockTeamsRepository from "../mock/mockTeams.js";
 
-const groupsExporter = new GroupsExporter(true);
+const groupsExporter = new ExcelGroupsExporter(true);
 const mockDistribution = new MockDistributionRepository();
 const mockTeams = new MockTeamsRepository();
 
