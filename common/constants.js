@@ -15,3 +15,6 @@ export const STAGE_SEMIFINAL = 'полуфинал';
 export const STAGE_CONSOLATION_FINAL = 'за 3 место';
 
 export const PLAYOFF_STAGES = [STAGE_SEMIFINAL, STAGE_CONSOLATION_FINAL, STAGE_FINAL];
+
+export const FORMAT_EXCEL = 'excel';
+export const FORMAT_CSV = 'csv';
