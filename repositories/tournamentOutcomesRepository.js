@@ -18,6 +18,12 @@ export default class TournamentOutcomesRepository {
                 "Рейтинг": record.rating,
             }
         })))));
+
+    createList = async records => chunkArray(records)
+        .map(chunk => asyncAirtable.bulkCreate(TABLE, chunk.map(record => ({
+            "Турниры": [record.tournamentId],
+            "Команды": [record.teamId],
+        }))));
 }
 
 export const minify = record => ({

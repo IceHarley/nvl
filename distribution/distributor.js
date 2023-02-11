@@ -15,7 +15,8 @@ export default class Distributor {
             .then(([params, results, lastDistribution]) =>
                 this.#teamsDistribution.distribute(results, lastDistribution, params.newTeams, params.withdrawed)
                     .map(d => this.toDistributionRecord(d, params)))
-            .then(result => this.#dataSaver.saveData(result));
+            .then(result => this.#dataSaver.saveData(result))
+            .then(result => this.#dataSaver.addMissingTournamentOutcomes(result));
 
     toDistributionRecord = (teamDistribution, params) => ({
         ...teamDistribution,
