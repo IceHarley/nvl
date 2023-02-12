@@ -10,6 +10,7 @@ import {SpinnerDataLoader} from "./distribution/dataLoader.js";
 import ExcelSaver from "./excel/excelSaver.js";
 import {GENERATED_PATH} from "./config.js";
 import {exportGroups} from "./common/groupsExporter.js";
+import PlayersManager from "./players/playersManager.js";
 
 const exportToExcel = (answers, ratingData) => {
     if (answers.rating.exportToExcel) {
@@ -24,6 +25,8 @@ const exportToExcel = (answers, ratingData) => {
             }, ratingData, distributions));
     }
 };
+
+// new PlayersManager().process({operation: 'loadFromAirtable', loadType: 'full'}, repositories);
 
 inquirer.prompt(questions)
     .then(answers => {
@@ -40,6 +43,10 @@ inquirer.prompt(questions)
                 .then(ratingData => exportToExcel(answers, ratingData))
         } else if (answers.action === 'groupsExport') {
             exportGroups(answers.groupsExport);
+        } else if (answers.action === 'players') {
+            new PlayersManager().process(answers.players, repositories);
+        } else {
+            console.log(answers);
         }
     })
     .catch(error => {
