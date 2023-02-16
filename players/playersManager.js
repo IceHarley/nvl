@@ -8,16 +8,23 @@ export default class PlayersManager {
     process = async (options, repositories) => {
         repositories.playersRepository = playersRepository;
         const db = new Level('./db', {valueEncoding: 'json'})
-        const manager = new SpinnerPlayersService(db, repositories);
+        const playersService = new SpinnerPlayersService({
+            players: db.sublevel('players', {valueEncoding: 'json'}),
+            meta: db.sublevel('meta'),
+            modifications: db.sublevel('modifications', {valueEncoding: 'json'}),
+        }, repositories);
 
         db.open()
             .then(() => {
                 if (options.operation === 'loadFromAirtable') {
-                    if (options.loadType === 'full') {
-                        return manager.fullLoad();
-                    } else if (options.loadType === 'onlyChanges') {
-                        return manager.loadOnlyChanges();
+                    switch (options.loadType) {
+                        case 'full':
+                            return playersService.fullLoad();
+                        case 'onlyChanges':
+                            return playersService.loadOnlyChanges();
                     }
+                } else if (options.operation === 'upload') {
+                    return playersService.uploadLocalChanges();
                 }
             })
             .then(() => db.close());

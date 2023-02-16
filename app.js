@@ -26,8 +26,6 @@ const exportToExcel = (answers, ratingData) => {
     }
 };
 
-// new PlayersManager().process({operation: 'loadFromAirtable', loadType: 'full'}, repositories);
-
 inquirer.prompt(questions)
     .then(answers => {
         if (answers.action === 'distribution') {
