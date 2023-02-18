@@ -42,7 +42,7 @@ inquirer.prompt(questions)
         } else if (answers.action === 'groupsExport') {
             exportGroups(answers.groupsExport);
         } else if (answers.action === 'players') {
-            new PlayersManager().process(answers.players, repositories);
+            new PlayersManager(repositories).process();
         } else {
             console.log(answers);
         }

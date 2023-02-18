@@ -7,14 +7,16 @@ import sinon from "sinon";
 const mockPlayersRepository = new MockPlayersRepository();
 const dbMain = new MemoryLevel({valueEncoding: 'json'});
 const db = {
-    players: dbMain.sublevel('players', {valueEncoding: 'json'}),
     meta: dbMain.sublevel('meta'),
+    players: dbMain.sublevel('players', {valueEncoding: 'json'}),
+    teams: dbMain.sublevel('teams', {valueEncoding: 'json'}),
+    outcomes: dbMain.sublevel('outcomes', {valueEncoding: 'json'}),
     modifications: dbMain.sublevel('modifications', {valueEncoding: 'json'}),
 };
 const now = new Date();
 
 const playersService = new PlayersService(db, {
-    playersRepository: mockPlayersRepository,
+    players: mockPlayersRepository,
 }, true);
 
 test.beforeEach(() => {

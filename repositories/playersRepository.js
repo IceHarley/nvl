@@ -21,6 +21,7 @@ export default class PlayersRepository {
             "Имя": record.name,
             "Instagram": record.instagram,
             "Команда": [record.team],
+            "Турниры": record.tournaments,
         })))));
 
     updateList = async records => Promise.all(chunkArray(records)
@@ -30,6 +31,7 @@ export default class PlayersRepository {
                 "Имя": record.name,
                 "Instagram": record.instagram,
                 "Команда": [record.team],
+                "Турниры": record.tournaments,
             }
         })))));
 
@@ -43,5 +45,6 @@ export const minify = record => ({
     instagram: record.fields['Instagram'],
     team: record.fields['Команда'] && record.fields['Команда'].length > 0
         ? record.fields['Команда'][0] : undefined,
+    tournaments: record.fields['Турниры'],
     modified: record.fields['Изменен'],
 });

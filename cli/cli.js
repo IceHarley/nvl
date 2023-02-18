@@ -6,6 +6,7 @@ import TournamentOutcomesRepository from "../repositories/tournamentOutcomesRepo
 import {withSpinner} from "../common/utils.js";
 import TeamsRepository from "../repositories/teamsRepository.js";
 import {FORMAT_CSV, FORMAT_EXCEL} from "../common/constants.js";
+import PlayersRepository from "../repositories/playersRepository.js";
 
 const paramsRepository = new DistributionParamsRepository();
 const resultsRepository = new ResultsRepository();
@@ -13,6 +14,7 @@ const distributionRepository = new DistributionRepository();
 const tournamentsRepository = new TournamentsRepository();
 const tournamentOutcomesRepository = new TournamentOutcomesRepository();
 const teamsRepository = new TeamsRepository();
+const playersRepository = new PlayersRepository();
 
 const paramsChoices = state => () => paramsRepository.getByState(state)
     .then(params => params.map(params => ({
@@ -38,7 +40,7 @@ export const questions = [
             {name: 'Удалить распределение команд', value: 'removeDistribution', short: 'Удаление распределения'},
             {name: 'Составить рейтинговую таблицу', value: 'rating', short: 'Рейтинговая таблица'},
             {name: 'Экспорт групп для расписания', value: 'groupsExport', short: 'Экспорт групп'},
-            {name: 'Игроки', value: 'players', short: 'Работа с базой данных игроков'},
+            {name: 'Работа с базой игроков', value: 'players', short: 'База игроков'},
         ]
     },
     {
@@ -100,26 +102,6 @@ export const questions = [
             {name: 'Excel - для копирования в InDesign', value: FORMAT_EXCEL, short: 'Excel'},
         ]
     },
-    {
-        type: 'list',
-        name: 'players.operation',
-        message: 'Выбор действия',
-        when: answers => answers.action === 'players',
-        choices: [
-            {name: 'Загрузка игроков из airtable', value: 'loadFromAirtable', short: 'загрузка из БД'},
-            {name: 'Привязка игроков к командам', value: 'assignment', short: 'по командам'},
-        ]
-    },
-    {
-        type: 'list',
-        name: 'players.loadType',
-        message: 'Выбор действия',
-        when: answers => answers.action === 'players' && answers.players.operation === 'loadFromAirtable',
-        choices: [
-            {name: 'Только загрузка изменений', value: 'onlyChanges', short: 'только изменения'},
-            {name: 'Очистка локальной БД и полная загрузка', value: 'full', short: 'полная загрузка'},
-        ]
-    },
 ];
 
 export const repositories = {
@@ -129,4 +111,5 @@ export const repositories = {
     tournaments: tournamentsRepository,
     tournamentOutcomes: tournamentOutcomesRepository,
     teams: teamsRepository,
+    players: playersRepository,
 };
