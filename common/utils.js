@@ -79,3 +79,19 @@ export const resolvePromisesSeq = async (tasks) => {
     }
     return results;
 };
+
+//Только описанные в классе, без родительских, конструкторов, геттеров, сеттеров
+export const getMethods = obj => {
+    let properties = new Set()
+    Object.getOwnPropertyNames(obj).map(item => properties.add(item))
+    return [...properties.keys()].filter(item => typeof obj[item] === 'function')
+}
+export const verifyLength = (array, length, errorMore = 'Размер массива более ожидаемого', errorLess = 'Размер массива менее ожидаемого') => {
+    if (array.length > length) {
+        throw new Error(errorMore);
+    }
+    if (array.length < length) {
+        throw new Error(errorLess);
+    }
+    return array;
+};

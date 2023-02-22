@@ -1,7 +1,17 @@
-import {resolvePromisesSeq, withSpinner} from "../common/utils.js";
+import {getMethods, resolvePromisesSeq, verifyLength, withSpinner} from "../common/utils.js";
 import {minify} from "../repositories/playersRepository.js";
 
 export const SYNC_DATETIME = 'Synchronization datetime';
+export const SEQUENCE = 'SEQUENCE';
+export const SEQUENCE_DEFAULT = 100000;
+
+const UPD = 'upd';
+const DEL = 'del';
+const INS = 'ins';
+const LTE_INS = 'ins~';
+
+const ERROR_MULTIPLE_CURRENT_OUTCOMES = 'Игрок отмечен заигранным более чем за одну команду!';
+
 
 export default class PlayersService {
     #repositories = {};
@@ -79,26 +89,98 @@ export default class PlayersService {
         .then(([result]) => result);
 
     #removeDeletedRecords = () => this.#db.modifications.iterator().all() //получаем измененные локально записи в таблице модификаций
-        .then(mods => mods.filter(([, value]) => value === 'del').map(([key]) => key)) //находим идентификаторы удаленных
+        .then(mods => mods.filter(([, value]) => value === DEL).map(([key]) => key)) //находим идентификаторы удаленных
         .then(ids => Promise.all([ids.length, this.#repositories.players.deleteList(ids)])) //удаляем в airtable
         .then(([count]) => this.logAndReturn('Удалено игроков в airtable', count));
 
     #updateModifiedRecords = () => this.#db.modifications.iterator().all() //получаем измененные локально записи в таблице модификаций
-        .then(mods => mods.filter(([, value]) => value === 'upd').map(([key]) => key)) //находим идентификаторы обновленных
+        .then(mods => mods.filter(([, value]) => value === UPD).map(([key]) => key)) //находим идентификаторы обновленных
         .then(keys => Promise.all([keys, this.#db.players.getMany(keys)])) //получаем обновленные записи
         .then(([keys, records]) => records.map((record, index) => ({id: keys[index], ...record}))) //объединяем записи с идентификаторами
         .then(records => this.#repositories.players.updateList(records)) //обновляем в airtable
         .then(records => this.logAndReturn('Обновлено игроков в airtable', records.flat().length));
 
-    #insertNewRecords = () => this.#db.players.values({lte: 'ins~'}).all() //получаем добавленные локально записи (c идентификаторами на ins...)
+    #insertNewRecords = () => this.#db.players.values({lte: LTE_INS}).all() //получаем добавленные локально записи (c идентификаторами на ins...)
         .then(records => this.#repositories.players.createList(records)) //создаем их в airtable
         .then(records => this.#db.players.batch(records.flat().map(record => this.#toOperation(minify(record))))) //созданные в airtable записи сохраняем локально
-        .then(() => this.#db.players.keys({lte: 'ins~'}).all()) //добавленные локально записи
+        .then(() => this.#db.players.keys({lte: LTE_INS}).all()) //добавленные локально записи
         .then(records => Promise.all([
             records.length,
-            this.#db.players.batch(records.map(r => ({type: 'del', key: r}))) //удаляем из локальной БД
+            this.#db.players.batch(records.map(r => ({type: DEL, key: r}))) //удаляем из локальной БД
         ]))
         .then(([count]) => this.logAndReturn('Создано игроков в airtable', count));
+
+    editPlayer = player => this.validate(player)
+        .then(player => this.#db.players.put(player.id, player))
+        .then(() => this.#db.modifications.put(player.id, player.id.substring(0, 3) === INS ? INS : UPD))
+        .then(() => this.#db.players.get(player.id));
+
+    createPlayer = player => this.generateId()
+        .then(id => this.editPlayer({...player, id: `${INS}${id}`}));
+
+    deletePlayer = playerId => this.#db.players.get(playerId)
+        .catch(err => {
+            throw err.code === 'LEVEL_NOT_FOUND' ? new Error('Игрок не найден') : err;
+        })
+        .then(() => this.#db.modifications.get(playerId))
+        .catch(err => {
+            if (err.code === 'LEVEL_NOT_FOUND') {
+                return UPD; // если нет в таблице модификаций, то игрок существует в airtable но локально не менялся
+            } else {
+                throw err;
+            }
+        })
+        .then(modification => modification === INS
+            ? this.#db.modifications.del(playerId) :    //для добавленных только локально игроков просто удаляем запись в модификациях
+            this.#db.modifications.put(playerId, DEL))  //для существующих в airtable игроков проставляем модификацию удаления
+        .then(() => this.#db.players.del(playerId));
+
+    validate = player => {
+        if (!player.id) {
+            return Promise.reject(new Error('id не задан'));
+        }
+        if (!player.name) {
+            return Promise.reject(new Error('имя не задано'));
+        }
+        if (!player.tournaments) {
+            return Promise.reject(new Error('турниры не заданы. Ожидается массив'));
+        }
+        return Promise.resolve(player);
+    };
+
+    generateId = () => this.#db.meta.get(SEQUENCE, {valueEncoding: 'json'})
+        .then(currentValue => currentValue + 1)
+        .catch(() => SEQUENCE_DEFAULT)
+        .then(nextValue => Promise.all([nextValue, this.#db.meta.put(SEQUENCE, nextValue, {valueEncoding: 'json'})]))
+        .then(([nextValue]) => nextValue);
+
+    removeCurrentOutcome = playerId => Promise.all([this.#db.players.get(playerId), this.#db.outcomes.keys().all()])
+        .then(([player, outcomes]) => [
+            player,
+            verifyLength(outcomes.filter(outcome => player.tournaments?.includes(outcome)), 1, ERROR_MULTIPLE_CURRENT_OUTCOMES)[0]])
+        .then(([player, outcome]) => this.editPlayer({
+            ...player,
+            id: playerId,
+            tournaments: player.tournaments.filter(t => t !== outcome)
+        }));
+
+    addCurrentOutcome = (playerId, outcomeId) => Promise.all([this.#db.players.get(playerId), this.#db.outcomes.keys().all()])
+        .then(([player, outcomes]) => {
+            if (!outcomes.includes(outcomeId)) {
+                throw new Error(`${outcomeId} не относится к текущему турниру`);
+            }
+            if (player.tournaments?.includes(outcomeId)) {
+                throw new Error(`Список турниров игрока [${player.tournaments}] уже содержит ${outcomeId}`);
+            }
+            if (outcomes.some(outcome => player.tournaments?.includes(outcome))) {
+                throw new Error(`Список турниров игрока [${player.tournaments}] уже содержит другую запись для текущего турнира`);
+            }
+            return this.editPlayer({
+                ...player,
+                id: playerId,
+                tournaments: [outcomeId].concat(player.tournaments)
+            });
+        });
 
     logAndReturn = (text, obj) => {
         !this.#silent && console.log(`${text}: ${obj}`);
@@ -107,14 +189,9 @@ export default class PlayersService {
 }
 
 export class SpinnerPlayersService {
-    #service
-
     constructor(db, repositories) {
-        this.#service = new PlayersService(db, repositories);
-        this.fullLoad = withSpinner(this.#service.fullLoad);
-        this.loadOnlyChanges = withSpinner(this.#service.loadOnlyChanges);
-        this.loadActiveTeams = withSpinner(this.#service.loadActiveTeams);
-        this.loadActiveTournamentOutcomes = withSpinner(this.#service.loadActiveTournamentOutcomes);
-        this.uploadLocalChanges = withSpinner(this.#service.uploadLocalChanges);
+        const service = new PlayersService(db, repositories);
+        getMethods(service)
+            .map(methodName => this[methodName] = withSpinner(service[methodName]));
     }
 }
