@@ -334,6 +334,21 @@ test.serial('Добавление заигранности игроку', async 
     t.is(await db.modifications.get(id), 'upd');
 });
 
+test.serial('Добавление заигранности игроку без турниров', async t => {
+    const id = 'rec4h1WslVHlbFKF7';
+    const player = {
+        name: 'current_name',
+        team: 'current_team',
+        instagram: 'current_instagram',
+    };
+    await db.players.batch().put(id, player).write();
+    await db.outcomes.batch().put('current_tournament', {}).write()
+
+    await playersService.addCurrentOutcome(id, 'current_tournament');
+    t.like(await db.players.get(id), {...player, tournaments: ['current_tournament']})
+    t.is(await db.modifications.get(id), 'upd');
+});
+
 test.serial('Добавление текущей заигранности игроку с другими заигранностями всегда в начало', async t => {
     const id = 'rec4h1WslVHlbFKF7';
     const player = {

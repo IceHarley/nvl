@@ -178,7 +178,7 @@ export default class PlayersService {
             return this.editPlayer({
                 ...player,
                 id: playerId,
-                tournaments: [outcomeId].concat(player.tournaments)
+                tournaments: [outcomeId].concat(player.tournaments || [])
             });
         });
 
