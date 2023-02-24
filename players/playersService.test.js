@@ -282,10 +282,38 @@ test.serial('Добавление заигранности игрока у ко�
         tournaments: ['other_tournament', 'current_tournament', 'another_tournament']
     };
     await db.players.batch().put(id, player).write();
-    await db.outcomes.batch().put('current_tournament', {}).write()
+    await db.outcomes.batch().put('current_tournament', {teamId: 'current_team'}).write()
 
-    t.is((await t.throwsAsync(() => playersService.addCurrentOutcome(id, 'current_tournament'))).message,
+    t.is((await t.throwsAsync(() => playersService.addCurrentOutcome(id))).message,
         'Список турниров игрока [other_tournament,current_tournament,another_tournament] уже содержит current_tournament');
+});
+
+test.serial('Добавление заигранности игроку без команды - ошибка', async t => {
+    const id = 'rec4h1WslVHlbFKF7';
+    const player = {
+        name: 'current_name',
+        instagram: 'current_instagram',
+        tournaments: ['other_tournament', 'current_tournament', 'another_tournament']
+    };
+    await db.players.batch().put(id, player).write();
+    await db.outcomes.batch().put('current_tournament', {teamId: 'current_team'}).write()
+
+    t.is((await t.throwsAsync(() => playersService.addCurrentOutcome(id))).message,
+        'Игрок не числится в команде');
+});
+
+test.serial('Добавление заигранности игроку чья команда не участвует в текущем турнире - ошибка', async t => {
+    const id = 'rec4h1WslVHlbFKF7';
+    const player = {
+        name: 'current_name',
+        team: 'current_team',
+        instagram: 'current_instagram',
+        tournaments: ['other_tournament', 'current_tournament', 'another_tournament']
+    };
+    await db.players.batch().put(id, player).write();
+
+    t.is((await t.throwsAsync(() => playersService.addCurrentOutcome(id))).message,
+        'Команда игрока не участвует в текущем турнире');
 });
 
 test.serial('Добавление заигранности игроку с другой заигранностью - ошибка', async t => {
@@ -297,25 +325,10 @@ test.serial('Добавление заигранности игроку с др�
         tournaments: ['current_tournament_team2']
     };
     await db.players.batch().put(id, player).write();
-    await db.outcomes.batch().put('current_tournament_team1', {}).put('current_tournament_team2', {}).write()
+    await db.outcomes.batch().put('current_tournament_team1', {teamId: 'current_team'}).put('current_tournament_team2', {}).write()
 
-    t.is((await t.throwsAsync(() => playersService.addCurrentOutcome(id, 'current_tournament_team1'))).message,
+    t.is((await t.throwsAsync(() => playersService.addCurrentOutcome(id))).message,
         'Список турниров игрока [current_tournament_team2] уже содержит другую запись для текущего турнира');
-});
-
-test.serial('Добавление заигранности не относящейся к текущему сезону - ошибка', async t => {
-    const id = 'rec4h1WslVHlbFKF7';
-    const player = {
-        name: 'current_name',
-        team: 'current_team',
-        instagram: 'current_instagram',
-        tournaments: []
-    };
-    await db.players.batch().put(id, player).write();
-    await db.outcomes.batch().put('current_tournament', {}).write()
-
-    t.is((await t.throwsAsync(() => playersService.addCurrentOutcome(id, 'other_tournament_team1'))).message,
-        'other_tournament_team1 не относится к текущему турниру');
 });
 
 test.serial('Добавление заигранности игроку', async t => {
@@ -327,9 +340,9 @@ test.serial('Добавление заигранности игроку', async 
         tournaments: []
     };
     await db.players.batch().put(id, player).write();
-    await db.outcomes.batch().put('current_tournament', {}).write()
+    await db.outcomes.batch().put('current_tournament', {teamId: 'current_team'}).write()
 
-    await playersService.addCurrentOutcome(id, 'current_tournament');
+    await playersService.addCurrentOutcome(id);
     t.like(await db.players.get(id), {...player, tournaments: ['current_tournament']})
     t.is(await db.modifications.get(id), 'upd');
 });
@@ -342,9 +355,9 @@ test.serial('Добавление заигранности игроку без �
         instagram: 'current_instagram',
     };
     await db.players.batch().put(id, player).write();
-    await db.outcomes.batch().put('current_tournament', {}).write()
+    await db.outcomes.batch().put('current_tournament', {teamId: 'current_team'}).write()
 
-    await playersService.addCurrentOutcome(id, 'current_tournament');
+    await playersService.addCurrentOutcome(id);
     t.like(await db.players.get(id), {...player, tournaments: ['current_tournament']})
     t.is(await db.modifications.get(id), 'upd');
 });
@@ -358,9 +371,9 @@ test.serial('Добавление текущей заигранности игр
         tournaments: ['other_tournament', 'another_tournament']
     };
     await db.players.batch().put(id, player).write();
-    await db.outcomes.batch().put('current_tournament', {}).write()
+    await db.outcomes.batch().put('current_tournament', {teamId: 'current_team'}).write()
 
-    await playersService.addCurrentOutcome(id, 'current_tournament');
+    await playersService.addCurrentOutcome(id);
     t.like(await db.players.get(id), {...player, tournaments: ['current_tournament', 'other_tournament', 'another_tournament']})
     t.is(await db.modifications.get(id), 'upd');
 });
@@ -397,8 +410,6 @@ test.serial('Добавление нового игрока в локальну�
         team: 'new_team',
         instagram: 'new_instagram',
     };
-    const id = 'ins' + SEQUENCE_DEFAULT;
-
     const actual = await t.throwsAsync(() => playersService.createPlayer(newPlayer));
 
     t.is(actual.message, 'турниры не заданы. Ожидается массив');

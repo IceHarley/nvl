@@ -164,15 +164,22 @@ export default class PlayersService {
             tournaments: player.tournaments.filter(t => t !== outcome)
         }));
 
-    addCurrentOutcome = (playerId, outcomeId) => Promise.all([this.#db.players.get(playerId), this.#db.outcomes.keys().all()])
+    toRecords = entries => entries.map(([id, entry]) => ({id, ...entry}));
+
+    addCurrentOutcome = playerId => Promise.all([this.#db.players.get(playerId), this.#db.outcomes.iterator().all()])
         .then(([player, outcomes]) => {
-            if (!outcomes.includes(outcomeId)) {
-                throw new Error(`${outcomeId} не относится к текущему турниру`);
+            outcomes = this.toRecords(outcomes);
+            if (!player.team) {
+                throw new Error('Игрок не числится в команде');
+            }
+            const outcomeId = outcomes.find(outcome => outcome.teamId === player.team)?.id;
+            if (!outcomeId) {
+                throw new Error('Команда игрока не участвует в текущем турнире');
             }
             if (player.tournaments?.includes(outcomeId)) {
                 throw new Error(`Список турниров игрока [${player.tournaments}] уже содержит ${outcomeId}`);
             }
-            if (outcomes.some(outcome => player.tournaments?.includes(outcome))) {
+            if (outcomes.some(outcome => player.tournaments?.includes(outcome.id))) {
                 throw new Error(`Список турниров игрока [${player.tournaments}] уже содержит другую запись для текущего турнира`);
             }
             return this.editPlayer({

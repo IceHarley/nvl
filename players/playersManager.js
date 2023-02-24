@@ -117,7 +117,7 @@ export default class PlayersManager {
 
     toRecords = entries => entries.map(([id, entry]) => ({id, ...entry}));
 
-    playersSource = filter => (answers, input = '') => this.getPlayersForSelection(answers.team, filter)
+    playersSource = filter => (answers, input = '') => this.getPlayersForSelection(filter)
         .then(players => fuzzy
             .filter(input, players, {extract: p => p.name})
             .map(el => ({
@@ -131,13 +131,17 @@ export default class PlayersManager {
             throw e;
         });
 
-    playersSourceWithSystemChoices = filter => (answers, input = '') => this.playersSource(filter)(answers, input)
+    playersSourceWithSystemChoices = (answers, input = '') => this.playersSource(p => !answers.team || p.team === answers.team.id)(answers, input)
         .then(players => this.addSystemChoices(players));
 
-    playersSourceWithNewPlayerChoice = filter => (answers, input = '') => this.playersSource(filter)(answers, input)
+    playersSourceWithNewPlayerChoice = (answers, input = '') => this.playersSource(p => p)(answers, input)
         .then(players => (input.length > 2
             ? [{name: `Новый игрок: ${input}`, value: input, short: `Создан новый игрок ${input}`}]
-            : []).concat(players));
+            : []).concat(players).concat([
+            new inquirer.Separator(),
+            {name: '====Назад', value: 'back', short: 'Назад'},
+            {name: '====Выход', value: 'quit', short: 'Выход'}
+        ]));
 
     addSystemChoices = choices => ([
         {name: '====Добавить игрока', value: 'addPlayer', short: 'Добавить игрока в команду'}])
@@ -147,7 +151,7 @@ export default class PlayersManager {
             {name: '====Выход', value: 'quit', short: 'Выход'},
         ]);
 
-    getPlayersForSelection = (team, filter = p => p.team === team.id) =>
+    getPlayersForSelection = filter =>
         this.#db.playersSource.iterator().all()
             .then(players => this.toRecords(players).filter(filter));
 
@@ -167,13 +171,13 @@ export default class PlayersManager {
             throw 'Игрок не выбран!'
         }
         if (!answers.player.currentOutcome) {
-            actions.push({
-                name: new cli.Line().column('Отметить как заигранного за', 28).column(answers.team.name, 40).contents(),
+            answers.player.team && actions.push({
+                name: new cli.Line().column('Отметить как заигранного за', 28).padding(2).column(answers.player.teamName, 40).contents(),
                 value: 'addCurrentOutcome',
                 short: 'Заиграть'
             });
-            actions.push({
-                name: new cli.Line().column('Исключить из состава команды', 28).column(answers.team.name, 40).contents(),
+            answers.player.team && actions.push({
+                name: new cli.Line().column('Исключить из состава команды', 28).padding(2).column(answers.player.teamName, 40).contents(),
                 value: 'removeFromRoster',
                 short: 'Исключить из команды'
             })
@@ -185,12 +189,12 @@ export default class PlayersManager {
             })
         }
         actions.push({
-            name: new cli.Line().column('Редактировать имя/фамилию', 28).column(answers.player.name, 40).contents(),
+            name: new cli.Line().column('Редактировать имя/фамилию', 28).padding(2).column(answers.player.name, 40).contents(),
             value: 'rename',
             short: 'Переименовать'
         })
         actions.push({
-            name: new cli.Line().column('Редактировать instagram', 28).column(answers.player.instagram || '', 40).contents(),
+            name: new cli.Line().column('Редактировать instagram', 28).padding(2).column(answers.player.instagram || '', 40).contents(),
             value: 'changeInstagram',
             short: 'instagram'
         })
@@ -216,7 +220,7 @@ export default class PlayersManager {
 
     getRosterMenuMessage = message => answers => {
         return ([
-            `\nСостав команды ${answers.team?.name}`,
+            !answers.team ? '' : `\nСостав команды ${answers.team?.name}`,
             !answers.player ? '' : `\nИгрок: ${this.formatPlayer(answers.player)}`,
             `\n${message}`,
         ].join(''));
@@ -241,7 +245,7 @@ export default class PlayersManager {
             message: this.getRosterMenuMessage('Выбор игрока'),
             searchText: 'ищем...',
             emptyText: 'Игрок не найден!',
-            source: this.playersSourceWithSystemChoices(),
+            source: this.playersSourceWithSystemChoices,
             pageSize: 6,
             loop: false,
             when: answers => answers.team !== 'back' && answers.team !== 'quit',
@@ -277,6 +281,48 @@ export default class PlayersManager {
         },
     ];
 
+    playersListPrompt = [
+        {
+            type: 'autocomplete',
+            name: 'player',
+            suggestOnly: false,
+            message: this.getRosterMenuMessage('Выбор игрока'),
+            searchText: 'ищем...',
+            emptyText: 'Игрок не найден!',
+            source: this.playersSourceWithSystemChoices,
+            pageSize: 6,
+            loop: false,
+        },
+        {
+            type: 'list',
+            name: 'action',
+            message: this.getRosterMenuMessage('Выбор действия'),
+            when: answers => answers.player !== 'back' && answers.player !== 'quit' && answers.player !== 'addPlayer',
+            choices: this.rosterPlayerActions,
+        },
+        {
+            type: 'input',
+            name: 'newInstagram',
+            message: this.getRosterMenuMessage('Instagram'),
+            default: answers => answers?.player?.instagram,
+            when: answers => answers.action === 'changeInstagram',
+        },
+        {
+            type: 'input',
+            name: 'newName',
+            message: this.getRosterMenuMessage('Имя фамилия'),
+            default: answers => answers?.player?.name,
+            when: answers => answers.action === 'rename',
+        },
+        {
+            type: 'confirm',
+            name: 'deleteConfirmation',
+            message: this.getRosterMenuMessage('Точно удалить игрока?'),
+            default: true,
+            when: answers => answers.action === 'delete',
+        },
+    ];
+
     addPlayerMenuPrompt = [
         {
             type: 'autocomplete',
@@ -284,24 +330,38 @@ export default class PlayersManager {
             suggestOnly: false,
             message: this.getRosterMenuMessage('Добавление игрока в состав'),
             searchText: 'ищем...',
-            source: this.playersSourceWithNewPlayerChoice(p => p),
+            source: this.playersSourceWithNewPlayerChoice,
             pageSize: 6,
             loop: false,
+            when: answers => !answers.createPlayerOnly
+        },
+        {
+            type: 'autocomplete',
+            name: 'addPlayer',
+            suggestOnly: false,
+            message: 'Имя и фамилия нового игрока',
+            source: (answers, input = '') => [
+                {name: `Новый игрок: ${input}`, value: input, short: `Создан новый игрок ${input}`},
+                {name: '====Назад', value: 'back', short: 'Назад'},
+                {name: '====Выход', value: 'quit', short: 'Выход'},
+            ],
+            when: answers => answers.createPlayerOnly
         },
         {
             type: 'input',
             name: 'newPlayer.instagram',
             message: 'Instagram',
-            when: answers => typeof answers.addPlayer === 'string'
+            when: answers => typeof answers.addPlayer === 'string' && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
         },
         {
             type: 'list',
             name: 'addCurrentOutcome',
-            message: answers => 'Отметить как заигранного за ' + answers.team.name,
+            message: answers => 'Отметить как заигранного за ' + answers.newPlayer.teamName,
             choices: answers => [
-                {name: 'Да', value: answers.team.outcome, short: 'Заигран за ' + answers.team.name},
-                {name: 'Нет', value: undefined, short: 'Не заигран'},
-            ]
+                {name: 'Да', value: true, short: 'Заигран за ' + answers.newPlayer.teamName},
+                {name: 'Нет', value: false, short: 'Не заигран'},
+            ],
+            when: answers => answers.newPlayer?.team && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
         }
     ];
 
@@ -323,6 +383,9 @@ export default class PlayersManager {
         .then(result => {
             if (result === 'roster') {
                 return this.rosterMenu();
+            }
+            if (result === 'playersList') {
+                return this.playersListMenu();
             }
             if (result !== 'quit') {
                 return this.menu();
@@ -349,10 +412,20 @@ export default class PlayersManager {
             throw command;
         });
 
-    addPlayerMenu = team => inquirer.prompt(this.addPlayerMenuPrompt, {
+    addPlayerMenu = ({team, createPlayerOnly}) => inquirer.prompt(this.addPlayerMenuPrompt, {
         team,
-        newPlayer: {team: team.id, tournaments: []}
+        createPlayerOnly,
+        newPlayer: !team ? {tournaments: []} : {team: team.id, tournaments: [], teamName: team.name},
     })
+        .then(answers => {
+            if (answers.addPlayer === 'quit') {
+                this.quit();
+            }
+            if (answers.addPlayer === 'back') {
+                this.toPlayerSelection(answers);
+            }
+            return answers;
+        })
         .then(answers => ({
             ...answers,
             newPlayer: typeof answers.addPlayer !== 'string'
@@ -373,8 +446,29 @@ export default class PlayersManager {
                 : this.playersService.createPlayer(answers.newPlayer)
         ]))
         .then(([answers, player]) => Promise.all([{...answers, playerId: player.id},
-            answers.addCurrentOutcome ? this.playersService.addCurrentOutcome(player.id, answers.team.outcome) : null]))
+            answers.addCurrentOutcome ? this.playersService.addCurrentOutcome(player.id) : null]))
         .then(([answers]) => this.updateSource(answers.playerId));
+
+    playersListMenu = answers => inquirer.prompt(this.playersListPrompt, answers)
+        .then(answers => {
+            if (answers.player === 'addPlayer') {
+                return this.addPlayerMenu({createPlayerOnly: true})
+                    .then(() => {
+                        throw () => this.playersListMenu()
+                    })
+            }
+            return answers;
+        })
+        .then(answers => this.applyPlayerAction(answers))
+        .catch(command => {
+            if (command === 'quit') {
+                return 'quit';
+            }
+            if (command instanceof Function) {
+                return command();
+            }
+            throw command;
+        });
 
     processSystemChoices = answers => {
         if (answers.team === 'quit' || answers.player === 'quit' || answers.action === 'quit') {
@@ -389,8 +483,12 @@ export default class PlayersManager {
         return answers;
     };
 
-    toPlayerSelection = answers => {
-        throw () => this.rosterMenu({team: answers.team})
+    toPlayerSelection = ({team}) => {
+        if (!team) {
+            throw () => this.playersListMenu()
+        } else {
+            throw () => this.rosterMenu({team: team})
+        }
     };
 
     toTeamSelection = () => {
@@ -410,7 +508,7 @@ export default class PlayersManager {
     selectTeamAction = answers => {
         switch (answers.player) {
             case 'addPlayer':
-                return this.addPlayerMenu(answers.team)
+                return this.addPlayerMenu(answers)
                     .then(() => this.toPlayerSelection(answers))
             default:
                 return Promise.resolve(answers);
@@ -418,7 +516,7 @@ export default class PlayersManager {
     };
 
     applyPlayerAction = answers => this.selectPlayerAction(answers)
-        .then(() => this.getPlayersForSelection(answers.team))
+        .then(() => this.getPlayersForSelection(p => !answers.team || p.team === answers.team.id))
         .then(players => ({
             ...answers,
             player: players.find(player => player.id === answers.player?.id),
@@ -431,7 +529,7 @@ export default class PlayersManager {
                     .then(() => this.updateSource(answers.player.id))
                     .then(() => this.toPlayerSelection(answers));
             case 'addCurrentOutcome':
-                return this.playersService.addCurrentOutcome(answers.player.id, answers.team.outcome)
+                return this.playersService.addCurrentOutcome(answers.player.id)
                     .then(() => this.updateSource(answers.player.id))
                     .then(() => this.toPlayerSelection(answers));
             case 'changeInstagram':
