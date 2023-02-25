@@ -8,7 +8,6 @@ export default class AddPlayerMenu {
     constructor(playersService, choiceSources) {
         this.playersService = playersService;
         this.choiceSources = choiceSources;
-
     }
 
     playersSourceWithNewPlayerChoice = (answers, input = '') => this.choiceSources.playersSource(p => p)(answers, input)
@@ -43,6 +42,7 @@ export default class AddPlayerMenu {
                 {name: '====Выход', value: 'quit', short: 'Выход'},
             ],
             when: answers => answers.createPlayerOnly
+        //    TODO filter - не давать вводить пустое имя
         },
         {
             type: 'input',

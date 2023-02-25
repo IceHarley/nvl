@@ -5,6 +5,7 @@ import inquirerPrompt from 'inquirer-autocomplete-prompt';
 import ChoiceSources from "./choiceSources.js";
 import {getRosterMenuMessage, quit} from "./playersCliUtils.js";
 import AddPlayerMenu from "./addPlayerMenu.js";
+import PlayersListMenu from "./playersListMenu.js";
 
 inquirer.registerPrompt('autocomplete', inquirerPrompt);
 
@@ -52,10 +53,11 @@ export default class PlayersManager {
         this.playersService = new SpinnerPlayersService(this.#db, repositories);
         this.choiceSources = new ChoiceSources(this.#db);
         this.addPlayerMenu = new AddPlayerMenu(this.playersService, this.choiceSources);
+        this.playersListMenu = new PlayersListMenu(this.playersService, this.choiceSources, this.addPlayerMenu);
     }
 
     playersSourceWithSystemChoices = (answers, input = '') =>
-        this.choiceSources.playersSource(p => !answers.team || p.team === answers.team.id)(answers, input)
+        this.choiceSources.playersSource(p => p.team === answers.team.id)(answers, input)
             .then(players => this.addSystemChoices(players));
 
     addSystemChoices = choices => ([
@@ -166,48 +168,6 @@ export default class PlayersManager {
         },
     ];
 
-    playersListPrompt = [
-        {
-            type: 'autocomplete',
-            name: 'player',
-            suggestOnly: false,
-            message: getRosterMenuMessage('Выбор игрока'),
-            searchText: 'ищем...',
-            emptyText: 'Игрок не найден!',
-            source: this.playersSourceWithSystemChoices,
-            pageSize: 6,
-            loop: false,
-        },
-        {
-            type: 'list',
-            name: 'action',
-            message: getRosterMenuMessage('Выбор действия'),
-            when: answers => answers.player !== 'back' && answers.player !== 'quit' && answers.player !== 'addPlayer',
-            choices: this.rosterPlayerActions,
-        },
-        {
-            type: 'input',
-            name: 'newInstagram',
-            message: getRosterMenuMessage('Instagram'),
-            default: answers => answers?.player?.instagram,
-            when: answers => answers.action === 'changeInstagram',
-        },
-        {
-            type: 'input',
-            name: 'newName',
-            message: getRosterMenuMessage('Имя фамилия'),
-            default: answers => answers?.player?.name,
-            when: answers => answers.action === 'rename',
-        },
-        {
-            type: 'confirm',
-            name: 'deleteConfirmation',
-            message: getRosterMenuMessage('Точно удалить игрока?'),
-            default: true,
-            when: answers => answers.action === 'delete',
-        },
-    ];
-
     process = () => this.#db.main.open()
         .then(() => this.choiceSources.init())
         .then(() => this.menu(this.playersService))
@@ -228,7 +188,7 @@ export default class PlayersManager {
                 return this.rosterMenu();
             }
             if (result === 'playersList') {
-                return this.playersListMenu();
+                return this.playersListMenu.open(undefined, this.toMainMenu);
             }
             if (result !== 'quit') {
                 return this.menu();
@@ -255,39 +215,6 @@ export default class PlayersManager {
             throw command;
         });
 
-    playersListMenu = answers => inquirer.prompt(this.playersListPrompt, answers)
-        .then(answers => {
-            if (answers.player === 'back') {
-                this.toMainMenu();
-            }
-            if (answers.player === 'quit' || answers.action === 'quit') {
-                quit();
-            }
-            if (answers.action === 'back') {
-                this.toPlayersListMenu();
-            }
-            if (answers.player === 'addPlayer') {
-                return this.addPlayerMenu.open({createPlayerOnly: true}, () => {
-                    throw () => this.playersListMenu()
-                })
-                    .then(() => {
-                        throw () => this.playersListMenu()
-                    })
-            }
-            return answers;
-        })
-        .then(answers => this.applyPlayerAction(answers))
-        .then(() => this.playersListMenu({}))
-        .catch(command => {
-            if (command === 'quit') {
-                return 'quit';
-            }
-            if (command instanceof Function) {
-                return command();
-            }
-            throw command;
-        });
-
     processSystemChoices = answers => {
         if (answers.team === 'quit' || answers.player === 'quit' || answers.action === 'quit') {
             quit();
@@ -303,7 +230,7 @@ export default class PlayersManager {
 
     toPlayerSelection = ({team}) => {
         if (!team) {
-            throw () => this.playersListMenu()
+            throw () => this.playersListMenu.open()
         } else {
             throw () => this.rosterMenu({team: team})
         }
@@ -316,10 +243,6 @@ export default class PlayersManager {
     toMainMenu = () => {
         throw () => this.menu()
     };
-
-    toPlayersListMenu = () => {
-        throw () => this.playersListMenu();
-    }
 
     applyTeamAction = answers => this.selectTeamAction(answers);
 

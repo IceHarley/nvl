@@ -13,6 +13,7 @@ test.beforeEach(() => {
     service = manager.playersService;
     sources = manager.choiceSources;
     addPlayerMenu = manager.addPlayerMenu;
+    playersListMenu = manager.playersListMenu;
     sinon.replace(service, 'editPlayer', sinon.fake.resolves({}));
     sinon.replace(service, 'createPlayer', sinon.fake.resolves({}));
     sinon.replace(service, 'deletePlayer', sinon.fake.resolves({}));
@@ -22,9 +23,8 @@ test.beforeEach(() => {
     sinon.replace(sources, 'update', sinon.fake.resolves());
     sinon.replace(sources, 'delete', sinon.fake.resolves());
     rosterMenu = sinon.replace(manager, 'rosterMenu', sinon.fake(manager.rosterMenu));
-    // addPlayerMenu = sinon.replace(manager.addPlayerMenu, 'open', sinon.fake(manager.addPlayerMenu.open));
     sinon.replace(addPlayerMenu, 'open', sinon.fake(addPlayerMenu.open));
-    playersListMenu = sinon.replace(manager, 'playersListMenu', sinon.fake(manager.playersListMenu));
+    sinon.replace(playersListMenu, 'open', sinon.fake(playersListMenu.open));
     mainMenu = sinon.replace(manager, 'menu', sinon.fake(manager.menu));
 });
 
@@ -458,26 +458,26 @@ test.serial('меню Состав команды: Выбор действия �
 test.serial('меню Список игроков: выход', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({player: 'quit'});
 
     await manager.process();
 
-    t.true(playersListMenu.calledOnce);
-    t.is(playersListMenu.firstCall.args[0], undefined);
+    t.true(playersListMenu.open.calledOnce);
+    t.is(playersListMenu.open.firstCall.args[0], undefined);
 });
 
 test.serial('меню Список игроков: назад', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
         .onSecondCall().resolves({operation: 'quit'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({player: 'back'});
 
     await manager.process();
 
-    t.true(playersListMenu.calledOnce);
-    t.is(playersListMenu.firstCall.args[0], undefined);
+    t.true(playersListMenu.open.calledOnce);
+    t.is(playersListMenu.open.firstCall.args[0], undefined);
     t.true(mainMenu.calledTwice);
     t.is(mainMenu.secondCall.args[0], undefined);
 });
@@ -485,37 +485,37 @@ test.serial('меню Список игроков: назад', async t => {
 test.serial('меню Список игроков: Выбор игрока - назад - возврат к выбору игрока', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({player: {id: 'playerId'}, action: 'back'})
         .onSecondCall().resolves({player: 'quit'});
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
 });
 
 test.serial('меню Список игроков: Выбор игрока - выход', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({player: {id: 'playerId'}, action: 'quit'});
 
     await manager.process();
 
-    t.true(playersListMenu.calledOnce);
+    t.true(playersListMenu.open.calledOnce);
     t.true(mainMenu.calledOnce);
 });
 
 test.serial('меню Список игроков: Выбор игрока - редактирование имени', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({player: {id: 'playerId', name: 'playerName'}, newName: 'newName', action: 'rename'})
         .onSecondCall().resolves({player: 'quit'});
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
     t.true(mainMenu.calledOnce);
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', name: 'newName'});
@@ -526,7 +526,7 @@ test.serial('меню Список игроков: Выбор игрока - р�
 test.serial('меню Список игроков: Выбор игрока - редактирование Instagram', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({
         player: {id: 'playerId', name: 'playerName'},
         newInstagram: 'newInstagram',
@@ -536,7 +536,7 @@ test.serial('меню Список игроков: Выбор игрока - р�
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
     t.true(mainMenu.calledOnce);
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', instagram: 'newInstagram'});
@@ -547,7 +547,7 @@ test.serial('меню Список игроков: Выбор игрока - р�
 test.serial('меню Список игроков: Выбор игрока - отметить как заигранного', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({
         player: {id: 'playerId', name: 'playerName', team: 'teamId'},
         action: 'addCurrentOutcome'
@@ -556,7 +556,7 @@ test.serial('меню Список игроков: Выбор игрока - о�
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
     t.true(mainMenu.calledOnce);
     t.true(service.addCurrentOutcome.calledOnce);
     t.is(service.addCurrentOutcome.firstCall.args[0], 'playerId');
@@ -567,7 +567,7 @@ test.serial('меню Список игроков: Выбор игрока - о�
 test.serial('меню Список игроков: Выбор игрока - отметить как незаигранного', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({
         player: {id: 'playerId', name: 'playerName', team: 'teamId'},
         action: 'removeCurrentOutcome'
@@ -576,7 +576,7 @@ test.serial('меню Список игроков: Выбор игрока - о�
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
     t.true(mainMenu.calledOnce);
     t.true(service.removeCurrentOutcome.calledOnce);
     t.is(service.removeCurrentOutcome.firstCall.args[0], 'playerId');
@@ -587,7 +587,7 @@ test.serial('меню Список игроков: Выбор игрока - о�
 test.serial('меню Список игроков: Выбор игрока - исключить из состава', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({
         player: {id: 'playerId', name: 'playerName', team: 'teamId'},
         action: 'removeFromRoster'
@@ -596,7 +596,7 @@ test.serial('меню Список игроков: Выбор игрока - и�
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
     t.true(mainMenu.calledOnce);
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', name: 'playerName', team: undefined});
@@ -607,7 +607,7 @@ test.serial('меню Список игроков: Выбор игрока - и�
 test.serial('меню Список игроков: Выбор игрока - удалить', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({
         player: {id: 'playerId', name: 'playerName', team: 'teamId'},
         action: 'delete',
@@ -617,7 +617,7 @@ test.serial('меню Список игроков: Выбор игрока - у�
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
     t.true(mainMenu.calledOnce);
     t.true(service.deletePlayer.calledOnce);
     t.is(service.deletePlayer.firstCall.args[0], 'playerId');
@@ -628,7 +628,7 @@ test.serial('меню Список игроков: Выбор игрока - у�
 test.serial('меню Список игроков: Выбор игрока - удалить без подтверждения', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({
         player: {id: 'playerId', name: 'playerName', team: 'teamId'},
         action: 'delete',
@@ -638,7 +638,7 @@ test.serial('меню Список игроков: Выбор игрока - у�
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
     t.true(mainMenu.calledOnce);
     t.true(service.deletePlayer.notCalled);
     t.true(sources.delete.notCalled);
@@ -647,14 +647,14 @@ test.serial('меню Список игроков: Выбор игрока - у�
 test.serial('меню Список игроков: Выбор игрока - Добавить игрока - открытие меню добавления игрока - выход', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({player: 'addPlayer'})
         .withArgs(addPlayerMenu.addPlayerMenuPrompt)
         .onFirstCall().resolves({addPlayer: 'quit'});
 
     await manager.process();
 
-    t.true(playersListMenu.calledOnce);
+    t.true(playersListMenu.open.calledOnce);
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {createPlayerOnly: true});
 });
@@ -662,7 +662,7 @@ test.serial('меню Список игроков: Выбор игрока - Д�
 test.serial('меню Список игроков: Выбор игрока - Добавить игрока - открытие меню добавления игрока - назад', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({player: 'addPlayer'})
         .onSecondCall().resolves({player: 'quit'})
         .withArgs(addPlayerMenu.addPlayerMenuPrompt)
@@ -670,7 +670,7 @@ test.serial('меню Список игроков: Выбор игрока - Д�
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {createPlayerOnly: true});
 });
@@ -678,7 +678,7 @@ test.serial('меню Список игроков: Выбор игрока - Д�
 test.serial('меню Список игроков: Выбор игрока - Добавить игрока - введен новый игрок', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'playersList'})
-        .withArgs(manager.playersListPrompt)
+        .withArgs(playersListMenu.playersListPrompt)
         .onFirstCall().resolves({player: 'addPlayer'})
         .onSecondCall().resolves({player: 'quit'})
         .withArgs(addPlayerMenu.addPlayerMenuPrompt)
@@ -690,7 +690,7 @@ test.serial('меню Список игроков: Выбор игрока - Д�
 
     await manager.process();
 
-    t.true(playersListMenu.calledTwice);
+    t.true(playersListMenu.open.calledTwice);
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {createPlayerOnly: true});
     t.true(service.editPlayer.notCalled);
