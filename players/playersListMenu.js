@@ -1,6 +1,5 @@
 import inquirer from "inquirer";
 import {getRosterMenuMessage, quit, rosterPlayerActions} from "./playersCliUtils.js";
-import cli from "clui";
 import PlayerActions from "./playerActions.js";
 
 export default class PlayersListMenu {

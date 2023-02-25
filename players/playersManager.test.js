@@ -14,6 +14,7 @@ test.beforeEach(() => {
     sources = manager.choiceSources;
     addPlayerMenu = manager.addPlayerMenu;
     playersListMenu = manager.playersListMenu;
+    rosterMenu = manager.rosterMenu;
     sinon.replace(service, 'editPlayer', sinon.fake.resolves({}));
     sinon.replace(service, 'createPlayer', sinon.fake.resolves({}));
     sinon.replace(service, 'deletePlayer', sinon.fake.resolves({}));
@@ -22,7 +23,7 @@ test.beforeEach(() => {
     sinon.replace(sources, 'init', sinon.fake.resolves([]));
     sinon.replace(sources, 'update', sinon.fake.resolves());
     sinon.replace(sources, 'delete', sinon.fake.resolves());
-    rosterMenu = sinon.replace(manager, 'rosterMenu', sinon.fake(manager.rosterMenu));
+    sinon.replace(rosterMenu, 'open', sinon.fake(rosterMenu.open));
     sinon.replace(addPlayerMenu, 'open', sinon.fake(addPlayerMenu.open));
     sinon.replace(playersListMenu, 'open', sinon.fake(playersListMenu.open));
     mainMenu = sinon.replace(manager, 'menu', sinon.fake(manager.menu));
@@ -105,7 +106,7 @@ test.serial('Выгрузка изменений в Airtable', async t => {
 
 test.serial('меню Состав команды: выход', async t => {
     prompt.onFirstCall().resolves({operation: 'roster'});
-    prompt.withArgs(manager.rosterMenuPrompt).resolves({team: 'quit'});
+    prompt.withArgs(rosterMenu.rosterMenuPrompt).resolves({team: 'quit'});
 
     await manager.process();
 
@@ -116,51 +117,52 @@ test.serial('меню Состав команды: Выбор команды - �
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
         .onSecondCall().resolves({operation: 'quit'})
-        .withArgs(manager.rosterMenuPrompt).resolves({team: 'back'});
+        .withArgs(rosterMenu.rosterMenuPrompt)
+        .resolves({team: 'back'});
 
     await manager.process();
 
-    t.true(rosterMenu.calledOnce);
+    t.true(rosterMenu.open.calledOnce);
 });
 
 test.serial('меню Состав команды: Выбор игрока - назад - возврат к выбору команды', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({team: {id: 'teamId'}, player: 'back'})
         .onSecondCall().resolves({team: 'quit'});
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args, []);
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args, [undefined, manager.toMainMenu]);
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - назад - возврат к выбору игрока', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({team: {id: 'teamId'}, action: 'back'})
         .onSecondCall().resolves({team: 'quit'});
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
 });
 
 
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - открытие меню добавления игрока - выход', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({team: {id: 'teamId'}, player: 'addPlayer'})
         .withArgs(addPlayerMenu.addPlayerMenuPrompt)
         .onFirstCall().resolves({addPlayer: 'quit'});
 
     await manager.process();
 
-    t.true(rosterMenu.calledOnce);
+    t.true(rosterMenu.open.calledOnce);
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {player: 'addPlayer', team: {id: 'teamId'}});
 });
@@ -168,7 +170,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - открытие меню добавления игрока - назад', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({team: {id: 'teamId'}, player: 'addPlayer'})
         .onSecondCall().resolves({team: 'quit'})
         .withArgs(addPlayerMenu.addPlayerMenuPrompt)
@@ -176,8 +178,8 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {player: 'addPlayer', team: {id: 'teamId'}});
 });
@@ -185,7 +187,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - игрок выбран и указано не заигрывать', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({team: {id: 'teamId'}, player: 'addPlayer'})
         .onSecondCall().resolves({team: 'quit'})
         .withArgs(addPlayerMenu.addPlayerMenuPrompt)
@@ -197,8 +199,8 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {player: 'addPlayer', team: {id: 'teamId'}});
     t.true(service.editPlayer.calledOnce);
@@ -215,7 +217,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - игрок выбран и отмечен как заигранный', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({team: {id: 'teamId'}, player: 'addPlayer'})
         .onSecondCall().resolves({team: 'quit'})
         .withArgs(addPlayerMenu.addPlayerMenuPrompt)
@@ -227,8 +229,8 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {player: 'addPlayer', team: {id: 'teamId'}});
     t.true(service.editPlayer.calledOnce);
@@ -245,7 +247,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - введен новый игрок и указано не заигрывать', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({team: {id: 'teamId'}, player: 'addPlayer'})
         .onSecondCall().resolves({team: 'quit'})
         .withArgs(addPlayerMenu.addPlayerMenuPrompt)
@@ -258,8 +260,8 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {player: 'addPlayer', team: {id: 'teamId'}});
     t.true(service.editPlayer.notCalled);
@@ -277,7 +279,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - введен новый игрок и отмечен как заигранный', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({team: {id: 'teamId'}, player: 'addPlayer'})
         .onSecondCall().resolves({team: 'quit'})
         .withArgs(addPlayerMenu.addPlayerMenuPrompt)
@@ -290,8 +292,8 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {player: 'addPlayer', team: {id: 'teamId'}});
     t.true(service.editPlayer.notCalled);
@@ -309,7 +311,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
 test.serial('меню Состав команды: Выбор действия с игроком - отметить как незаигранного', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({
         team: {id: 'teamId'},
         player: {id: 'playerId', name: 'playerName', team: 'teamId', tournaments: ['current_tournament']},
@@ -319,8 +321,8 @@ test.serial('меню Состав команды: Выбор действия �
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.removeCurrentOutcome.calledOnce);
     t.is(service.removeCurrentOutcome.firstCall.args[0], 'playerId');
     t.true(sources.update.calledOnce);
@@ -330,7 +332,7 @@ test.serial('меню Состав команды: Выбор действия �
 test.serial('меню Состав команды: Выбор действия с игроком - отметить как заигранного', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({
         team: {id: 'teamId'},
         player: {id: 'playerId', name: 'playerName', team: 'teamId', tournaments: []},
@@ -340,8 +342,8 @@ test.serial('меню Состав команды: Выбор действия �
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.addCurrentOutcome.calledOnce);
     t.is(service.addCurrentOutcome.firstCall.args[0], 'playerId');
     t.true(sources.update.calledOnce);
@@ -351,7 +353,7 @@ test.serial('меню Состав команды: Выбор действия �
 test.serial('меню Состав команды: Выбор действия с игроком - отредактировать инстаграм', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({
         team: {id: 'teamId'},
         player: {id: 'playerId', name: 'playerName', team: 'teamId', tournaments: []},
@@ -362,8 +364,8 @@ test.serial('меню Состав команды: Выбор действия �
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', instagram: 'newInstagram'});
     t.true(sources.update.calledOnce);
@@ -373,7 +375,7 @@ test.serial('меню Состав команды: Выбор действия �
 test.serial('меню Состав команды: Выбор действия с игроком - отредактировать имя', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({
         team: {id: 'teamId'},
         player: {id: 'playerId', name: 'playerName', team: 'teamId', tournaments: []},
@@ -384,8 +386,8 @@ test.serial('меню Состав команды: Выбор действия �
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', name: 'newName'});
     t.true(sources.update.calledOnce);
@@ -395,7 +397,7 @@ test.serial('меню Состав команды: Выбор действия �
 test.serial('меню Состав команды: Выбор действия с игроком - исключить из состава', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({
         team: {id: 'teamId'},
         player: {id: 'playerId', name: 'playerName', team: 'teamId', tournaments: []},
@@ -405,8 +407,8 @@ test.serial('меню Состав команды: Выбор действия �
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', team: undefined});
     t.true(sources.update.calledOnce);
@@ -416,7 +418,7 @@ test.serial('меню Состав команды: Выбор действия �
 test.serial('меню Состав команды: Выбор действия с игроком - удалить игрока', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({
         team: {id: 'teamId'},
         player: {id: 'playerId', name: 'playerName', team: 'teamId', tournaments: []},
@@ -427,8 +429,8 @@ test.serial('меню Состав команды: Выбор действия �
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}, player: undefined});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}, player: undefined});
     t.true(service.deletePlayer.calledOnce);
     t.is(service.deletePlayer.firstCall.args[0], 'playerId');
     t.true(sources.delete.calledOnce);
@@ -438,7 +440,7 @@ test.serial('меню Состав команды: Выбор действия �
 test.serial('меню Состав команды: Выбор действия с игроком - удалить игрока, отказ при подтверждении', async t => {
     prompt.withArgs(menuPrompt)
         .onFirstCall().resolves({operation: 'roster'})
-        .withArgs(manager.rosterMenuPrompt)
+        .withArgs(rosterMenu.rosterMenuPrompt)
         .onFirstCall().resolves({
         team: {id: 'teamId'},
         player: {id: 'playerId', name: 'playerName', team: 'teamId', tournaments: []},
@@ -449,8 +451,8 @@ test.serial('меню Состав команды: Выбор действия �
 
     await manager.process();
 
-    t.true(rosterMenu.calledTwice);
-    t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}, player: undefined});
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}, player: undefined});
     t.true(service.deletePlayer.notCalled);
     t.true(sources.delete.notCalled);
 });
