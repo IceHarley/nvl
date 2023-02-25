@@ -1,7 +1,7 @@
 import {toOperation, toRecords} from "../common/utils.js";
 import fuzzy from "fuzzy";
 import inquirer from "inquirer";
-import cli from "clui";
+import {formatPlayer} from "./playersCliUtils.js";
 
 export default class ChoiceSources {
     #db
@@ -77,7 +77,7 @@ export default class ChoiceSources {
         .then(players => fuzzy
             .filter(input, players, {extract: p => p.name})
             .map(el => ({
-                name: this.formatPlayer(el.original),
+                name: formatPlayer(el.original),
                 value: el.original,
                 short: el.original.name
             }))
@@ -86,15 +86,4 @@ export default class ChoiceSources {
             console.log(e);
             throw e;
         });
-
-    //TODO убрать отсюда в общее место и удалить дублирование
-    formatPlayer = player => new cli.Line()
-        .column(player.name, 20, [])
-        .padding(2)
-        .column(player.teamName || '', 20, [])
-        .padding(2)
-        .column(player.instagram || '', 20, [])
-        .padding(2)
-        .column(!player.currentOutcome ? 'не заигран' : `заигран за ${player.outcomeTeam}`, 40, [])
-        .contents();
 }
