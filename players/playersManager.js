@@ -1,13 +1,17 @@
 import cli from "clui";
-import {Level} from "level";
 import {SpinnerPlayersService} from "./playersService.js";
 import inquirer from "inquirer";
 import inquirerPrompt from 'inquirer-autocomplete-prompt';
 import fuzzy from "fuzzy";
+import {toOperation, toRecords} from "../common/utils.js";
 
 inquirer.registerPrompt('autocomplete', inquirerPrompt);
 
-const menuPrompt = [
+
+// TODO при добавлении игрока в состав, если он уже в другой команде - тихо перезапишет в текущую - нужно давать подтверждение о переходе в команду
+// TODO при добавлении игрока в состав, если он заигран за другую команду - тихо перезапишет в текущую - нужно запрещать переход заигранного
+// TODO при добавлении игрока в состав и отметке как заигранного, если он заигран за другую команду - упадет исключение - нужно запрещать переход заигранного
+export const menuPrompt = [
     {
         type: 'list',
         name: 'operation',
@@ -39,18 +43,8 @@ export default class PlayersManager {
     #db
     playersService
 
-    constructor(repositories) {
-        const db = new Level('./db', {valueEncoding: 'json'});
-        this.#db = {
-            main: db,
-            meta: db.sublevel('meta'),
-            players: db.sublevel('players', {valueEncoding: 'json'}),
-            playersSource: db.sublevel('playersSource', {valueEncoding: 'json'}),
-            teams: db.sublevel('teams', {valueEncoding: 'json'}),
-            teamsSource: db.sublevel('teamsSources', {valueEncoding: 'json'}),
-            outcomes: db.sublevel('outcomes', {valueEncoding: 'json'}),
-            modifications: db.sublevel('modifications', {valueEncoding: 'json'}),
-        }
+    constructor(repositories, db) {
+        this.#db = db;
 
         this.playersService = new SpinnerPlayersService(this.#db, repositories);
     }
@@ -63,9 +57,9 @@ export default class PlayersManager {
         this.#db.teamsSource.clear(),
     ])
         .then(([players, teams, outcomes]) => ([
-            this.toRecords(players),
-            this.toRecords(teams),
-            this.toRecords(outcomes)
+            toRecords(players),
+            toRecords(teams),
+            toRecords(outcomes)
         ]))
         .then(([players, teams, outcomes]) => [players
             .map(player => ({
@@ -86,15 +80,15 @@ export default class PlayersManager {
             teams
         ])
         .then(([players, teams]) => Promise.all([
-            this.#db.playersSource.batch(players.map(player => this.#toOperation(player))),
-            this.#db.teamsSource.batch(teams.map(team => this.#toOperation(team))),
+            this.#db.playersSource.batch(players.map(player => toOperation(player))),
+            this.#db.teamsSource.batch(teams.map(team => toOperation(team))),
         ]));
 
     updateSource = playerId => Promise.all([
         this.#db.players.get(playerId),
         this.#db.teamsSource.iterator().all()
     ])
-        .then(([player, teams]) => [player, this.toRecords(teams)])
+        .then(([player, teams]) => [player, toRecords(teams)])
         .then(([player, teams]) => this.#db.playersSource.put(playerId, {
             ...player,
             teamName: teams.find(team => player.team === team.id)?.name,
@@ -106,16 +100,13 @@ export default class PlayersManager {
 
     teamsSource = (answers, input = '') => this.#db.teamsSource.iterator().all()
         .then(teams => fuzzy
-            .filter(input, this.toRecords(teams), {extract: t => t.name})
+            .filter(input, toRecords(teams), {extract: t => t.name})
             .map(el => ({name: el.string, value: el.original, short: `${el.original.name} (${el.original.city})`}))
             .concat([
                 new inquirer.Separator(),
                 {name: '====Назад', value: 'back', short: 'Назад'},
                 {name: '====Выход', value: 'quit', short: 'Выход'},
             ]));
-
-
-    toRecords = entries => entries.map(([id, entry]) => ({id, ...entry}));
 
     playersSource = filter => (answers, input = '') => this.getPlayersForSelection(filter)
         .then(players => fuzzy
@@ -153,7 +144,7 @@ export default class PlayersManager {
 
     getPlayersForSelection = filter =>
         this.#db.playersSource.iterator().all()
-            .then(players => this.toRecords(players).filter(filter));
+            .then(players => toRecords(players).filter(filter));
 
     formatPlayer = player => new cli.Line()
         .column(player.name, 20, [])
@@ -209,14 +200,6 @@ export default class PlayersManager {
             {name: '====Выход', value: 'quit', short: 'Выход'},
         ]);
     }
-
-    #toOperation = record => ({
-        type: 'put',
-        key: record.id,
-        value: {
-            ...record
-        }
-    });
 
     getRosterMenuMessage = message => answers => {
         return ([
@@ -372,6 +355,8 @@ export default class PlayersManager {
 
     menu = () => inquirer.prompt(menuPrompt)
         .then(answers => {
+            console.log('menu');
+            console.log(answers);
             if (answers.operation === 'loadFromAirtable') {
                 return this.loadFromAirtable(answers.loadType, this.playersService);
             } else if (answers.operation === 'uploadToAirtable') {
@@ -381,6 +366,7 @@ export default class PlayersManager {
             return answers.operation;
         })
         .then(result => {
+            console.log(result);
             if (result === 'roster') {
                 return this.rosterMenu();
             }
@@ -418,6 +404,7 @@ export default class PlayersManager {
         newPlayer: !team ? {tournaments: []} : {team: team.id, tournaments: [], teamName: team.name},
     })
         .then(answers => {
+            console.log(answers);
             if (answers.addPlayer === 'quit') {
                 this.quit();
             }
@@ -451,6 +438,17 @@ export default class PlayersManager {
 
     playersListMenu = answers => inquirer.prompt(this.playersListPrompt, answers)
         .then(answers => {
+            console.log('playersListMenu');
+            console.log(answers);
+            if (answers.player === 'back') {
+                this.toMainMenu();
+            }
+            if (answers.player === 'quit' || answers.action === 'quit') {
+                this.quit();
+            }
+            if (answers.action === 'back') {
+                this.toPlayersListMenu();
+            }
             if (answers.player === 'addPlayer') {
                 return this.addPlayerMenu({createPlayerOnly: true})
                     .then(() => {
@@ -460,6 +458,7 @@ export default class PlayersManager {
             return answers;
         })
         .then(answers => this.applyPlayerAction(answers))
+        .then(() => this.playersListMenu({}))
         .catch(command => {
             if (command === 'quit') {
                 return 'quit';
@@ -498,6 +497,10 @@ export default class PlayersManager {
     toMainMenu = () => {
         throw () => this.menu()
     };
+
+    toPlayersListMenu = () => {
+        throw () => this.playersListMenu();
+    }
 
     quit = () => {
         throw 'quit';

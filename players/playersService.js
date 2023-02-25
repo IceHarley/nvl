@@ -1,4 +1,4 @@
-import {getMethods, resolvePromisesSeq, verifyLength, withSpinner} from "../common/utils.js";
+import {getMethods, resolvePromisesSeq, toOperation, toRecords, verifyLength, withSpinner} from "../common/utils.js";
 import {minify} from "../repositories/playersRepository.js";
 
 export const SYNC_DATETIME = 'Synchronization datetime';
@@ -11,7 +11,6 @@ const INS = 'ins';
 const LTE_INS = 'ins~';
 
 const ERROR_MULTIPLE_CURRENT_OUTCOMES = 'Игрок отмечен заигранным более чем за одну команду!';
-
 
 export default class PlayersService {
     #repositories = {};
@@ -26,7 +25,7 @@ export default class PlayersService {
 
     fullLoad = () => this.#db.players.clear()
         .then(() => this.#repositories.players.getList())
-        .then(records => this.#db.players.batch(records.map(player => this.#toOperation(player))))
+        .then(records => this.#db.players.batch(records.map(player => toOperation(player))))
         .then(() => Promise.all([
             this.#db.meta.put(SYNC_DATETIME, new Date().toISOString()),
             this.#db.modifications.clear(),
@@ -37,25 +36,17 @@ export default class PlayersService {
 
     loadActiveTeams = () => this.#db.teams.clear()
         .then(() => this.#repositories.teams.getActiveTeams())
-        .then(records => this.#db.teams.batch(records.map(player => this.#toOperation(player))))
+        .then(records => this.#db.teams.batch(records.map(player => toOperation(player))))
         .then(() => this.#db.teams.keys().all())
         .then(keys => keys.length)
         .then(count => this.logAndReturn('Загружено команд', count));
 
     loadActiveTournamentOutcomes = () => this.#db.outcomes.clear()
         .then(() => this.#repositories.tournamentOutcomes.getByActiveTournament())
-        .then(records => this.#db.outcomes.batch(records.map(outcome => this.#toOperation(outcome))))
+        .then(records => this.#db.outcomes.batch(records.map(outcome => toOperation(outcome))))
         .then(() => this.#db.outcomes.keys().all())
         .then(keys => keys.length)
         .then(count => this.logAndReturn('Загружено результатов турниров', count));
-
-    #toOperation = record => ({
-        type: 'put',
-        key: record.id,
-        value: {
-            ...record
-        }
-    });
 
     loadOnlyChanges = () => this.#db.meta.get(SYNC_DATETIME)
         .catch(() => Promise.resolve(new Date(2021, 1).toISOString()))
@@ -64,7 +55,7 @@ export default class PlayersService {
         }))
         .then(records => Promise.all([
             records.length,
-            this.#db.players.batch(records.map(player => this.#toOperation(player)))
+            this.#db.players.batch(records.map(player => toOperation(player)))
         ]))
         .then(([count]) => Promise.all([
             count,
@@ -102,7 +93,7 @@ export default class PlayersService {
 
     #insertNewRecords = () => this.#db.players.values({lte: LTE_INS}).all() //получаем добавленные локально записи (c идентификаторами на ins...)
         .then(records => this.#repositories.players.createList(records)) //создаем их в airtable
-        .then(records => this.#db.players.batch(records.flat().map(record => this.#toOperation(minify(record))))) //созданные в airtable записи сохраняем локально
+        .then(records => this.#db.players.batch(records.flat().map(record => toOperation(minify(record))))) //созданные в airtable записи сохраняем локально
         .then(() => this.#db.players.keys({lte: LTE_INS}).all()) //добавленные локально записи
         .then(records => Promise.all([
             records.length,
@@ -164,11 +155,9 @@ export default class PlayersService {
             tournaments: player.tournaments.filter(t => t !== outcome)
         }));
 
-    toRecords = entries => entries.map(([id, entry]) => ({id, ...entry}));
-
     addCurrentOutcome = playerId => Promise.all([this.#db.players.get(playerId), this.#db.outcomes.iterator().all()])
         .then(([player, outcomes]) => {
-            outcomes = this.toRecords(outcomes);
+            outcomes = toRecords(outcomes);
             if (!player.team) {
                 throw new Error('Игрок не числится в команде');
             }

@@ -95,3 +95,13 @@ export const verifyLength = (array, length, errorMore = 'Размер масси
     }
     return array;
 };
+
+export const toRecords = entries => entries.map(([id, entry]) => ({id, ...entry}));
+
+export const toOperation = record => ({
+    type: 'put',
+    key: record.id,
+    value: {
+        ...record
+    }
+});
