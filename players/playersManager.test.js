@@ -6,19 +6,20 @@ import inquirer from "inquirer";
 
 const db = provideDb();
 const manager = new PlayersManager({}, db);
-let prompt, service, rosterMenu, addPlayerMenu, playersListMenu, mainMenu;
+let prompt, service, sources, rosterMenu, addPlayerMenu, playersListMenu, mainMenu;
 
 test.beforeEach(() => {
     prompt = sinon.stub(inquirer, "prompt");
     service = manager.playersService;
+    sources = manager.choiceSources;
     sinon.replace(service, 'editPlayer', sinon.fake.resolves({}));
     sinon.replace(service, 'createPlayer', sinon.fake.resolves({}));
     sinon.replace(service, 'deletePlayer', sinon.fake.resolves({}));
     sinon.replace(service, 'addCurrentOutcome', sinon.fake.resolves({}));
     sinon.replace(service, 'removeCurrentOutcome', sinon.fake.resolves({}));
-    sinon.replace(manager, 'initSources', sinon.fake.resolves([]));
-    sinon.replace(manager, 'updateSource', sinon.fake.resolves());
-    sinon.replace(manager, 'deleteSource', sinon.fake.resolves());
+    sinon.replace(sources, 'init', sinon.fake.resolves([]));
+    sinon.replace(sources, 'update', sinon.fake.resolves());
+    sinon.replace(sources, 'delete', sinon.fake.resolves());
     rosterMenu = sinon.replace(manager, 'rosterMenu', sinon.fake(manager.rosterMenu));
     addPlayerMenu = sinon.replace(manager, 'addPlayerMenu', sinon.fake(manager.addPlayerMenu));
     playersListMenu = sinon.replace(manager, 'playersListMenu', sinon.fake(manager.playersListMenu));
@@ -51,7 +52,7 @@ test.serial('Загрузка из Airtable без указания типа', a
     t.true(service.loadOnlyChanges.notCalled);
     t.true(service.fullLoad.notCalled);
     t.true(service.loadActiveTeams.notCalled);
-    t.true(manager.initSources.calledOnce);
+    t.true(sources.init.calledOnce);
 });
 
 test.serial('Загрузка из Airtable только изменений', async t => {
@@ -62,7 +63,7 @@ test.serial('Загрузка из Airtable только изменений', as
     await manager.process();
 
     t.true(service.loadOnlyChanges.calledOnce);
-    t.true(manager.initSources.calledTwice);
+    t.true(sources.init.calledTwice);
 });
 
 test.serial('Полная загрузка из Airtable', async t => {
@@ -73,7 +74,7 @@ test.serial('Полная загрузка из Airtable', async t => {
     await manager.process();
 
     t.true(service.fullLoad.calledOnce);
-    t.true(manager.initSources.calledTwice);
+    t.true(sources.init.calledTwice);
 });
 
 test.serial('Загрузка из Airtable команд', async t => {
@@ -86,7 +87,7 @@ test.serial('Загрузка из Airtable команд', async t => {
 
     t.true(service.loadActiveTeams.calledOnce);
     t.true(service.loadActiveTournamentOutcomes.calledOnce);
-    t.true(manager.initSources.calledTwice);
+    t.true(sources.init.calledTwice);
 });
 
 test.serial('Выгрузка изменений в Airtable', async t => {
@@ -97,7 +98,7 @@ test.serial('Выгрузка изменений в Airtable', async t => {
     await manager.process();
 
     t.true(service.uploadLocalChanges.calledOnce);
-    t.true(manager.initSources.calledTwice);
+    t.true(sources.init.calledTwice);
 });
 
 test.serial('меню Состав команды: выход', async t => {
@@ -106,7 +107,7 @@ test.serial('меню Состав команды: выход', async t => {
 
     await manager.process();
 
-    t.true(manager.initSources.calledOnce);
+    t.true(sources.init.calledOnce);
 });
 
 test.serial('меню Состав команды: Выбор команды - назад - выход в главное меню', async t => {
@@ -206,7 +207,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
         tournaments: []
     });
     t.true(service.addCurrentOutcome.notCalled);
-    t.true(manager.updateSource.calledOnce);
+    t.true(sources.update.calledOnce);
 });
 
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - игрок выбран и отмечен как заигранный', async t => {
@@ -236,7 +237,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
         tournaments: []
     });
     t.true(service.addCurrentOutcome.calledOnce);
-    t.true(manager.updateSource.calledOnce);
+    t.true(sources.update.calledOnce);
 });
 
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - введен новый игрок и указано не заигрывать', async t => {
@@ -268,7 +269,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
         teamName: 'teamName'
     });
     t.true(service.addCurrentOutcome.notCalled);
-    t.true(manager.updateSource.calledOnce);
+    t.true(sources.update.calledOnce);
 });
 
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - введен новый игрок и отмечен как заигранный', async t => {
@@ -300,7 +301,7 @@ test.serial('меню Состав команды: Выбор игрока - Д�
         teamName: 'teamName'
     });
     t.true(service.addCurrentOutcome.calledOnce);
-    t.true(manager.updateSource.calledOnce);
+    t.true(sources.update.calledOnce);
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - отметить как незаигранного', async t => {
@@ -320,8 +321,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.removeCurrentOutcome.calledOnce);
     t.is(service.removeCurrentOutcome.firstCall.args[0], 'playerId');
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - отметить как заигранного', async t => {
@@ -341,8 +342,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.addCurrentOutcome.calledOnce);
     t.is(service.addCurrentOutcome.firstCall.args[0], 'playerId');
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - отредактировать инстаграм', async t => {
@@ -363,8 +364,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', instagram: 'newInstagram'});
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - отредактировать имя', async t => {
@@ -385,8 +386,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', name: 'newName'});
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - исключить из состава', async t => {
@@ -406,8 +407,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', team: undefined});
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - удалить игрока', async t => {
@@ -428,8 +429,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}, player: undefined});
     t.true(service.deletePlayer.calledOnce);
     t.is(service.deletePlayer.firstCall.args[0], 'playerId');
-    t.true(manager.deleteSource.calledOnce);
-    t.is(manager.deleteSource.firstCall.args[0], 'playerId');
+    t.true(sources.delete.calledOnce);
+    t.is(sources.delete.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - удалить игрока, отказ при подтверждении', async t => {
@@ -449,7 +450,7 @@ test.serial('меню Состав команды: Выбор действия �
     t.true(rosterMenu.calledTwice);
     t.deepEqual(rosterMenu.secondCall.args[0], {team: {id: 'teamId'}, player: undefined});
     t.true(service.deletePlayer.notCalled);
-    t.true(manager.deleteSource.notCalled);
+    t.true(sources.delete.notCalled);
 });
 
 test.serial('меню Список игроков: выход', async t => {
@@ -516,8 +517,8 @@ test.serial('меню Список игроков: Выбор игрока - р�
     t.true(mainMenu.calledOnce);
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', name: 'newName'});
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Список игроков: Выбор игрока - редактирование Instagram', async t => {
@@ -537,8 +538,8 @@ test.serial('меню Список игроков: Выбор игрока - р�
     t.true(mainMenu.calledOnce);
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', instagram: 'newInstagram'});
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Список игроков: Выбор игрока - отметить как заигранного', async t => {
@@ -557,8 +558,8 @@ test.serial('меню Список игроков: Выбор игрока - о�
     t.true(mainMenu.calledOnce);
     t.true(service.addCurrentOutcome.calledOnce);
     t.is(service.addCurrentOutcome.firstCall.args[0], 'playerId');
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Список игроков: Выбор игрока - отметить как незаигранного', async t => {
@@ -577,8 +578,8 @@ test.serial('меню Список игроков: Выбор игрока - о�
     t.true(mainMenu.calledOnce);
     t.true(service.removeCurrentOutcome.calledOnce);
     t.is(service.removeCurrentOutcome.firstCall.args[0], 'playerId');
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Список игроков: Выбор игрока - исключить из состава', async t => {
@@ -597,8 +598,8 @@ test.serial('меню Список игроков: Выбор игрока - и�
     t.true(mainMenu.calledOnce);
     t.true(service.editPlayer.calledOnce);
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', name: 'playerName', team: undefined});
-    t.true(manager.updateSource.calledOnce);
-    t.is(manager.updateSource.firstCall.args[0], 'playerId');
+    t.true(sources.update.calledOnce);
+    t.is(sources.update.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Список игроков: Выбор игрока - удалить', async t => {
@@ -618,8 +619,8 @@ test.serial('меню Список игроков: Выбор игрока - у�
     t.true(mainMenu.calledOnce);
     t.true(service.deletePlayer.calledOnce);
     t.is(service.deletePlayer.firstCall.args[0], 'playerId');
-    t.true(manager.deleteSource.calledOnce);
-    t.is(manager.deleteSource.firstCall.args[0], 'playerId');
+    t.true(sources.delete.calledOnce);
+    t.is(sources.delete.firstCall.args[0], 'playerId');
 });
 
 test.serial('меню Список игроков: Выбор игрока - удалить без подтверждения', async t => {
@@ -638,7 +639,7 @@ test.serial('меню Список игроков: Выбор игрока - у�
     t.true(playersListMenu.calledTwice);
     t.true(mainMenu.calledOnce);
     t.true(service.deletePlayer.notCalled);
-    t.true(manager.deleteSource.notCalled);
+    t.true(sources.delete.notCalled);
 });
 
 test.serial('меню Список игроков: Выбор игрока - Добавить игрока - открытие меню добавления игрока - выход', async t => {
@@ -698,5 +699,5 @@ test.serial('меню Список игроков: Выбор игрока - Д�
         instagram: 'instagram',
     });
     t.true(service.addCurrentOutcome.notCalled);
-    t.true(manager.updateSource.calledOnce);
+    t.true(sources.update.calledOnce);
 });

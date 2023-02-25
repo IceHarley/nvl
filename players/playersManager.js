@@ -2,8 +2,7 @@ import cli from "clui";
 import {SpinnerPlayersService} from "./playersService.js";
 import inquirer from "inquirer";
 import inquirerPrompt from 'inquirer-autocomplete-prompt';
-import fuzzy from "fuzzy";
-import {toOperation, toRecords} from "../common/utils.js";
+import ChoiceSources from "./choiceSources.js";
 
 inquirer.registerPrompt('autocomplete', inquirerPrompt);
 
@@ -42,90 +41,20 @@ export const menuPrompt = [
 export default class PlayersManager {
     #db
     playersService
+    choiceSources
 
     constructor(repositories, db) {
         this.#db = db;
 
         this.playersService = new SpinnerPlayersService(this.#db, repositories);
+        this.choiceSources = new ChoiceSources(this.#db);
     }
 
-    initSources = () => Promise.all([
-        this.#db.players.iterator().all(),
-        this.#db.teams.iterator().all(),
-        this.#db.outcomes.iterator().all(),
-        this.#db.playersSource.clear(),
-        this.#db.teamsSource.clear(),
-    ])
-        .then(([players, teams, outcomes]) => ([
-            toRecords(players),
-            toRecords(teams),
-            toRecords(outcomes)
-        ]))
-        .then(([players, teams, outcomes]) => [players
-            .map(player => ({
-                ...player,
-                teamName: teams.find(team => player.team === team.id)?.name,
-                currentOutcome: outcomes.find(outcome => player.tournaments?.includes(outcome.id))?.id,
-            })),
-            teams.map(team => ({
-                ...team,
-                outcome: outcomes.find(outcome => outcome.teamId === team.id).id
-            }))
-        ])
-        .then(([players, teams]) => [
-            players.map(player => ({
-                ...player,
-                outcomeTeam: teams.find(team => player.currentOutcome && player.currentOutcome === team.outcome)?.name,
-            })),
-            teams
-        ])
-        .then(([players, teams]) => Promise.all([
-            this.#db.playersSource.batch(players.map(player => toOperation(player))),
-            this.#db.teamsSource.batch(teams.map(team => toOperation(team))),
-        ]));
+    playersSourceWithSystemChoices = (answers, input = '') =>
+        this.choiceSources.playersSource(p => !answers.team || p.team === answers.team.id)(answers, input)
+            .then(players => this.addSystemChoices(players));
 
-    updateSource = playerId => Promise.all([
-        this.#db.players.get(playerId),
-        this.#db.teamsSource.iterator().all()
-    ])
-        .then(([player, teams]) => [player, toRecords(teams)])
-        .then(([player, teams]) => this.#db.playersSource.put(playerId, {
-            ...player,
-            teamName: teams.find(team => player.team === team.id)?.name,
-            currentOutcome: teams.find(team => player.tournaments?.includes(team.outcome))?.outcome,
-            outcomeTeam: teams.find(team => player.tournaments?.includes(team.outcome))?.name,
-        }));
-
-    deleteSource = playerId => this.#db.playersSource.del(playerId);
-
-    teamsSource = (answers, input = '') => this.#db.teamsSource.iterator().all()
-        .then(teams => fuzzy
-            .filter(input, toRecords(teams), {extract: t => t.name})
-            .map(el => ({name: el.string, value: el.original, short: `${el.original.name} (${el.original.city})`}))
-            .concat([
-                new inquirer.Separator(),
-                {name: '====Назад', value: 'back', short: 'Назад'},
-                {name: '====Выход', value: 'quit', short: 'Выход'},
-            ]));
-
-    playersSource = filter => (answers, input = '') => this.getPlayersForSelection(filter)
-        .then(players => fuzzy
-            .filter(input, players, {extract: p => p.name})
-            .map(el => ({
-                name: this.formatPlayer(el.original),
-                value: el.original,
-                short: el.original.name
-            }))
-        )
-        .catch(e => {
-            console.log(e);
-            throw e;
-        });
-
-    playersSourceWithSystemChoices = (answers, input = '') => this.playersSource(p => !answers.team || p.team === answers.team.id)(answers, input)
-        .then(players => this.addSystemChoices(players));
-
-    playersSourceWithNewPlayerChoice = (answers, input = '') => this.playersSource(p => p)(answers, input)
+    playersSourceWithNewPlayerChoice = (answers, input = '') => this.choiceSources.playersSource(p => p)(answers, input)
         .then(players => (input.length > 2
             ? [{name: `Новый игрок: ${input}`, value: input, short: `Создан новый игрок ${input}`}]
             : []).concat(players).concat([
@@ -141,10 +70,6 @@ export default class PlayersManager {
             {name: '====Назад', value: 'back', short: 'Назад'},
             {name: '====Выход', value: 'quit', short: 'Выход'},
         ]);
-
-    getPlayersForSelection = filter =>
-        this.#db.playersSource.iterator().all()
-            .then(players => toRecords(players).filter(filter));
 
     formatPlayer = player => new cli.Line()
         .column(player.name, 20, [])
@@ -201,13 +126,11 @@ export default class PlayersManager {
         ]);
     }
 
-    getRosterMenuMessage = message => answers => {
-        return ([
-            !answers.team ? '' : `\nСостав команды ${answers.team?.name}`,
-            !answers.player ? '' : `\nИгрок: ${this.formatPlayer(answers.player)}`,
-            `\n${message}`,
-        ].join(''));
-    }
+    getRosterMenuMessage = message => answers => ([
+        !answers.team ? '' : `\nСостав команды ${answers.team?.name}`,
+        !answers.player ? '' : `\nИгрок: ${this.formatPlayer(answers.player)}`,
+        `\n${message}`,
+    ].join(''))
 
     rosterMenuPrompt = [
         {
@@ -217,7 +140,7 @@ export default class PlayersManager {
             message: 'Выбор команды',
             searchText: 'ищем...',
             emptyText: 'Команда не найдена!',
-            source: this.teamsSource,
+            source: (answers, input = '') => this.choiceSources.teamsSource(answers, input),
             pageSize: 7,
             loop: false,
         },
@@ -349,24 +272,21 @@ export default class PlayersManager {
     ];
 
     process = () => this.#db.main.open()
-        .then(() => this.initSources())
+        .then(() => this.choiceSources.init())
         .then(() => this.menu(this.playersService))
         .then(() => this.#db.main.close())
 
     menu = () => inquirer.prompt(menuPrompt)
         .then(answers => {
-            console.log('menu');
-            console.log(answers);
             if (answers.operation === 'loadFromAirtable') {
                 return this.loadFromAirtable(answers.loadType, this.playersService);
             } else if (answers.operation === 'uploadToAirtable') {
                 return this.playersService.uploadLocalChanges()
-                    .then(() => this.initSources());
+                    .then(() => this.choiceSources.init());
             }
             return answers.operation;
         })
         .then(result => {
-            console.log(result);
             if (result === 'roster') {
                 return this.rosterMenu();
             }
@@ -404,7 +324,6 @@ export default class PlayersManager {
         newPlayer: !team ? {tournaments: []} : {team: team.id, tournaments: [], teamName: team.name},
     })
         .then(answers => {
-            console.log(answers);
             if (answers.addPlayer === 'quit') {
                 this.quit();
             }
@@ -434,12 +353,10 @@ export default class PlayersManager {
         ]))
         .then(([answers, player]) => Promise.all([{...answers, playerId: player.id},
             answers.addCurrentOutcome ? this.playersService.addCurrentOutcome(player.id) : null]))
-        .then(([answers]) => this.updateSource(answers.playerId));
+        .then(([answers]) => this.choiceSources.update(answers.playerId));
 
     playersListMenu = answers => inquirer.prompt(this.playersListPrompt, answers)
         .then(answers => {
-            console.log('playersListMenu');
-            console.log(answers);
             if (answers.player === 'back') {
                 this.toMainMenu();
             }
@@ -519,7 +436,7 @@ export default class PlayersManager {
     };
 
     applyPlayerAction = answers => this.selectPlayerAction(answers)
-        .then(() => this.getPlayersForSelection(p => !answers.team || p.team === answers.team.id))
+        .then(() => this.choiceSources.getPlayersForSelection(p => !answers.team || p.team === answers.team.id))
         .then(players => ({
             ...answers,
             player: players.find(player => player.id === answers.player?.id),
@@ -529,28 +446,28 @@ export default class PlayersManager {
         switch (answers.action) {
             case 'removeCurrentOutcome':
                 return this.playersService.removeCurrentOutcome(answers.player.id)
-                    .then(() => this.updateSource(answers.player.id))
+                    .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => this.toPlayerSelection(answers));
             case 'addCurrentOutcome':
                 return this.playersService.addCurrentOutcome(answers.player.id)
-                    .then(() => this.updateSource(answers.player.id))
+                    .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => this.toPlayerSelection(answers));
             case 'changeInstagram':
                 return this.playersService.editPlayer({...answers.player, instagram: answers.newInstagram})
-                    .then(() => this.updateSource(answers.player.id))
+                    .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => this.toPlayerSelection(answers));
             case 'rename':
                 return this.playersService.editPlayer({...answers.player, name: answers.newName})
-                    .then(() => this.updateSource(answers.player.id))
+                    .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => this.toPlayerSelection(answers));
             case 'removeFromRoster':
                 return this.playersService.editPlayer({...answers.player, team: undefined})
-                    .then(() => this.updateSource(answers.player.id))
+                    .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => this.toPlayerSelection(answers))
             case 'delete':
                 if (answers.deleteConfirmation) {
                     return this.playersService.deletePlayer(answers.player.id)
-                        .then(() => this.deleteSource(answers.player.id))
+                        .then(() => this.choiceSources.delete(answers.player.id))
                 } else {
                     return Promise.resolve({
                         ...answers,
@@ -566,14 +483,14 @@ export default class PlayersManager {
         switch (loadType) {
             case 'onlyChanges':
                 return playersService.loadOnlyChanges()
-                    .then(() => this.initSources());
+                    .then(() => this.choiceSources.init());
             case 'full':
                 return playersService.fullLoad()
-                    .then(() => this.initSources());
+                    .then(() => this.choiceSources.init());
             case 'activeTeams':
                 return playersService.loadActiveTeams()
                     .then(() => playersService.loadActiveTournamentOutcomes())
-                    .then(() => this.initSources());
+                    .then(() => this.choiceSources.init());
             default:
                 return Promise.resolve('continue');
         }

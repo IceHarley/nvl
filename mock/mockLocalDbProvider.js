@@ -8,7 +8,7 @@ export const provideDb = () => {
         players: db.sublevel('players', {valueEncoding: 'json'}),
         playersSource: db.sublevel('playersSource', {valueEncoding: 'json'}),
         teams: db.sublevel('teams', {valueEncoding: 'json'}),
-        teamsSource: db.sublevel('teamsSources', {valueEncoding: 'json'}),
+        teamsSource: db.sublevel('teamsSource', {valueEncoding: 'json'}),
         outcomes: db.sublevel('outcomes', {valueEncoding: 'json'}),
         modifications: db.sublevel('modifications', {valueEncoding: 'json'}),
     };
