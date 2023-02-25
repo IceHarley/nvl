@@ -1,9 +1,8 @@
-import cli from "clui";
 import {SpinnerPlayersService} from "./playersService.js";
 import inquirer from "inquirer";
 import inquirerPrompt from 'inquirer-autocomplete-prompt';
 import ChoiceSources from "./choiceSources.js";
-import {getRosterMenuMessage, quit} from "./playersCliUtils.js";
+import {getRosterMenuMessage, quit, rosterPlayerActions} from "./playersCliUtils.js";
 import AddPlayerMenu from "./addPlayerMenu.js";
 import PlayersListMenu from "./playersListMenu.js";
 import PlayerActions from "./playerActions.js";
@@ -69,51 +68,6 @@ export default class PlayersManager {
             {name: '====Выход', value: 'quit', short: 'Выход'},
         ]);
 
-    rosterPlayerActions = answers => {
-        const actions = [];
-        if (!answers.player) {
-            throw 'Игрок не выбран!'
-        }
-        if (!answers.player.currentOutcome) {
-            answers.player.team && actions.push({
-                name: new cli.Line().column('Отметить как заигранного за', 28).padding(2).column(answers.player.teamName, 40).contents(),
-                value: 'addCurrentOutcome',
-                short: 'Заиграть'
-            });
-            answers.player.team && actions.push({
-                name: new cli.Line().column('Исключить из состава команды', 28).padding(2).column(answers.player.teamName, 40).contents(),
-                value: 'removeFromRoster',
-                short: 'Исключить из команды'
-            })
-        } else {
-            actions.push({
-                name: 'Отметить как незаигранного',
-                value: 'removeCurrentOutcome',
-                short: 'Убрать заигранность'
-            })
-        }
-        actions.push({
-            name: new cli.Line().column('Редактировать имя/фамилию', 28).padding(2).column(answers.player.name, 40).contents(),
-            value: 'rename',
-            short: 'Переименовать'
-        })
-        actions.push({
-            name: new cli.Line().column('Редактировать instagram', 28).padding(2).column(answers.player.instagram || '', 40).contents(),
-            value: 'changeInstagram',
-            short: 'instagram'
-        })
-        actions.push({
-            name: 'Удалить игрока',
-            value: 'delete',
-            short: 'Удалить'
-        })
-        return actions.concat([
-            new inquirer.Separator(),
-            {name: '====Назад', value: 'back', short: 'Назад'},
-            {name: '====Выход', value: 'quit', short: 'Выход'},
-        ]);
-    }
-
     rosterMenuPrompt = [
         {
             type: 'autocomplete',
@@ -144,7 +98,7 @@ export default class PlayersManager {
             message: getRosterMenuMessage('Выбор действия'),
             when: answers => answers.player !== 'back' && answers.player !== 'quit'
                 && answers.team !== 'back' && answers.team !== 'quit' && answers.player !== 'addPlayer',
-            choices: this.rosterPlayerActions,
+            choices: rosterPlayerActions,
         },
         {
             type: 'input',
