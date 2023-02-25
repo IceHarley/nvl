@@ -6,6 +6,7 @@ import ChoiceSources from "./choiceSources.js";
 import {getRosterMenuMessage, quit} from "./playersCliUtils.js";
 import AddPlayerMenu from "./addPlayerMenu.js";
 import PlayersListMenu from "./playersListMenu.js";
+import PlayerActions from "./playerActions.js";
 
 inquirer.registerPrompt('autocomplete', inquirerPrompt);
 
@@ -200,7 +201,7 @@ export default class PlayersManager {
     rosterMenu = answers => inquirer.prompt(this.rosterMenuPrompt, answers)
         .then(answers => this.processSystemChoices(answers))
         .then(answers => this.applyTeamAction(answers))
-        .then(answers => this.applyPlayerAction(answers))
+        .then(answers => new PlayerActions(this.playersService, this.choiceSources, () => this.toPlayerSelection(answers)).applyPlayerAction(answers))
         .then(answers => this.rosterMenu({
             team: answers.team,
             player: answers.player
@@ -253,50 +254,6 @@ export default class PlayersManager {
                     throw () => this.rosterMenu({team: answers.team})
                 })
                     .then(() => this.toPlayerSelection(answers))
-            default:
-                return Promise.resolve(answers);
-        }
-    };
-
-    applyPlayerAction = answers => this.selectPlayerAction(answers)
-        .then(() => this.choiceSources.getPlayersForSelection(p => !answers.team || p.team === answers.team.id))
-        .then(players => ({
-            ...answers,
-            player: players.find(player => player.id === answers.player?.id),
-        }));
-
-    selectPlayerAction = answers => {
-        switch (answers.action) {
-            case 'removeCurrentOutcome':
-                return this.playersService.removeCurrentOutcome(answers.player.id)
-                    .then(() => this.choiceSources.update(answers.player.id))
-                    .then(() => this.toPlayerSelection(answers));
-            case 'addCurrentOutcome':
-                return this.playersService.addCurrentOutcome(answers.player.id)
-                    .then(() => this.choiceSources.update(answers.player.id))
-                    .then(() => this.toPlayerSelection(answers));
-            case 'changeInstagram':
-                return this.playersService.editPlayer({...answers.player, instagram: answers.newInstagram})
-                    .then(() => this.choiceSources.update(answers.player.id))
-                    .then(() => this.toPlayerSelection(answers));
-            case 'rename':
-                return this.playersService.editPlayer({...answers.player, name: answers.newName})
-                    .then(() => this.choiceSources.update(answers.player.id))
-                    .then(() => this.toPlayerSelection(answers));
-            case 'removeFromRoster':
-                return this.playersService.editPlayer({...answers.player, team: undefined})
-                    .then(() => this.choiceSources.update(answers.player.id))
-                    .then(() => this.toPlayerSelection(answers))
-            case 'delete':
-                if (answers.deleteConfirmation) {
-                    return this.playersService.deletePlayer(answers.player.id)
-                        .then(() => this.choiceSources.delete(answers.player.id))
-                } else {
-                    return Promise.resolve({
-                        ...answers,
-                        action: undefined
-                    })
-                }
             default:
                 return Promise.resolve(answers);
         }
