@@ -20,7 +20,7 @@ export default class PlayersRepository {
         .map(chunk => asyncAirtable.bulkCreate(TABLE, chunk.map(record => ({
             "Имя": record.name,
             "Instagram": record.instagram,
-            "Команда": [record.team],
+            "Команда": record.team ? [record.team] : [],
             "Турниры": record.tournaments,
         })))));
 

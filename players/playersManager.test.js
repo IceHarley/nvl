@@ -151,6 +151,24 @@ test.serial('меню Состав команды: Выбор действия �
     t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
 });
 
+test.serial.only('меню Состав команды: Выбор действия с игроком - назад и еще раз назад - возврат в главное меню', async t => {
+    prompt.withArgs(menuPrompt)
+        .onFirstCall().resolves({operation: 'roster'})
+        .onSecondCall().resolves({operation: 'quit'})
+        .withArgs(rosterMenu.rosterMenuPrompt)
+        .onFirstCall().resolves({
+        team: {id: 'teamId'},
+        player: {id: 'playerId', name: 'playerName', team: 'teamId', tournaments: ['current_tournament']},
+        action: 'removeCurrentOutcome'
+    })
+        .onSecondCall().resolves({team: 'back'});
+
+    await manager.process();
+
+    t.true(rosterMenu.open.calledTwice);
+    t.deepEqual(rosterMenu.open.secondCall.args[0], {team: {id: 'teamId'}});
+});
+
 
 test.serial('меню Состав команды: Выбор игрока - Добавить игрока - открытие меню добавления игрока - выход', async t => {
     prompt.withArgs(menuPrompt)

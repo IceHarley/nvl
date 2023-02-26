@@ -29,7 +29,13 @@ export default class AddPlayerMenu {
             source: this.playersSourceWithNewPlayerChoice,
             pageSize: 6,
             loop: false,
-            when: answers => !answers.createPlayerOnly
+            when: answers => !answers.createPlayerOnly,
+            validate: (input, answers) => {
+                if (input.value.outcomeTeam && input.value.outcomeTeam !== answers.team.name) {
+                    return 'Игрок уже заигран за другую команду!';
+                }
+                return true;
+            }
         },
         {
             type: 'autocomplete',
@@ -41,14 +47,41 @@ export default class AddPlayerMenu {
                 {name: '====Назад', value: 'back', short: 'Назад'},
                 {name: '====Выход', value: 'quit', short: 'Выход'},
             ],
-            when: answers => answers.createPlayerOnly
-        //    TODO filter - не давать вводить пустое имя
+            when: answers => answers.createPlayerOnly,
+            validate: input => {
+                if (!input || !input.value) {
+                    return "Имя не задано";
+                }
+                if (input.value.length < 4) {
+                    return "Имя слишком короткое";
+                }
+                if (!input.value.includes(' ')) {
+                    return "Введите имя и фамилию через пробел";
+                }
+                return true;
+            },
         },
         {
             type: 'input',
             name: 'newPlayer.instagram',
             message: 'Instagram',
             when: answers => typeof answers.addPlayer === 'string' && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
+        },
+        {
+            type: 'list',
+            name: 'confirmSwitchTeam',
+            message: answers => `Игрок уже числится в составе команды ${answers.addPlayer.teamName}. Точно перевести в команду ${answers.newPlayer.teamName}`,
+            choices: answers => [
+                {
+                    name: 'Да',
+                    value: true,
+                    short: `Перевод из ${answers.addPlayer.teamName} в ${answers.newPlayer.teamName}`
+                },
+                {name: 'Нет', value: 'back', short: 'Отмена добавления игрока'},
+            ],
+            when: answers => typeof answers.addPlayer !== 'string' && answers.addPlayer?.teamName
+                && answers.addPlayer?.teamName !== answers.newPlayer.teamName
+                && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
         },
         {
             type: 'list',
@@ -59,6 +92,7 @@ export default class AddPlayerMenu {
                 {name: 'Нет', value: false, short: 'Не заигран'},
             ],
             when: answers => answers.newPlayer?.team && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
+                && !answers.addPlayer?.outcomeTeam && answers.confirmSwitchTeam !== 'back'
         }
     ];
 
@@ -71,7 +105,7 @@ export default class AddPlayerMenu {
             if (answers.addPlayer === 'quit') {
                 quit();
             }
-            if (answers.addPlayer === 'back') {
+            if (answers.addPlayer === 'back' || answers.confirmSwitchTeam === 'back') {
                 toPrevMenu();
             }
             return answers;
@@ -91,7 +125,8 @@ export default class AddPlayerMenu {
             answers.addPlayer
                 ? this.playersService.editPlayer({
                     ...answers.addPlayer,
-                    team: answers.team.id
+                    team: answers.team.id,
+                    tournaments: answers.addPlayer.tournaments || [],
                 }).then(() => answers.addPlayer)
                 : this.playersService.createPlayer(answers.newPlayer)
         ]))

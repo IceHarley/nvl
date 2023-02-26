@@ -17,10 +17,10 @@ export default class RosterMenu {
         this.choiceSources.playersSource(p => p.team === answers.team.id)(answers, input)
             .then(players => this.addSystemChoices(players));
 
-    addSystemChoices = choices => ([
-        {name: '====Добавить игрока', value: 'addPlayer', short: 'Добавить игрока в команду'}])
-        .concat(choices).concat([
+    addSystemChoices = choices =>
+        choices.concat([
             new inquirer.Separator(),
+            {name: '====Добавить игрока', value: 'addPlayer', short: 'Добавить игрока в команду'},
             {name: '====Назад', value: 'back', short: 'Назад'},
             {name: '====Выход', value: 'quit', short: 'Выход'},
         ]);
@@ -84,7 +84,7 @@ export default class RosterMenu {
     open = (answers, toPrevMenu) => inquirer.prompt(this.rosterMenuPrompt, answers)
         .then(answers => this.processSystemChoices(answers, toPrevMenu))
         .then(answers => this.applyTeamAction(answers, toPrevMenu))
-        .then(answers => new PlayerActions(this.playersService, this.choiceSources, () => this.toPlayerSelection(answers)).applyPlayerAction(answers))
+        .then(answers => new PlayerActions(this.playersService, this.choiceSources, () => this.toPlayerSelection(answers, toPrevMenu)).applyPlayerAction(answers))
         .then(answers => this.open({
             team: answers.team,
             player: answers.player
