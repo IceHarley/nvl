@@ -97,6 +97,10 @@ export default class PlayersListMenu {
         });
 
     toPlayersListMenu = toPrevMenu => () => {
-        throw () => this.open({}, toPrevMenu);
+        this._toPlayersListMenu(toPrevMenu);
     }
+
+    _toPlayersListMenu = toPrevMenu => {
+        throw () => this.open({}, toPrevMenu);
+    };
 }
