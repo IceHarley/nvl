@@ -2,7 +2,6 @@ import {SpinnerPlayersService} from "./playersService.js";
 import inquirer from "inquirer";
 import inquirerPrompt from 'inquirer-autocomplete-prompt';
 import ChoiceSources from "./choiceSources.js";
-import {quit} from "./playersCliUtils.js";
 import AddPlayerMenu from "./addPlayerMenu.js";
 import PlayersListMenu from "./playersListMenu.js";
 import RosterMenu from "./rosterMenu.js";

@@ -13,9 +13,11 @@ test.beforeEach(() => {
     service = manager.playersService;
     sources = manager.choiceSources;
     //TODO тесты вызова меню
-    // playersListMenu = manager.playersListMenu;
-    // rosterMenu = manager.rosterMenu;
+    playersListMenu = manager.playersListMenu;
+    rosterMenu = manager.rosterMenu;
     sinon.replace(sources, 'init', sinon.fake.resolves());
+    sinon.replace(rosterMenu, 'open', sinon.fake.resolves('quit'));
+    sinon.replace(playersListMenu, 'open', sinon.fake.resolves('quit'));
 });
 
 test.afterEach.always(() => {
@@ -91,4 +93,26 @@ test.serial('Выгрузка изменений в Airtable', async t => {
 
     t.true(service.uploadLocalChanges.calledOnce);
     t.true(sources.init.calledTwice);
+});
+
+test.serial('Меню состава команды', async t => {
+    prompt.onFirstCall().resolves({operation: 'roster'})
+        .onSecondCall().resolves({operation: 'quit'});
+
+    await manager.process();
+
+    t.true(rosterMenu.open.calledOnce);
+    t.is(rosterMenu.open.getCall(0).args[0], undefined);
+    t.is(rosterMenu.open.getCall(0).args[1], manager.toMainMenu);
+});
+
+test.serial('Меню списка игроков', async t => {
+    prompt.onFirstCall().resolves({operation: 'playersList'})
+        .onSecondCall().resolves({operation: 'quit'});
+
+    await manager.process();
+
+    t.true(playersListMenu.open.calledOnce);
+    t.is(playersListMenu.open.getCall(0).args[0], undefined);
+    t.is(playersListMenu.open.getCall(0).args[1], manager.toMainMenu);
 });
