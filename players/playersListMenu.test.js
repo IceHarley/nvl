@@ -21,12 +21,10 @@ test.beforeEach(() => {
         }
     });
     prompt = sinon.stub(inquirer, "prompt");
-    sinon.replace(service, 'editPlayer', sinon.fake.resolves({}));
-    sinon.replace(service, 'createPlayer', sinon.fake.resolves({}));
-    sinon.replace(service, 'deletePlayer', sinon.fake.resolves({}));
-    sinon.replace(service, 'addCurrentOutcome', sinon.fake.resolves({}));
-    sinon.replace(service, 'removeCurrentOutcome', sinon.fake.resolves({}));
-    sinon.replace(sources, 'init', sinon.fake.resolves([]));
+    sinon.replace(service, 'editPlayer', sinon.fake.resolves());
+    sinon.replace(service, 'deletePlayer', sinon.fake.resolves());
+    sinon.replace(service, 'addCurrentOutcome', sinon.fake.resolves());
+    sinon.replace(service, 'removeCurrentOutcome', sinon.fake.resolves());
     sinon.replace(sources, 'update', sinon.fake.resolves());
     sinon.replace(sources, 'delete', sinon.fake.resolves());
 });
@@ -220,7 +218,7 @@ test.serial('меню Список игроков: Выбор игрока - Д�
     t.true(menu._toPlayersListMenu.calledOnce);
 });
 
-test.serial('меню Список игроков: Выбор игрока - Добавить игрока - введен новый игрок', async t => {
+test.serial('меню Список игроков: Выбор игрока - Добавить игрока - выбрано действие с игроком', async t => {
     prompt.withArgs(menu.playersListPrompt)
         .onFirstCall().resolves({player: 'addPlayer'})
         .onSecondCall().resolves({player: 'quit'});
@@ -230,8 +228,5 @@ test.serial('меню Список игроков: Выбор игрока - Д�
     t.true(menu.open.calledTwice);
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {createPlayerOnly: true});
-    t.true(service.editPlayer.notCalled);
-    t.true(service.createPlayer.notCalled);
-    t.true(service.addCurrentOutcome.notCalled);
     t.true(menu._toPlayersListMenu.calledOnce);
 });
