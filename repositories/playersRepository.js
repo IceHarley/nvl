@@ -30,7 +30,7 @@ export default class PlayersRepository {
             fields: {
                 "Имя": record.name,
                 "Instagram": record.instagram,
-                "Команда": [record.team],
+                "Команда": record.team ? [record.team] : [],
                 "Турниры": record.tournaments,
             }
         })))));

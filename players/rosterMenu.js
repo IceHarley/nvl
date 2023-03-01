@@ -17,10 +17,10 @@ export default class RosterMenu {
         this.choiceSources.playersSource(p => p.team === answers.team.id)(answers, input)
             .then(players => this.addSystemChoices(players));
 
-    addSystemChoices = choices =>
-        choices.concat([
+    addSystemChoices = choices => ([
+        {name: '====Добавить игрока', value: 'addPlayer', short: 'Добавить игрока в команду'}])
+        .concat(choices).concat([
             new inquirer.Separator(),
-            {name: '====Добавить игрока', value: 'addPlayer', short: 'Добавить игрока в команду'},
             {name: '====Назад', value: 'back', short: 'Назад'},
             {name: '====Выход', value: 'quit', short: 'Выход'},
         ]);
