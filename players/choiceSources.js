@@ -57,6 +57,8 @@ export default class ChoiceSources {
             outcomeTeam: teams.find(team => player.tournaments?.includes(team.outcome))?.name,
         }));
 
+    updateList = playerIds => Promise.all(playerIds.map(id => this.update(id)));
+
     delete = playerId => this.#db.playersSource.del(playerId);
 
     teamsSource = (answers, input = '') => this.#db.teamsSource.iterator().all()

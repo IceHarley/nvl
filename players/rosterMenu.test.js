@@ -22,8 +22,10 @@ test.beforeEach(() => {
     sinon.replace(service, 'editPlayer', sinon.fake.resolves());
     sinon.replace(service, 'deletePlayer', sinon.fake.resolves());
     sinon.replace(service, 'addCurrentOutcome', sinon.fake.resolves());
+    sinon.replace(service, 'addCurrentOutcomes', sinon.fake.resolves());
     sinon.replace(service, 'removeCurrentOutcome', sinon.fake.resolves());
     sinon.replace(sources, 'update', sinon.fake.resolves());
+    sinon.replace(sources, 'updateList', sinon.fake.resolves());
     sinon.replace(sources, 'delete', sinon.fake.resolves());
     sinon.replace(menu, 'open', sinon.fake(menu.open));
 });
@@ -259,4 +261,34 @@ test.serial('меню Состав команды: Выбор действия �
     t.deepEqual(menu.open.secondCall.args[0], {team: {id: 'teamId'}, player: undefined});
     t.true(service.deletePlayer.notCalled);
     t.true(sources.delete.notCalled);
+});
+
+test.serial('меню Состав команды: Выбор игрока - Отметить заигранных - никто не выбран', async t => {
+    prompt.withArgs(menu.rosterMenuPrompt)
+        .onFirstCall().resolves({team: {id: 'teamId'}, player: 'multipleOutcomes', multipleOutcomes: []})
+        .onSecondCall().resolves({team: 'quit'});
+
+    await menu.open({}, toPrevMenu);
+
+    t.true(menu.open.calledTwice);
+    t.deepEqual(menu.open.secondCall.args, [{team: {id: 'teamId'}}, toPrevMenu]);
+});
+
+test.serial('меню Состав команды: Выбор игрока - Отметить заигранных - выбраны игроки', async t => {
+    prompt.withArgs(menu.rosterMenuPrompt)
+        .onFirstCall().resolves({team: {id: 'teamId'}, player: 'multipleOutcomes', multipleOutcomes: [
+            {id: 'id1', name: 'Player1'},
+            {id: 'id2', name: 'Player2'},
+            {id: 'id3', name: 'Player3'},
+        ]})
+        .onSecondCall().resolves({team: 'quit'});
+
+    await menu.open({}, toPrevMenu);
+
+    t.true(menu.open.calledTwice);
+    t.deepEqual(menu.open.secondCall.args, [{team: {id: 'teamId'}}, toPrevMenu]);
+    t.true(service.addCurrentOutcomes.calledOnce);
+    t.deepEqual(service.addCurrentOutcomes.firstCall.args[0], ['id1', 'id2', 'id3']);
+    t.true(sources.updateList.calledOnce);
+    t.deepEqual(sources.updateList.firstCall.args[0], ['id1', 'id2', 'id3']);
 });

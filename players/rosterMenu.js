@@ -17,10 +17,14 @@ export default class RosterMenu {
         this.choiceSources.playersSource(p => p.team === answers.team.id)(answers, input)
             .then(players => this.addSystemChoices(players));
 
+    playersSourceNoCurrentOutcome = answers =>
+        this.choiceSources.playersSource(p => p.team === answers.team.id && !p.currentOutcome)(answers, '');
+
     addSystemChoices = choices => ([
         {name: '====Добавить игрока', value: 'addPlayer', short: 'Добавить игрока в команду'}])
         .concat(choices).concat([
             new inquirer.Separator(),
+            {name: '====Отметить заигранных', value: 'multipleOutcomes', short: 'Отметить заигранных'},
             {name: '====Назад', value: 'back', short: 'Назад'},
             {name: '====Выход', value: 'quit', short: 'Выход'},
         ]);
@@ -55,8 +59,10 @@ export default class RosterMenu {
             name: 'action',
             message: getRosterMenuMessage('Выбор действия'),
             when: answers => answers.player !== 'back' && answers.player !== 'quit'
-                && answers.team !== 'back' && answers.team !== 'quit' && answers.player !== 'addPlayer',
+                && answers.team !== 'back' && answers.team !== 'quit'
+                && answers.player !== 'addPlayer' && answers.player !== 'multipleOutcomes',
             choices: rosterPlayerActions,
+            loop: false,
         },
         {
             type: 'input',
@@ -79,6 +85,14 @@ export default class RosterMenu {
             default: true,
             when: answers => answers.action === 'delete',
         },
+        {
+            type: 'checkbox',
+            name: 'multipleOutcomes',
+            message: getRosterMenuMessage('Пометка заигранных'),
+            choices: this.playersSourceNoCurrentOutcome,
+            loop: false,
+            when: answers => answers.player === 'multipleOutcomes',
+        }
     ];
 
     open = (answers, toPrevMenu) => inquirer.prompt(this.rosterMenuPrompt, answers)
@@ -120,7 +134,13 @@ export default class RosterMenu {
                 return this.addPlayerMenu.open(answers, () => {
                     throw () => this.open({team: answers.team}, toPrevMenu)
                 })
-                    .then(() => this.toPlayerSelection(answers, toPrevMenu))
+                    .then(() => this.toPlayerSelection(answers, toPrevMenu));
+            case 'multipleOutcomes': {
+                const playerIds = answers.multipleOutcomes.map(player => player.id);
+                return this.playersService.addCurrentOutcomes(playerIds)
+                    .then(() => this.choiceSources.updateList(playerIds))
+                    .then(() => this.toPlayerSelection(answers, toPrevMenu));
+            }
             default:
                 return Promise.resolve(answers);
         }

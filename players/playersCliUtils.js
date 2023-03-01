@@ -3,7 +3,7 @@ import inquirer from "inquirer";
 
 export const getRosterMenuMessage = message => answers => ([
     !answers.team ? '' : `\nСостав команды ${answers.team?.name}`,
-    !answers.player ? '' : `\nИгрок: ${formatPlayer(answers.player)}`,
+    !answers.player || typeof answers.player === 'string' ? '' : `\nИгрок: ${formatPlayer(answers.player)}`,
     `\n${message}`,
 ].join(''))
 

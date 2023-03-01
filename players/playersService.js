@@ -178,6 +178,9 @@ export default class PlayersService {
             });
         });
 
+    addCurrentOutcomes = playerIds => Promise.all(playerIds
+        .map(id => this.addCurrentOutcome(id)));
+
     logAndReturn = (text, obj) => {
         !this.#silent && console.log(`${text}: ${obj}`);
         return obj;
