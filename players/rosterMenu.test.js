@@ -7,7 +7,7 @@ import PlayersService from "./playersService.js";
 import ChoiceSources from "./choiceSources.js";
 
 const db = provideDb();
-let prompt, service, sources, menu, addPlayerMenu, toPrevMenu;
+let prompt, service, sources, menu, addPlayerMenu, toPrevMenu, applyPlayerActionFake;
 
 test.beforeEach(() => {
     prompt = sinon.stub(inquirer, "prompt");
@@ -28,6 +28,8 @@ test.beforeEach(() => {
     sinon.replace(sources, 'updateList', sinon.fake.resolves());
     sinon.replace(sources, 'delete', sinon.fake.resolves());
     sinon.replace(menu, 'open', sinon.fake(menu.open));
+    applyPlayerActionFake = sinon.fake(menu.playerActions.applyPlayerAction);
+    sinon.replace(menu.playerActions, 'applyPlayerAction', applyPlayerActionFake);
 });
 
 test.afterEach.always(() => {
@@ -125,7 +127,6 @@ test.serial('меню Состав команды: Выбор игрока - Д�
     t.deepEqual(menu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(addPlayerMenu.open.calledOnce);
     t.deepEqual(addPlayerMenu.open.firstCall.args[0], {player: 'addPlayer', team: {id: 'teamId'}});
-    //TODO проверить вызов PlayerActions.applyPlayerAction с параметрами
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - отметить как незаигранного', async t => {
@@ -145,6 +146,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.is(service.removeCurrentOutcome.firstCall.args[0], 'playerId');
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'removeCurrentOutcome'});
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - отметить как заигранного', async t => {
@@ -164,6 +167,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.is(service.addCurrentOutcome.firstCall.args[0], 'playerId');
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'addCurrentOutcome'});
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - отредактировать инстаграм', async t => {
@@ -184,6 +189,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', instagram: 'newInstagram'});
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'changeInstagram'});
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - отредактировать имя', async t => {
@@ -204,6 +211,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', name: 'newName'});
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'rename'});
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - исключить из состава', async t => {
@@ -223,6 +232,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', team: undefined});
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'removeFromRoster'});
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - удалить игрока', async t => {
@@ -243,6 +254,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.is(service.deletePlayer.firstCall.args[0], 'playerId');
     t.true(sources.delete.calledOnce);
     t.is(sources.delete.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'delete'});
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - удалить игрока, отказ при подтверждении', async t => {
@@ -261,6 +274,8 @@ test.serial('меню Состав команды: Выбор действия �
     t.deepEqual(menu.open.secondCall.args[0], {team: {id: 'teamId'}, player: undefined});
     t.true(service.deletePlayer.notCalled);
     t.true(sources.delete.notCalled);
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'delete'});
 });
 
 test.serial('меню Состав команды: Выбор игрока - Отметить заигранных - никто не выбран', async t => {

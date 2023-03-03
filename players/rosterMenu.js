@@ -6,11 +6,13 @@ export default class RosterMenu {
     choiceSources
     playersService
     addPlayerMenu
+    playerActions
 
     constructor(playersService, choiceSources, addPlayerMenu) {
         this.playersService = playersService;
         this.choiceSources = choiceSources;
         this.addPlayerMenu = addPlayerMenu;
+        this.playerActions = new PlayerActions(this.playersService, this.choiceSources);
     }
 
     playersSourceWithSystemChoices = (answers, input = '') =>
@@ -98,7 +100,7 @@ export default class RosterMenu {
     open = (answers, toPrevMenu) => inquirer.prompt(this.rosterMenuPrompt, answers)
         .then(answers => this.processSystemChoices(answers, toPrevMenu))
         .then(answers => this.applyTeamAction(answers, toPrevMenu))
-        .then(answers => new PlayerActions(this.playersService, this.choiceSources, () => this.toPlayerSelection(answers, toPrevMenu)).applyPlayerAction(answers))
+        .then(answers => this.playerActions.applyPlayerAction(answers, () => this.toPlayerSelection(answers, toPrevMenu)))
         .then(answers => this.open({
             team: answers.team,
             player: answers.player

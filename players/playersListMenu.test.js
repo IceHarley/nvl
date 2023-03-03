@@ -7,7 +7,7 @@ import {provideDb} from "../mock/mockLocalDbProvider.js";
 import ChoiceSources from "./choiceSources.js";
 
 const db = provideDb();
-let toPrevMenu, prompt, service, sources, addPlayerMenu, menu;
+let toPrevMenu, prompt, service, sources, addPlayerMenu, menu, applyPlayerActionFake;
 
 test.beforeEach(() => {
     service = new PlayersService(db, {});
@@ -27,6 +27,8 @@ test.beforeEach(() => {
     sinon.replace(service, 'removeCurrentOutcome', sinon.fake.resolves());
     sinon.replace(sources, 'update', sinon.fake.resolves());
     sinon.replace(sources, 'delete', sinon.fake.resolves());
+    applyPlayerActionFake = sinon.fake(menu.playerActions.applyPlayerAction);
+    sinon.replace(menu.playerActions, 'applyPlayerAction', applyPlayerActionFake);
 });
 
 test.afterEach.always(() => {
@@ -87,6 +89,8 @@ test.serial('меню Список игроков: Выбор игрока - р�
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', name: 'newName'});
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'rename'});
 });
 
 test.serial('меню Список игроков: Выбор игрока - редактирование Instagram', async t => {
@@ -105,6 +109,8 @@ test.serial('меню Список игроков: Выбор игрока - р�
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', instagram: 'newInstagram'});
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'changeInstagram'});
 });
 
 test.serial('меню Список игроков: Выбор игрока - отметить как заигранного', async t => {
@@ -122,6 +128,8 @@ test.serial('меню Список игроков: Выбор игрока - о�
     t.is(service.addCurrentOutcome.firstCall.args[0], 'playerId');
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'addCurrentOutcome'});
 });
 
 test.serial('меню Список игроков: Выбор игрока - отметить как незаигранного', async t => {
@@ -139,6 +147,8 @@ test.serial('меню Список игроков: Выбор игрока - о�
     t.is(service.removeCurrentOutcome.firstCall.args[0], 'playerId');
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'removeCurrentOutcome'});
 });
 
 test.serial('меню Список игроков: Выбор игрока - исключить из состава', async t => {
@@ -156,6 +166,8 @@ test.serial('меню Список игроков: Выбор игрока - и�
     t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', name: 'playerName', team: undefined});
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'removeFromRoster'});
 });
 
 test.serial('меню Список игроков: Выбор игрока - удалить', async t => {
@@ -174,6 +186,8 @@ test.serial('меню Список игроков: Выбор игрока - у�
     t.is(service.deletePlayer.firstCall.args[0], 'playerId');
     t.true(sources.delete.calledOnce);
     t.is(sources.delete.firstCall.args[0], 'playerId');
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'delete'});
 });
 
 test.serial('меню Список игроков: Выбор игрока - удалить без подтверждения', async t => {
@@ -190,6 +204,8 @@ test.serial('меню Список игроков: Выбор игрока - у�
     t.true(menu.open.calledTwice);
     t.true(service.deletePlayer.notCalled);
     t.true(sources.delete.notCalled);
+    t.true(applyPlayerActionFake.calledOnce);
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'delete'});
 });
 
 test.serial('меню Список игроков: Выбор игрока - Добавить игрока - открытие меню добавления игрока - выход', async t => {

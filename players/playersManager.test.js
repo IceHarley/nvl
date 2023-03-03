@@ -12,7 +12,6 @@ test.beforeEach(() => {
     prompt = sinon.stub(inquirer, "prompt");
     service = manager.playersService;
     sources = manager.choiceSources;
-    //TODO тесты вызова меню
     playersListMenu = manager.playersListMenu;
     rosterMenu = manager.rosterMenu;
     sinon.replace(sources, 'init', sinon.fake.resolves());

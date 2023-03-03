@@ -6,11 +6,13 @@ export default class PlayersListMenu {
     choiceSources
     playersService
     addPlayerMenu
+    playerActions
 
     constructor(playersService, choiceSources, addPlayerMenu) {
         this.playersService = playersService;
         this.choiceSources = choiceSources;
         this.addPlayerMenu = addPlayerMenu;
+        this.playerActions = new PlayerActions(this.playersService, this.choiceSources);
     }
 
     playersSourceWithSystemChoices = (answers, input = '') =>
@@ -84,7 +86,7 @@ export default class PlayersListMenu {
             }
             return answers;
         })
-        .then(answers => new PlayerActions(this.playersService, this.choiceSources, this.toPlayersListMenu).applyPlayerAction(answers))
+        .then(answers => this.playerActions.applyPlayerAction(answers, this.toPlayersListMenu))
         .then(() => this.open(undefined, toPrevMenu))
         .catch(command => {
             if (command === 'quit') {
