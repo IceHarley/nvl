@@ -10,6 +10,11 @@ export default class TournamentOutcomesRepository {
         filterByFormula: `{Идентификатор турнира}='${tournamentId}'`
     }).then(records => records.map(record => minify(record)));
 
+    getByActiveTournament = async () => asyncAirtable.select(TABLE, {
+        view: VIEW,
+        filterByFormula: '{Турнир в процессе}=1'
+    }).then(records => records.map(record => minify(record)));
+
     updateRatingList = async records => Promise.all(chunkArray(records)
         .map(chunk => asyncAirtable.bulkUpdate(TABLE, chunk.map(record => ({
             id: record.id,

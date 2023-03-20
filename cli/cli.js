@@ -6,6 +6,7 @@ import TournamentOutcomesRepository from "../repositories/tournamentOutcomesRepo
 import {withSpinner} from "../common/utils.js";
 import TeamsRepository from "../repositories/teamsRepository.js";
 import {FORMAT_CSV, FORMAT_EXCEL} from "../common/constants.js";
+import PlayersRepository from "../repositories/playersRepository.js";
 
 const paramsRepository = new DistributionParamsRepository();
 const resultsRepository = new ResultsRepository();
@@ -13,6 +14,7 @@ const distributionRepository = new DistributionRepository();
 const tournamentsRepository = new TournamentsRepository();
 const tournamentOutcomesRepository = new TournamentOutcomesRepository();
 const teamsRepository = new TeamsRepository();
+const playersRepository = new PlayersRepository();
 
 const paramsChoices = state => () => paramsRepository.getByState(state)
     .then(params => params.map(params => ({
@@ -38,6 +40,7 @@ export const questions = [
             {name: 'Удалить распределение команд', value: 'removeDistribution', short: 'Удаление распределения'},
             {name: 'Составить рейтинговую таблицу', value: 'rating', short: 'Рейтинговая таблица'},
             {name: 'Экспорт групп для расписания', value: 'groupsExport', short: 'Экспорт групп'},
+            {name: 'Работа с базой игроков', value: 'players', short: 'База игроков'},
         ]
     },
     {
@@ -98,7 +101,7 @@ export const questions = [
             {name: 'csv - для импорта в Illustrator', value: FORMAT_CSV, short: 'csv'},
             {name: 'Excel - для копирования в InDesign', value: FORMAT_EXCEL, short: 'Excel'},
         ]
-    }
+    },
 ];
 
 export const repositories = {
@@ -108,4 +111,5 @@ export const repositories = {
     tournaments: tournamentsRepository,
     tournamentOutcomes: tournamentOutcomesRepository,
     teams: teamsRepository,
+    players: playersRepository,
 };

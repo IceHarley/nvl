@@ -71,3 +71,37 @@ export const withSpinner = (func, message = "Загрузка данных...") 
 export const format = obj => JSON.stringify(obj, null, 2);
 
 export const isRegularTour = tour => Number.isInteger(parseFloat(tour));
+
+export const resolvePromisesSeq = async (tasks) => {
+    const results = [];
+    for (const task of tasks) {
+        results.push(await task);
+    }
+    return results;
+};
+
+//Только описанные в классе, без родительских, конструкторов, геттеров, сеттеров
+export const getMethods = obj => {
+    let properties = new Set()
+    Object.getOwnPropertyNames(obj).map(item => properties.add(item))
+    return [...properties.keys()].filter(item => typeof obj[item] === 'function')
+}
+export const verifyLength = (array, length, errorMore = 'Размер массива более ожидаемого', errorLess = 'Размер массива менее ожидаемого') => {
+    if (array.length > length) {
+        throw new Error(errorMore);
+    }
+    if (array.length < length) {
+        throw new Error(errorLess);
+    }
+    return array;
+};
+
+export const toRecords = entries => entries.map(([id, entry]) => ({id, ...entry}));
+
+export const toOperation = record => ({
+    type: 'put',
+    key: record.id,
+    value: {
+        ...record
+    }
+});

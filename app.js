@@ -10,6 +10,8 @@ import {SpinnerDataLoader} from "./distribution/dataLoader.js";
 import ExcelSaver from "./excel/excelSaver.js";
 import {GENERATED_PATH} from "./config.js";
 import {exportGroups} from "./common/groupsExporter.js";
+import PlayersManager from "./players/playersManager.js";
+import {provideDb} from "./players/localDbProvider.js";
 
 const exportToExcel = (answers, ratingData) => {
     if (answers.rating.exportToExcel) {
@@ -40,6 +42,10 @@ inquirer.prompt(questions)
                 .then(ratingData => exportToExcel(answers, ratingData))
         } else if (answers.action === 'groupsExport') {
             exportGroups(answers.groupsExport);
+        } else if (answers.action === 'players') {
+            new PlayersManager(repositories, provideDb()).process();
+        } else {
+            console.log(answers);
         }
     })
     .catch(error => {
