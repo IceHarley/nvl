@@ -7,25 +7,10 @@ import {SpinnerRatingDataLoader} from "./rating/ratingDataLoader.js";
 import RatingMaker from "./rating/ratingMaker.js";
 import {ratingDataSaverBuilder} from "./rating/ratingSaver.js";
 import {SpinnerDataLoader} from "./distribution/dataLoader.js";
-import ExcelSaver from "./excel/excelSaver.js";
-import {GENERATED_PATH} from "./config.js";
 import {exportGroups} from "./common/groupsExporter.js";
 import PlayersManager from "./players/playersManager.js";
 import {provideDb} from "./players/localDbProvider.js";
-
-const exportToExcel = (answers, ratingData) => {
-    if (answers.rating.exportToExcel) {
-        repositories.tournaments.getById(answers.rating.tournamentId)
-            .then(tournament => Promise.all([
-                repositories.distribution.getByTournamentAndTour(answers.rating.tournamentId, tournament.lastDistributedTour),
-                tournament,
-            ]))
-            .then(([distributions, tournament]) => new ExcelSaver().save({
-                tournamentName: tournament.name,
-                fileName: GENERATED_PATH.concat(`Рейтинг ${tournament.name} generated.xlsx`)
-            }, ratingData, distributions));
-    }
-};
+import {exportRating} from "./rating/ratingExporter.js";
 
 inquirer.prompt(questions)
     .then(answers => {
@@ -39,7 +24,7 @@ inquirer.prompt(questions)
             const dataLoader = new SpinnerRatingDataLoader(repositories);
             const dataSaver = ratingDataSaverBuilder(answers.rating.saveResults, repositories);
             new RatingMaker(dataLoader, dataSaver).makeRating(answers.rating.tournamentId)
-                .then(ratingData => exportToExcel(answers, ratingData))
+                .then(ratingData => exportRating(answers, ratingData))
         } else if (answers.action === 'groupsExport') {
             exportGroups(answers.groupsExport);
         } else if (answers.action === 'players') {

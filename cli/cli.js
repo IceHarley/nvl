@@ -79,11 +79,15 @@ export const questions = [
         default: true
     },
     {
-        type: 'confirm',
-        name: 'rating.exportToExcel',
-        message: 'Выгрузить рейтинговую таблицу в файл Excel',
+        type: 'list',
+        name: 'rating.exportFormat',
+        message: 'Формат экспорта рейтинговой таблицы',
         when: answers => answers.action === 'rating',
-        default: true
+        choices: () => [
+            {name: 'csv - для импорта в Illustrator', value: FORMAT_CSV, short: 'csv'},
+            {name: 'Excel', value: FORMAT_EXCEL, short: 'Excel'},
+            {name: 'Не выгружать', value: null, short: 'Не выгружать'},
+        ]
     },
     {
         type: 'list',

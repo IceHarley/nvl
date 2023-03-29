@@ -5,7 +5,7 @@ import {isRegularTour} from "../common/utils.js";
 const TOURS = 3;
 
 const SUBSCRIPT = '₁₂₃₄₅₆₇₈';
-const ROME = ["", "I", "II", "III", "IV"];
+export const ROME = ["", "I", "II", "III", "IV"];
 
 const COLUMNS_WIDTH = [
     {width: 0.7}, {width: 5}, {width: 4}, {width: 30}, Array.from({length: TOURS * 2}, () => ({width: 8})), {width: 8}, {width: 0.7}
@@ -18,26 +18,13 @@ export default class ExcelSaver {
         this.#silent = silent;
     }
 
-    save = async (meta, data, distributions = []) => writeXlsxFile(this.prepareTable(meta, this.mergeDistributions(data, distributions)), {
+    save = async (meta, data, distributions = []) => writeXlsxFile(this.prepareTable(meta, mergeDistributions(data, distributions)), {
         columns: COLUMNS_WIDTH,
         filePath: meta.fileName,
         fontFamily: 'Calibri',
         fontSize: 12,
         sheet: 'Рейтинг'
     }).then(() => !this.#silent && console.log(`Рейтинговая таблица турнира ${meta.tournamentName} сохранена в файл ${meta.fileName}`))
-
-    mergeDistributions = (data, distributions) => {
-        data.forEach(team =>
-            team.tours.forEach(tour => {
-                if (!tour.group || tour.group === NEW_TEAM) {
-                    let distribution = distributions.find(d => d.team === team.teamId && d.tour === tour.tour);
-                    if (distribution) {
-                        tour.group = distribution.group;
-                    }
-                }
-            }));
-        return data;
-    }
 
     prepareTable = (meta, data) => ([
         this.emptyLine(3.75),
@@ -305,4 +292,17 @@ export default class ExcelSaver {
     });
 
     getPlayoffPlace = row => ROME[row.place];
+}
+
+export const mergeDistributions = (data, distributions) => {
+    data.forEach(team =>
+        team.tours.forEach(tour => {
+            if (!tour.group || tour.group === NEW_TEAM) {
+                let distribution = distributions.find(d => d.team === team.teamId && d.tour === tour.tour);
+                if (distribution) {
+                    tour.group = distribution.group;
+                }
+            }
+        }));
+    return data;
 }
