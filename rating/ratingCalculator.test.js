@@ -197,6 +197,36 @@ test('команды с одинаковым рейтингом играли в 
     assertRatingTable(t, actual, expected);
 });
 
+test('команды игравшие в четвертьфиналах - сортируются по ним несмотря на рейтинг', async t => {
+    const tournamentId = 'recJepQzq0sgvQsko';
+    const outcomes = mockTournamentOutcomes.getByTournamentTeams(tournamentId, ['Кристалл', 'Матчбол', 'Спарта', 'Мстители', 'Черноморец', 'Продвижение', 'Сурож']);
+    const expected = [
+        {teamName: 'Спарта'},
+        {teamName: 'Матчбол'},
+        {teamName: 'Сурож'},
+        {teamName: 'Продвижение'},
+    ];
+    const results = mockResults.getByTournamentDirect(tournamentId)
+        .filter(r => r.group !== 'полуфинал' && r.group !== 'за 5 место' && r.group !== 'за 3 место' && r.group !== 'финал');
+    const actual = await calculator.calculate(tournament, results, outcomes);
+    assertRatingTable(t, actual, expected);
+});
+
+test('команды игравшие в матче за 5ое место - сортируются по нему несмотря на рейтинг', async t => {
+    const tournamentId = 'recJepQzq0sgvQsko';
+    const outcomes = mockTournamentOutcomes.getByTournamentTeams(tournamentId, ['Кристалл', 'Матчбол', 'Спарта', 'Мстители', 'Черноморец', 'Продвижение', 'Сурож']);
+    const expected = [
+        {teamName: 'Сурож'},
+        {teamName: 'Продвижение'},
+        {teamName: 'Спарта'},
+        {teamName: 'Матчбол'},
+    ];
+    const results = mockResults.getByTournamentDirect(tournamentId)
+        .filter(r => r.group !== 'полуфинал' && r.group !== 'за 3 место' && r.group !== 'финал');
+    const actual = await calculator.calculate(tournament, results, outcomes);
+    assertRatingTable(t, actual, expected);
+});
+
 test('команды игравшие в полуфиналах - сортируются по ним несмотря на рейтинг', async t => {
     const tournamentId = 'recC6cmCroZm6Rjb6';
     const outcomes = mockTournamentOutcomes.getByTournamentTeams(tournamentId, ['Легион', 'Легион-2', 'Спарта', 'Мстители', 'Матчбол']);

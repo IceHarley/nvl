@@ -4,8 +4,10 @@ import pkg from 'thenby';
 import {
     NEW_TEAM,
     PLAYOFF_STAGES,
+    STAGE_5TH_PLACE_MATCH,
     STAGE_CONSOLATION_FINAL,
     STAGE_FINAL,
+    STAGE_QUARTERFINAL,
     STAGE_SEMIFINAL,
     WITHDRAW
 } from "../common/constants.js";
@@ -100,6 +102,10 @@ export default class RatingCalculator {
             .thenBy(row => this.#placeInConsolationFinal(row))
             .thenBy(row => this.#inSemiFinal(row), "desc")
             .thenBy(row => this.#placeInSemiFinal(row))
+            .thenBy(row => this.#in5thPlaceMatch(row), "desc")
+            .thenBy(row => this.#placeIn5thPlaceMatch(row))
+            .thenBy(row => this.#inQuarterFinal(row), "desc")
+            .thenBy(row => this.#placeInQuarterFinal(row))
             .thenBy("rating", "desc")
             .thenBy("withdraw")
             .thenBy(row => row.tours.length);
@@ -118,6 +124,10 @@ export default class RatingCalculator {
 
     #inConsolationFinal = row => this.#inStage(row, STAGE_CONSOLATION_FINAL);
 
+    #in5thPlaceMatch = row => this.#inStage(row, STAGE_5TH_PLACE_MATCH);
+
+    #inQuarterFinal = row => this.#inStage(row, STAGE_QUARTERFINAL);
+
     #inFinal = row => this.#inStage(row, STAGE_FINAL);
 
     #placeInStage = (row, stage) => (row.tours.find(t => t.group === stage) || {groupPlace: 0}).groupPlace;
@@ -127,6 +137,10 @@ export default class RatingCalculator {
     #placeInSemiFinal = row => this.#placeInStage(row, STAGE_SEMIFINAL);
 
     #placeInConsolationFinal = row => this.#placeInStage(row, STAGE_CONSOLATION_FINAL);
+
+    #placeIn5thPlaceMatch = row => this.#placeInStage(row, STAGE_5TH_PLACE_MATCH);
+
+    #placeInQuarterFinal = row => this.#placeInStage(row, STAGE_QUARTERFINAL);
 
     static #validateGroupResults = (tournament, tournamentOutcomes) => {
         if (!tournament) {
