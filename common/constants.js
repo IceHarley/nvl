@@ -13,8 +13,10 @@ export const ABSENCE = 'неявка';
 export const STAGE_FINAL = 'финал';
 export const STAGE_SEMIFINAL = 'полуфинал';
 export const STAGE_CONSOLATION_FINAL = 'за 3 место';
+export const STAGE_QUARTERFINAL = 'четвертьфинал';
+export const STAGE_5TH_PLACE_MATCH = 'за 5 место';
 
-export const PLAYOFF_STAGES = [STAGE_SEMIFINAL, STAGE_CONSOLATION_FINAL, STAGE_FINAL];
+export const PLAYOFF_STAGES = [STAGE_QUARTERFINAL, STAGE_5TH_PLACE_MATCH, STAGE_SEMIFINAL, STAGE_CONSOLATION_FINAL, STAGE_FINAL];
 
 export const FORMAT_EXCEL = 'excel';
 export const FORMAT_CSV = 'csv';

@@ -5,7 +5,7 @@ import {isRegularTour} from "../common/utils.js";
 const TOURS = 3;
 
 const SUBSCRIPT = '₁₂₃₄₅₆₇₈';
-export const ROME = ["", "I", "II", "III", "IV"];
+export const ROME = ["", "I", "II", "III", "IV", "V", "VI"];
 
 const COLUMNS_WIDTH = [
     {width: 0.7}, {width: 5}, {width: 4}, {width: 30}, Array.from({length: TOURS * 2}, () => ({width: 8})), {width: 8}, {width: 0.7}
