@@ -15,6 +15,12 @@ import {
 const {firstBy} = pkg;
 
 export default class RatingCalculator {
+    #ratingRules
+
+    constructor(ratingRules) {
+        this.#ratingRules = ratingRules;
+    }
+
     calculate = (tournament, results = [], tournamentOutcomes, previousTournamentOutcomes = []) => {
         RatingCalculator.#validateGroupResults(tournament, tournamentOutcomes);
         const ratingTable = this.#makeRatingTable(tournamentOutcomes, previousTournamentOutcomes)
@@ -73,7 +79,7 @@ export default class RatingCalculator {
     #sortRatingTable = (ratingTable, maxTour) => ratingTable.sort(this.#getComparator(maxTour));
 
     #parseTourGroups = (groupedResults, tour, ratingTable) => {
-        new GroupsParser().parseGroups(groupedResults.get(tour)).flat().forEach(result => {
+        new GroupsParser(this.#ratingRules).parseGroups(groupedResults.get(tour)).flat().forEach(result => {
             this.#appendTeamTourResult(ratingTable, result, tour);
         })
     };

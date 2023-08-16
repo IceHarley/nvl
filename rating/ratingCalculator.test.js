@@ -566,7 +566,14 @@ test('команда с неявкой - ниже других с таким ж�
         {teamName: 'ФВМ+1', rating: 0, withdraw: false},
         {teamName: 'Хром', rating: 0, withdraw: true},
     ];
-    const actual = await calculator.calculate(tournament, mockResults.getGroup('K'), outcomes);
+    const ratingRules = [
+        ['A', 6, 5, 4, 1],
+        ['B', 5, 4, 3, 0],
+        ['F', 4, 3, 2, 0],
+        ['J', 3, 2, 1, 0],
+        ['Z', 0, 0, 0, 0],
+    ];
+    const actual = await new RatingCalculator(ratingRules).calculate(tournament, mockResults.getGroup('K'), outcomes);
     assertRatingTable(t, actual, expected);
 });
 
