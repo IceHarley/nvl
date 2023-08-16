@@ -4,6 +4,14 @@ import MockResultsRepository from "../mock/mockResults.js";
 
 const mockResults = new MockResultsRepository();
 
+const ratingRules = [
+    ['A', 6, 5, 4, 1],
+    ['B', 5, 4, 3, 0],
+    ['F', 4, 3, 2, 0],
+    ['J', 3, 2, 1, 0],
+    ['Z', 0, 0, 0, 0],
+];
+
 test('для пустых результатов возвращается ошибка', t => {
     t.throws(() => new GroupParser().parseGroup());
 });
@@ -39,7 +47,7 @@ test('группа где все друг у друга выиграли с од
 
 test('группа, где одна команда снялась', t => {
     const groupResults = mockResults.getGroup('O');
-    const actual = new GroupParser().parseGroup(groupResults);
+    const actual = new GroupParser(false, ratingRules).parseGroup(groupResults);
     t.deepEqual(actual[0], {group: 'O', team: 'recXu7MPHQpXpp5s1', place: 1, points: 7, score: 8+50, rating: 0});
     t.deepEqual(actual[1], {group: 'O', team: 'rec9GbvD9xEOe7ksG', place: 2, points: 5, score: -8+50, rating: 0});
     t.deepEqual(actual[2], {group: 'O', team: 'rec7IAXxfzLtdhMsg', place: 3, points: 0, score: -50-50, tech: 'снятие', rating: 0});
@@ -50,7 +58,7 @@ test('группа, где одна команда не явилась', t => {
     for (let i = 0; i < 3; i++) {
         groupResults[i].result = groupResults[i].result.replace('снятие', 'неявка');
     }
-    const actual = new GroupParser().parseGroup(groupResults);
+    const actual = new GroupParser(false, ratingRules).parseGroup(groupResults);
     t.deepEqual(actual[0], {group: 'O', team: 'recXu7MPHQpXpp5s1', place: 1, points: 7, score: 8+50, rating: 0});
     t.deepEqual(actual[1], {group: 'O', team: 'rec9GbvD9xEOe7ksG', place: 2, points: 5, score: -8+50, rating: 0});
     t.deepEqual(actual[2], {group: 'O', team: 'rec7IAXxfzLtdhMsg', place: 3, points: 0, score: -50-50, tech: 'неявка', rating: 0});
@@ -58,7 +66,7 @@ test('группа, где одна команда не явилась', t => {
 
 test('группа, где одна команда снялась, а другая не явилась', t => {
     const groupResults = mockResults.getGroup('K');
-    const actual = new GroupParser().parseGroup(groupResults);
+    const actual = new GroupParser(false, ratingRules).parseGroup(groupResults);
     t.deepEqual(actual[0], {group: 'K', team: 'recUZ9IN2r9brYDa6', place: 1, points: 8, score: 50+50, rating: 0});
     t.deepEqual(actual[1], {group: 'K', team: 'recoWmhWBQWh2jzRL', place: 3, points: 0, score: -50, tech: 'неявка', rating: 0});
     t.deepEqual(actual[2], {group: 'K', team: 'rec9HmVM1YlrsaUR6', place: 3, points: 0, score: -50, tech: 'снятие', rating: 0});
@@ -74,8 +82,8 @@ test('группа в которой игры не состоялись', t => {
 
 test('группа из двух команд', t => {
     const groupResults = mockResults.getGroup('O').splice(2, 1);
-    const actual = new GroupParser().parseGroup(groupResults);
-    t.is(new GroupParser().parseGroup(groupResults).length, 2);
+    const actual = new GroupParser(false, ratingRules).parseGroup(groupResults);
+    t.is(actual.length, 2);
     t.deepEqual(actual[0], {group: 'O', team: 'recXu7MPHQpXpp5s1', place: 1, points: 3, score: 8, rating: 0});
     t.deepEqual(actual[1], {group: 'O', team: 'rec9GbvD9xEOe7ksG', place: 2, points: 1, score: -8, rating: 0});
 });
@@ -153,5 +161,5 @@ test('нижняя группа, в которой только одна ком�
         tour: '3',
     }];
     const actual = new GroupParser().parseGroup(groupResults);
-    t.deepEqual(actual[0], {group: 'P', team: 'teamId', place: 1, points: 4, score: 50, rating: 0});
+    t.deepEqual(actual[0], {group: 'P', team: 'teamId', place: 1, points: 4, score: 50, rating: 1});
 });

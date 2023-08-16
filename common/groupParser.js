@@ -1,7 +1,7 @@
 import MatchParser from "./matchParser.js";
 import {alphabetPosition} from "./utils.js";
 import pkg from 'thenby';
-import {DEFAULT_RATING_INCREASE} from "./constants.js";
+import {DEFAULT_RATING_RULES} from "./constants.js";
 
 const {firstBy} = pkg;
 
@@ -9,9 +9,11 @@ export default class GroupParser {
     #parsedResults = [];
     #group;
     #skipEmptyMatches
+    #ratingRules
 
-    constructor(skipEmptyMatches = false) {
+    constructor(skipEmptyMatches = false, ratingRules = DEFAULT_RATING_RULES) {
         this.#skipEmptyMatches = skipEmptyMatches;
+        this.#ratingRules = ratingRules;
     }
 
     parseGroup = groupResults => {
@@ -100,7 +102,7 @@ export default class GroupParser {
         if (group.length > 1) {
             return 0;
         }
-        for (const increase of DEFAULT_RATING_INCREASE) {
+        for (const increase of this.#ratingRules) {
             if (alphabetPosition(group) <= alphabetPosition(increase[0])) {
                 if (tech) {
                     return increase[4]
