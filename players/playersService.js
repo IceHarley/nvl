@@ -107,7 +107,7 @@ export default class PlayersService {
         .then(() => this.#db.players.get(player.id));
 
     createPlayer = player => this.generateId()
-        .then(id => this.editPlayer({...player, id: `${INS}${id}`}));
+        .then(id => this.editPlayer({...player, id: `${INS}${id}`, tournaments: player.tournaments || []}));
 
     deletePlayer = playerId => this.#db.players.get(playerId)
         .catch(err => {
