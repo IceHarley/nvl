@@ -7,12 +7,12 @@ const VIEW = TABLE + ' private';
 export default class ResultsRepository {
     getByTournamentAndTour = async (tournamentId, tour) => asyncAirtable.select(TABLE, {
         view: VIEW,
-        filterByFormula: `AND({ID турнира}='${tournamentId}', {Тур} = ${tour})`
+        filterByFormula: `AND({ID турнира}='${tournamentId}', {Тур} = ${tour}, NOT({Команда-победитель}=''), NOT({Команда-проигравший}=''))`
     }).then(records => records.map(r => minify(r)));
 
     getByTournament = async tournamentId => asyncAirtable.select(TABLE, {
         view: VIEW,
-        filterByFormula: `{ID турнира}='${tournamentId}'`
+        filterByFormula: `AND({ID турнира}='${tournamentId}', NOT({Команда-победитель}=''), NOT({Команда-проигравший}=''))`
     }).then(records => records.map(r => minify(r)));
 }
 
