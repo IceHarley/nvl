@@ -7,6 +7,7 @@ import {withSpinner} from "../common/utils.js";
 import TeamsRepository from "../repositories/teamsRepository.js";
 import {FORMAT_CSV, FORMAT_EXCEL} from "../common/constants.js";
 import PlayersRepository from "../repositories/playersRepository.js";
+import ScheduleRepository from "../repositories/scheduleRepository.js";
 
 const paramsRepository = new DistributionParamsRepository();
 const resultsRepository = new ResultsRepository();
@@ -15,6 +16,7 @@ const tournamentsRepository = new TournamentsRepository();
 const tournamentOutcomesRepository = new TournamentOutcomesRepository();
 const teamsRepository = new TeamsRepository();
 const playersRepository = new PlayersRepository();
+const scheduleRepository = new ScheduleRepository();
 
 const paramsChoices = state => () => paramsRepository.getByState(state)
     .then(params => params.map(params => ({
@@ -37,9 +39,9 @@ export const questions = [
         message: 'Выбор действия',
         choices: () => [
             {name: 'Распределение команд на следующий тур', value: 'distribution', short: 'Распределение'},
+            {name: 'Расписание', value: 'schedule', short: 'Расписание'},
             {name: 'Удалить распределение команд', value: 'removeDistribution', short: 'Удаление распределения'},
             {name: 'Составить рейтинговую таблицу', value: 'rating', short: 'Рейтинговая таблица'},
-            {name: 'Экспорт групп для расписания', value: 'groupsExport', short: 'Экспорт групп'},
             {name: 'Работа с базой игроков', value: 'players', short: 'База игроков'},
         ]
     },
@@ -62,6 +64,24 @@ export const questions = [
         name: 'removeDistribution.paramsId',
         message: 'Код параметров распределения',
         when: answers => answers.action === 'removeDistribution',
+        choices: paramsChoices("Завершено")
+    },
+    {
+        type: 'list',
+        name: 'schedule.action',
+        message: 'Выбор действия с расписанием',
+        when: answers => answers.action === 'schedule',
+        choices: () => [
+            {name: 'Экспорт групп для расписания', value: 'groupsExport', short: 'Экспорт групп'},
+            {name: 'Составить расписание', value: 'makeUp', short: 'Составить'},
+            {name: 'Скопировать расписание в распределение', value: 'copy', short: 'Скопировать'},
+        ]
+    },
+    {
+        type: 'list',
+        name: 'schedule.paramsId',
+        message: 'Код параметров распределения',
+        when: answers => answers.action === 'schedule' && answers.schedule.action === 'makeUp',
         choices: paramsChoices("Завершено")
     },
     {
@@ -93,14 +113,14 @@ export const questions = [
         type: 'list',
         name: 'groupsExport.tournamentId',
         message: 'Выбор турнира',
-        when: answers => answers.action === 'groupsExport',
+        when: answers => answers.action === 'schedule' && answers.schedule.action === 'groupsExport',
         choices: tournamentsChoices("В процессе")
     },
     {
         type: 'list',
         name: 'groupsExport.format',
         message: 'Выбор формата файла',
-        when: answers => answers.action === 'groupsExport',
+        when: answers => answers.action === 'schedule' && answers.schedule.action === 'groupsExport',
         choices: () => [
             {name: 'csv - для импорта в Illustrator', value: FORMAT_CSV, short: 'csv'},
             {name: 'Excel - для копирования в InDesign', value: FORMAT_EXCEL, short: 'Excel'},
@@ -116,4 +136,5 @@ export const repositories = {
     tournamentOutcomes: tournamentOutcomesRepository,
     teams: teamsRepository,
     players: playersRepository,
+    schedule: scheduleRepository,
 };
