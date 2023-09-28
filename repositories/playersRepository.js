@@ -45,6 +45,6 @@ export const minify = record => ({
     instagram: record.fields['Instagram'],
     team: record.fields['Команда'] && record.fields['Команда'].length > 0
         ? record.fields['Команда'][0] : undefined,
-    tournaments: record.fields['Турниры'],
+    tournaments: record.fields['Турниры'] || [],
     modified: record.fields['Изменен'],
 });

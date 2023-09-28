@@ -374,7 +374,10 @@ test.serial('Добавление текущей заигранности игр
     await db.outcomes.batch().put('current_tournament', {teamId: 'current_team'}).write()
 
     await playersService.addCurrentOutcome(id);
-    t.like(await db.players.get(id), {...player, tournaments: ['current_tournament', 'other_tournament', 'another_tournament']})
+    t.like(await db.players.get(id), {
+        ...player,
+        tournaments: ['current_tournament', 'other_tournament', 'another_tournament']
+    })
     t.is(await db.modifications.get(id), 'upd');
 });
 
@@ -410,13 +413,16 @@ test.serial('Добавление нового игрока в локальну�
         team: 'new_team',
         instagram: 'new_instagram',
     };
-    const actual = await t.throwsAsync(() => playersService.createPlayer(newPlayer));
+    const id = 'ins' + SEQUENCE_DEFAULT;
 
-    t.is(actual.message, 'турниры не заданы. Ожидается массив');
+    await playersService.createPlayer(newPlayer);
+
+    t.like(await db.players.get(id), {...newPlayer, tournaments: []});
+    t.is(await db.modifications.get(id), 'ins');
 });
 
 test.serial('Удаление игрока с некорректным id', async t => {
-    const actual =  await t.throwsAsync(() => playersService.deletePlayer('incorrect_id'));
+    const actual = await t.throwsAsync(() => playersService.deletePlayer('incorrect_id'));
     t.is(actual.message, 'Игрок не найден');
 });
 
@@ -457,7 +463,7 @@ test.serial('Удаление игрока из БД который есть в 
     const id = 'id';
     await db.modifications.put(id, 'del');
 
-    const actual =  await t.throwsAsync(() => playersService.deletePlayer('incorrect_id'));
+    const actual = await t.throwsAsync(() => playersService.deletePlayer('incorrect_id'));
     t.is(actual.message, 'Игрок не найден');
 });
 
@@ -472,7 +478,7 @@ test.serial('Удаление игрока из БД который есть в 
     await db.players.put(id, newPlayer);
     await db.modifications.put(id, 'del');
 
-    const actual =  await t.throwsAsync(() => playersService.deletePlayer('incorrect_id'));
+    const actual = await t.throwsAsync(() => playersService.deletePlayer('incorrect_id'));
     t.is(actual.message, 'Игрок не найден');
 });
 
