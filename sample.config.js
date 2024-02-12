@@ -1,3 +1,5 @@
+//Переименовать файл в config.js
+
 export const ACCESS_TOKEN = 'access_token'; //access token отсюда https://airtable.com/create/tokens;
 export const BASE_ID = 'app1MljghZX5136lh'; //Основная База
 // export const BASE_ID = 'appMrRjGBAqVWdwoA';// для тестов НВЛ (September 27, 2023)
