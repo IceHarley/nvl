@@ -1,5 +1,5 @@
 import {isRegularTour} from "../common/utils.js";
-import {asyncAirtable} from "../config.js";
+import {asyncAirtable} from "../common/airtable.js";
 
 const TABLE = 'Результаты матчей';
 const VIEW = TABLE + ' private';

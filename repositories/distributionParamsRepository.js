@@ -1,4 +1,4 @@
-import {asyncAirtable} from "../config.js";
+import {asyncAirtable} from "../common/airtable.js";
 
 const TABLE = 'Параметры распределения';
 const VIEW = 'main';

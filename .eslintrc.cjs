@@ -11,5 +11,8 @@ module.exports = {
     sourceType: 'module'
   },
   rules: {
+  },
+  globals: {
+    process: true
   }
 }
