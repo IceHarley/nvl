@@ -1,5 +1,4 @@
 import {repositories} from "../cli/cli.js";
-import {GENERATED_PATH} from "../config.js";
 import {FORMAT_EXCEL} from "../common/constants.js";
 import ExcelSaver from "../excel/excelSaver.js";
 import CsvRatingSaver from "../csv/csvRatingSaver.js";
@@ -18,7 +17,7 @@ export const exportRating = (answers, ratingData) => {
             .then(([distributions, tournament]) => getRatingSaver(answers.rating.exportFormat).save({
                 tournamentName: tournament.name,
                 maxFileRecords: 25,
-                fileName: GENERATED_PATH.concat(`Рейтинг ${tournament.name} generated`)
+                fileName: process.env.GENERATED_PATH.concat(`Рейтинг ${tournament.name} generated`)
             }, ratingData, distributions));
     }
 };

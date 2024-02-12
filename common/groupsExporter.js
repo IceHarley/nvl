@@ -1,5 +1,4 @@
 import {repositories} from "../cli/cli.js";
-import {GENERATED_PATH} from "../config.js";
 import {FORMAT_EXCEL} from "./constants.js";
 import ExcelGroupsExporter from "../excel/excelGroupsExporter.js";
 import CsvGroupsExporter from "../csv/csvGroupsExporter.js";
@@ -19,7 +18,7 @@ export const exportGroups = params => {
         ])).then(([distributions, tournament, teams]) => {
         return getGroupsExporter(params.format).export({
             tournamentName: tournament.name,
-            fileName: GENERATED_PATH.concat(`${tournament.name} группы на ${tournament.lastDistributedTour} тур.${getFileExtension(params.format)}`)
+            fileName: process.env.GENERATED_PATH.concat(`${tournament.name} группы на ${tournament.lastDistributedTour} тур.${getFileExtension(params.format)}`)
         }, distributions, teams);
     });
 };
