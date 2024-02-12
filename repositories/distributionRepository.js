@@ -36,7 +36,7 @@ export default class DistributionRepository {
         .map(chunk => asyncAirtable.bulkUpdate(TABLE, chunk.map(record => ({
             id: record.id,
             fields: {
-                'Расписание': record.schedule,
+                'Расписание (сохранится)': record.schedule,
             }
         })))));
 }
