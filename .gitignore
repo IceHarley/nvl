@@ -3,3 +3,4 @@
 !/test-output/.gitkeep
 /db/*
 !/db/.gitkeep
+config.js

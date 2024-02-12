@@ -1,5 +1,5 @@
 import {chunkArray} from "../common/utils.js";
-import {asyncAirtable} from "../config.js";
+import {asyncAirtable} from "../common/airtable.js";
 
 const TABLE = 'Распределение команд';
 const VIEW = 'main';
