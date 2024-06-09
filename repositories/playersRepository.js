@@ -9,6 +9,12 @@ const DEFAULT_OPTIONS = {
     filterByFormula: "NOT({Имя} = '')",
 };
 
+const EMPTY_OPTIONS = (count) => ({
+    view: VIEW,
+    filterByFormula: "{Имя} = ''",
+    maxRecords: count,
+});
+
 export default class PlayersRepository {
     getById = async id => asyncAirtable.find(TABLE, id).then(record => minify(record));
 
@@ -16,13 +22,22 @@ export default class PlayersRepository {
         asyncAirtable.select(TABLE, {...DEFAULT_OPTIONS, ...options})
             .then(records => records.map(record => minify(record)));
 
-    createList = async records => Promise.all(chunkArray(records)
+    createList = async records => process.env.UPDATE_EMPTY_RECORDS_WHEN_CREATE
+        ? this.workaroundCreateList(records)
+        : this.normalCreateList(records);
+
+    normalCreateList = records => Promise.all(chunkArray(records)
         .map(chunk => asyncAirtable.bulkCreate(TABLE, chunk.map(record => ({
             "Имя": record.name,
             "Instagram": record.instagram,
             "Команда": record.team ? [record.team] : [],
             "Турниры": record.tournaments,
         })))));
+
+    workaroundCreateList = records =>
+        this.getList(EMPTY_OPTIONS(records.length))
+            .then(emptyRecords => records.map((record, index) => ({...record, id: emptyRecords[index].id}))) //объединяем записи с идентификаторами
+            .then(records => this.updateList(records));
 
     updateList = async records => Promise.all(chunkArray(records)
         .map(chunk => asyncAirtable.bulkUpdate(TABLE, chunk.map(record => ({
