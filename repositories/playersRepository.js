@@ -50,8 +50,16 @@ export default class PlayersRepository {
             }
         })))));
 
-    deleteList = async ids => Promise.all(chunkArray(ids)
-        .map(chunk => asyncAirtable.bulkDelete(TABLE, chunk)));
+    deleteList = async records => Promise.all(chunkArray(records.map(r => ({id: r})))
+        .map(chunk => asyncAirtable.bulkUpdate(TABLE, chunk.map(record => ({
+            id: record.id,
+            fields: {
+                "Имя": null,
+                "Instagram": null,
+                "Команда": null,
+                "Турниры": null,
+            }
+        })))));
 }
 
 export const minify = record => ({
