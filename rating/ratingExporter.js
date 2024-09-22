@@ -16,7 +16,7 @@ export const exportRating = (answers, ratingData) => {
             ]))
             .then(([distributions, tournament]) => getRatingSaver(answers.rating.exportFormat).save({
                 tournamentName: tournament.name,
-                maxFileRecords: 25,
+                maxFileRecords: 30,
                 fileName: process.env.GENERATED_PATH.concat(`Рейтинг ${tournament.name} generated`)
             }, ratingData, distributions));
     }
