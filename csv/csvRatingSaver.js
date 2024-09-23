@@ -36,7 +36,7 @@ export default class CsvRatingSaver {
             values.push({visible: 0});
         }
         for (let i = 1; i <= values.length / meta.maxFileRecords; i++) {
-            stringify(values.slice((i - 1) * 25, i * 25), {
+            stringify(values.slice((i - 1) * meta.maxFileRecords, i * meta.maxFileRecords), {
                 header: true,
                 columns: ['place', 'delta', 'team', 'group1', 'groupPlace1', 'rating1', 'group2', 'groupPlace2', 'rating2',
                     'group3', 'groupPlace3', 'rating3', 'rating', 'withdraw', 'visible', 'isPlayoffTeam'],
