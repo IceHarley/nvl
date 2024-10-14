@@ -37,21 +37,25 @@ export default class TeamsDistribution {
 
     static #sortTeams = teams => teams.sort((t1, t2) => this.#comparator(t1, t2));
 
+    static #compareByGroupIndex = (t1, t2) => t1.groupIndex - t2.groupIndex;
+
     static #comparator = (t1, t2) => {
         if (t1.group === NEW_TEAM || t2.group === NEW_TEAM) {
             return this.#compareNewTeams(t1, t2);
         } else if (Math.abs(t1.groupIndex - t2.groupIndex) > 1) {
-            return t1.groupIndex - t2.groupIndex;
+            return this.#compareByGroupIndex(t1, t2);
         } else if (t1.groupIndex === t2.groupIndex) {
             return this.#compareInSameGroup(t1, t2);
-        } else if (t1.groupIndex < t2.groupIndex) {
-            return this.#compareInAdjacentGroups(t1.place, t2.place);
         } else {
-            return this.#compareInAdjacentGroups(t2.place, t1.place);
+            return this.#compareInAdjacentGroups(t1, t2);
         }
     };
 
-    static #compareInAdjacentGroups = (place1, place2) => place1 === 3 && place2 === 1 ? -1 : 1;
+    static #compareInAdjacentGroups = (t1, t2) => {
+        return (t1.place === 3 && t2.place === 1 && t1.groupIndex < t2.groupIndex) ||
+        (t1.place === 1 && t2.place === 3 && t1.groupIndex > t2.groupIndex)
+            ? -1 * this.#compareByGroupIndex(t1, t2) : this.#compareByGroupIndex(t1, t2);
+    };
 
     static #compareInSameGroup = (t1, t2) => {
         return t1.place === t2.place && t1.previousGroupIndex && t2.previousGroupIndex
