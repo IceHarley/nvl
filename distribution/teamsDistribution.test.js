@@ -312,3 +312,17 @@ test('весь тур', t => {
         "+1 P\n   Q3! P\n   Q3! P\n" +
         "Q3! Q\n");
 });
+
+test('весь 1 тур осень 2024 - проблема со снятием Импульса в группе H', t => {
+    assertDistribution(t, teamsDistribution
+            .distribute(mockResults.getByTournamentAndTourDirect('recvaAYU6f4CrFY9T', 1), [], []),
+        "A1 A\n   A2 A\n    B1 A\n" +
+        "A3 B\n   B2 B\n    C1 B\n" +
+        "B3 C\n   C2 C\n    D1 C\n" +
+        "C3 D\n   D2 D\n    E1 D\n" +
+        "D3! E\n  E2 E\n    F1 E\n" +
+        "E3 F\n   F2 F\n    G1 F\n" +
+        "F3 G\n   G2 G\n    H1 G\n" +
+        "G3 H\n   H2 H\n    I1 H\n" +
+        "I2 I\n   I3 I\n");
+});
