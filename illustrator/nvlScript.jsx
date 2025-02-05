@@ -169,50 +169,72 @@ function nvlScript() {
 
     var doc = app.activeDocument;
 
-    // generateRatingVariables();
-    // generateVariables();
-    // getByNameInDoc('note: R_groupName').note = 'R_groupName';
-    // getByNameInDoc('note: R_groupDate').note = 'R_groupDate';
-    // return;
+    function findItalicFont(currentFont) {
+        for (var i = 0; i < app.textFonts.length; i++) {
+            if (app.textFonts[i].family === currentFont.family && app.textFonts[i].style === "Italic") {
+                return app.textFonts[i];
+            }
+        }
+    }
 
+    function beforeLast(value, delimiter) {
+        value = value || ''
 
-//alert(doc.pageItems[4].content);
+        if (delimiter === '') {
+            return value
+        }
 
-//doc.pageItems[5].note = 'aaaaa';
+        const substrings = value.split(delimiter)
 
-//alert(doc.pageItems[5].note);
+        return substrings.length === 1
+            ? value // delimiter is not part of the string
+            : substrings.slice(0, -1).join(delimiter)
+    }
 
-//var item = getByNote('A_team2');
-//if (item)
-//	item.contents = 'Матчбол';
-//   alert(decodeURIComponent('?x=test%3F'));
+    function afterLast(value, delimiter) {
+        value = value || ''
 
-    // loadDataFromCsv();
+        return delimiter === ''
+            ? value
+            : value.split(delimiter).pop()
+    }
 
     function loadDataFromCsv(fileName) {
         var data = getData(fileName);
         const header = data[0];
-        const values = data[1];
-        for (var i = 0; i < values.length; i++) {
-            values[i] = decodeURIComponent(values[i]);
+
+        for (var i = 0; i < doc.layers.getByName("groupsLayer").groupItems.length; i++) {
+            doc.layers.getByName("groupsLayer").groupItems[i].hidden = true;
         }
 
-        if (header.length !== values.length) {
-            //Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!
-            alert(decodeURIComponent('%D0%9D%D0%B5%D0%BA%D0%BE%D1%80%D1%80%D0%B5%D0%BA%D1%82%D0%BD%D1%8B%D0%B9%20%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%82%20%D1%84%D0%B0%D0%B9%D0%BB%D0%B0%3A%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B2%20%D0%B7%D0%B0%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BA%D0%B5%20%D0%BD%D0%B5%20%D1%81%D0%BE%D0%B2%D0%BF%D0%B0%D0%B4%D0%B0%D0%B5%D1%82%20%D1%81%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%D0%BC%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85%21'));
-        }
-        for (var i = 0; i < header.length; i++) {
-            if (header[i].endsWith('visible')) {
-                var group = getGroup(doc.layers[0].groupItems, header[i][0]);
-                if (group) {
-                    group.hidden = values[i].trim() === 'true' ? false : true;
-                } else {
-                    alert(decodeURIComponent('%D0%9D%D0%B5%20%D0%BD%D0%B0%D0%B9%D0%B4%D0%B5%D0%BD%D0%B0%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D0%B0%20') + header[i][0]);
-                }//Не найдена группа ...
-            } else if (values[i]) {
-                var item = getByNoteInDoc(header[i]);
+        for (var i = 1; i < data.length; i++) {
+            var values = data[i];
+            if (header.length !== values.length) {
+                //Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!
+                alert(decodeURIComponent('%D0%9D%D0%B5%D0%BA%D0%BE%D1%80%D1%80%D0%B5%D0%BA%D1%82%D0%BD%D1%8B%D0%B9%20%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%82%20%D1%84%D0%B0%D0%B9%D0%BB%D0%B0%3A%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B2%20%D0%B7%D0%B0%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BA%D0%B5%20%D0%BD%D0%B5%20%D1%81%D0%BE%D0%B2%D0%BF%D0%B0%D0%B4%D0%B0%D0%B5%D1%82%20%D1%81%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%D0%BC%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85%21'));
+            }
+
+            for (var j = 0; j < values.length; j++) {
+                values[j] = decodeURIComponent(values[j]);
+            }
+
+            var group = getGroup(doc.layers.getByName("groupsLayer").groupItems, values[0]);
+            if (group) {
+                group.hidden = values[1].trim() === 'true' ? false : true;
+            } else {
+                alert(decodeURIComponent('%D0%9D%D0%B5%20%D0%BD%D0%B0%D0%B9%D0%B4%D0%B5%D0%BD%D0%B0%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D0%B0%20') + values[0]);
+            }//Не найдена группа ...
+
+            for (var col = 0; col < header.length; col++) {
+                var item = getByNoteInGroup(group, header[col]);
                 if (item) {
-                    item.contents = data[1][i];
+                    if (header[col].endsWith("FullName")) {
+                        item.contents = beforeLast(values[col], " ");
+                        var city = item.words.add(afterLast(values[col], " "));
+                        city.characterAttributes.textFont = findItalicFont(item.textRange.textFont);
+                    } else {
+                        item.contents = values[col];
+                    }
                 }
             }
         }
@@ -226,9 +248,9 @@ function nvlScript() {
             //Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!
             alert(decodeURIComponent('%D0%9D%D0%B5%D0%BA%D0%BE%D1%80%D1%80%D0%B5%D0%BA%D1%82%D0%BD%D1%8B%D0%B9%20%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%82%20%D1%84%D0%B0%D0%B9%D0%BB%D0%B0%3A%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B2%20%D0%B7%D0%B0%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BA%D0%B5%20%D0%BD%D0%B5%20%D1%81%D0%BE%D0%B2%D0%BF%D0%B0%D0%B4%D0%B0%D0%B5%D1%82%20%D1%81%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%D0%BC%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85%21'));
         }
-        if (data.length !== 26) {
-            //Некорректный формат файла: должно быть 25 строк
-            alert('csv should contain header + 25 records! Actual: ' + data.length);
+        if (data.length !== 31) {
+            //Некорректный формат файла: должно быть 30 строк
+            alert('csv should contain header + 30 records! Actual: ' + data.length);
         }
         var items = doc.layers[0].groupItems;
 
@@ -253,14 +275,22 @@ function nvlScript() {
             return '';
         }
 
-        var white = new RGBColor();
-        white.red = 255;
-        white.green = 255;
-        white.blue = 255;
-        var grey = new RGBColor();
-        grey.red = 80;
-        grey.green = 80;
-        grey.blue = 80;
+        var top6Color = new RGBColor();
+        top6Color.red = 52;
+        top6Color.green = 53;
+        top6Color.blue = 95;
+        var top6BorderColor = new RGBColor();
+        top6BorderColor.red = 233;
+        top6BorderColor.green = 52;
+        top6BorderColor.blue = 72;
+        var mainColor = new RGBColor();
+        mainColor.red = 52;
+        mainColor.green = 53;
+        mainColor.blue = 95;
+        var mainBorderColor = new RGBColor();
+        mainBorderColor.red = 255;
+        mainBorderColor.green = 255;
+        mainBorderColor.blue = 255;
 
         for (var i = 1; i < data.length; i++) {
             var group = getRatingLine(items, i);
@@ -287,7 +317,12 @@ function nvlScript() {
                 getByNote('rating', group).contents = data[i][12];
                 for (var j = 0; j < group.pathItems.length; j++) {
                     if (group.pathItems[j].name.startsWith('back ')) {
-                        group.pathItems[j].fillColor = data[i][15] === '1' ? white : grey;
+                        //group.pathItems[j].fillColor = data[i][15] === '1' ? top6Color : mainColor;
+                        // group.pathItems[j].opacity = data[i][15] === '1' ? 60 : 100;
+                    }
+                    if (group.pathItems[j].name.startsWith('border')) {
+                        group.pathItems[j].strokeColor = data[i][15] === '1' ? top6BorderColor : mainBorderColor;
+                        group.pathItems[j].opacity = data[i][15] === '1' ? 50 : 20;
                     }
                 }
             }
@@ -310,6 +345,24 @@ function nvlScript() {
             var item = doc.pageItems[i];
             if (item.note === note) {
                 return item;
+            }
+        }
+    }
+
+    function getByNoteInGroup(group, note) {
+        if (!group || !group.textFrames) {
+            return undefined;
+        }
+        for (var i = 0; i < group.textFrames.length; i++) {
+            var item = group.textFrames[i];
+            if (item.note === note) {
+                return item;
+            }
+        }
+        for (var i = 0; i < group.groupItems.length; i++) {
+            var result = getByNoteInGroup(group.groupItems[i], note);
+            if (result) {
+                return result;
             }
         }
     }
@@ -423,7 +476,7 @@ function nvlScript() {
 
     function generateRatingVariables() {
         var items = doc.layers[0].groupItems;
-        for (var i = 1; i <= 25; i++) {
+        for (var i = 1; i <= 30; i++) {
             var item = getRatingLine(items, i);
             if (item) {
                 var frames = item.textFrames;
@@ -566,7 +619,7 @@ function nvlScript() {
             "",
             "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
             SESSION.dataFileMask(),
-            decodeURIComponent("d%3A\\Users\\levin\\Documents\\NVL\\2023%20%D0%B2%D0%B5%D1%81%D0%BD%D0%B0\\%D0%92%D0%B5%D1%81%D0%BD%D0%B0%202023%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%201%20%D1%82%D1%83%D1%80.csv")
+            decodeURIComponent("d%3A%5CUsers%5Clevin%5CDocuments%5CNVL%5C2025%20%D0%B2%D0%B5%D1%81%D0%BD%D0%B0%5C%D0%92%D0%B5%D1%81%D0%BD%D0%B0%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%201%20%D1%82%D1%83%D1%80.csv")
         );
         var btn_ok = g_file.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C'));
         w.UIElements["disp_dataFile"] = disp_dataFile;
@@ -578,7 +631,7 @@ function nvlScript() {
             "",
             "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
             SESSION.dataFileMask(),
-            decodeURIComponent("d%3A%5CUsers%5Clevin%5CDocuments%5CNVL%5C2023%20%D0%B2%D0%B5%D1%81%D0%BD%D0%B0%5C%D0%A0%D0%B5%D0%B9%D1%82%D0%B8%D0%BD%D0%B3%20%D0%92%D0%B5%D1%81%D0%BD%D0%B0%202023%20generated1.csv")
+            decodeURIComponent("D%3A%5CUsers%5Clevin%5CDocuments%5CNVL%5C2025%20%D0%B2%D0%B5%D1%81%D0%BD%D0%B0%5C%D0%A0%D0%B5%D0%B9%D1%82%D0%B8%D0%BD%D0%B3%20%D0%92%D0%B5%D1%81%D0%BD%D0%B0%202025%20generated1.csv")
         );
         var btn_loadRating = g_rating.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C'));
         btn_loadRating.onClick = function () {
@@ -637,4 +690,4 @@ function nvlScript() {
     }
 }
 
-nvlScript();                                     
+nvlScript();
