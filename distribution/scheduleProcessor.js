@@ -22,6 +22,7 @@ export class ScheduleProcessor {
         return schedule;
     };
 
+    //TODO ошибка, когда групп меньше 18, а в расписании 18 записей
     copyScheduleToDistribution = () => this.#repositories.schedule.getAll()
         .then(scheduleList => scheduleList.map(schedule => schedule.distributions.map(distributionId => ({
             id: distributionId,

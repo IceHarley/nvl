@@ -2,7 +2,7 @@ import cli from "clui";
 
 export const groupBy = (list, keyGetter) => {
     const map = new Map();
-    list.forEach((item) => {
+    list.forEach(item => {
         const key = keyGetter(item);
         const collection = map.get(key);
         if (!collection) {
@@ -105,3 +105,14 @@ export const toOperation = record => ({
         ...record
     }
 });
+
+export const extractPart = (text, part, delimiter) => {
+    if (!text || !text.length) {
+        return text;
+    }
+    let parts = text.split(delimiter);
+    if (parts.length > part) {
+        return parts[part];
+    }
+    return undefined;
+};

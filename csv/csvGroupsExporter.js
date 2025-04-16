@@ -1,4 +1,4 @@
-import {groupBy, positionToChar} from "../common/utils.js";
+import {groupBy, extractPart} from "../common/utils.js";
 import {stringify} from 'csv-stringify';
 import {writeFileSync} from 'fs';
 
@@ -16,18 +16,26 @@ export default class CsvGroupsExporter {
             ...distribution,
             ...(teams.find(t => t.id === distribution.team)),
         }));
-        const values = this.#getColumns(true);
-        groupBy(distributions, d => d.group).forEach(value =>
-            value.forEach(team => {
-                values[`${team.group}_visible`] = this.#encodeText('true');
-                values[`${team.group}_groupName`] = this.#encodeText(`Группа ${team.group}`);
-                values[`${team.group}_groupDate`] = this.#encodeText(team.schedule ? `${team.schedule}` : ' ');
-                values[`${team.group}_team${team.position}`] = this.#encodeText(`${team.name}`);
-                values[`${team.group}_city${team.position}`] = this.#encodeText(`${team.city}`);
-                values[`${team.group}_teamFull${team.position}`] = this.#encodeText(`${team.name} (${team.city})`);
-            }));
+        const values = [];
 
-        stringify([values], {
+        const extractDatetime = schedule => extractPart(schedule, 0, ", ");
+        const extractLocation = schedule => extractPart(schedule, 1, ", ");
+
+        groupBy(distributions, d => d.group).forEach(value => {
+            let group = [];
+            group.push(this.#encodeText(`${value[0].group}`));
+            group.push(this.#encodeText('true'));
+            group.push(this.#encodeText(value[0].schedule ? `${extractDatetime(value[0].schedule[0])}` : ' '));
+            group.push(this.#encodeText(value[0].schedule ? `${extractLocation(value[0].schedule[0])}` : ' '));
+            value.forEach(team => {
+                group.push(this.#encodeText(`${team.name}`));
+                group.push(this.#encodeText(`${team.city}`));
+                group.push(this.#encodeText(`${team.name} (${team.city})`));
+            });
+            values.push(group);
+        });
+
+        stringify(values, {
             header: true,
             columns: this.#getColumns(),
         }, (err, output) => {
@@ -40,18 +48,16 @@ export default class CsvGroupsExporter {
         ? encodeURIComponent(value)
         : value
 
-    #getColumns = (defaultValues = false) => {
+    #getColumns = () => {
         let columns = {};
-        for (let i = 0; i < 18; i++) {
-            const group = positionToChar(i);
-            columns[`${group}_visible`] = defaultValues ? 'false' : `${group}_visible`;
-            columns[`${group}_groupName`] = defaultValues ? ' ' : `${group}_groupName`;
-            columns[`${group}_groupDate`] = defaultValues ? ' ' : `${group}_groupDate`;
-            for (let j = 0; j < 3; j++) {
-                columns[`${group}_team${j + 1}`] = defaultValues ? ' ' : `${group}_team${j + 1}`;
-                columns[`${group}_city${j + 1}`] = defaultValues ? ' ' : `${group}_city${j + 1}`;
-                columns[`${group}_teamFull${j + 1}`] = defaultValues ? ' ' : `${group}_teamFull${j + 1}`;
-            }
+        columns[`groupName`] = `groupName`;
+        columns[`groupVisible`] = `groupVisible`;
+        columns[`groupDate`] = `groupDate`;
+        columns[`groupLocation`] = `groupLocation`;
+        for (let j = 0; j < 3; j++) {
+            columns[`team${j + 1}`] = `team${j + 1}`;
+            columns[`city${j + 1}`] = `city${j + 1}`;
+            columns[`team${j + 1}FullName`] = `team${j + 1}FullName`;
         }
         return columns;
     };
