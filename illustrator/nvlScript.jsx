@@ -303,21 +303,25 @@ function nvlScript() {
                 getByNote('group1', group).textRange.justification = Justification.CENTER;
                 getByNote('place1', group).contents = getPlaceSymbol(data[i][4]);
                 getByNote('place1', group).textRange.characterAttributes.textFont = app.textFonts.getByName('AdobePiStd');
+                getByNote('place1', group).textRange.characterAttributes.fillColor = mainBorderColor;
+                getByNote('place1', group).contents = getPlaceSymbol(data[i][4]);
                 getByNote('rating1', group).contents = data[i][5];
                 getByNote('group2', group).contents = '  ' + data[i][6];
                 getByNote('group2', group).textRange.justification = Justification.CENTER;
                 getByNote('place2', group).contents = getPlaceSymbol(data[i][7]);
                 getByNote('place2', group).textRange.characterAttributes.textFont = app.textFonts.getByName('AdobePiStd');
+                getByNote('place2', group).textRange.characterAttributes.fillColor = mainBorderColor;
                 getByNote('rating2', group).contents = data[i][8];
                 getByNote('group3', group).contents = '  ' + data[i][9];
                 getByNote('group3', group).textRange.justification = Justification.CENTER;
                 getByNote('place3', group).contents = getPlaceSymbol(data[i][10]);
                 getByNote('place3', group).textRange.characterAttributes.textFont = app.textFonts.getByName('AdobePiStd');
+                getByNote('place3', group).textRange.characterAttributes.fillColor = mainBorderColor;
                 getByNote('rating3', group).contents = data[i][11];
                 getByNote('rating', group).contents = data[i][12];
                 for (var j = 0; j < group.pathItems.length; j++) {
                     if (group.pathItems[j].name.startsWith('back ')) {
-                        //group.pathItems[j].fillColor = data[i][15] === '1' ? top6Color : mainColor;
+                        group.pathItems[j].fillColor = data[i][15] === '1' ? top6Color : mainColor;
                         // group.pathItems[j].opacity = data[i][15] === '1' ? 60 : 100;
                     }
                     if (group.pathItems[j].name.startsWith('border')) {
