@@ -276,57 +276,74 @@ function nvlScript() {
         }
 
         var top6Color = new RGBColor();
-        top6Color.red = 52;
-        top6Color.green = 53;
-        top6Color.blue = 95;
+        top6Color.red = 254;
+        top6Color.green = 133;
+        top6Color.blue = 53;
         var top6BorderColor = new RGBColor();
-        top6BorderColor.red = 233;
-        top6BorderColor.green = 52;
-        top6BorderColor.blue = 72;
+        top6BorderColor.red = 178;
+        top6BorderColor.green = 0;
+        top6BorderColor.blue = 0;
         var mainColor = new RGBColor();
-        mainColor.red = 52;
-        mainColor.green = 53;
-        mainColor.blue = 95;
+        mainColor.red = 254;
+        mainColor.green = 133;
+        mainColor.blue = 53;
         var mainBorderColor = new RGBColor();
         mainBorderColor.red = 255;
         mainBorderColor.green = 255;
         mainBorderColor.blue = 255;
+        var mainTextColor = new RGBColor();
+        mainBorderColor.red = 0;
+        mainBorderColor.green = 0;
+        mainBorderColor.blue = 0;
 
         for (var i = 1; i < data.length; i++) {
             var group = getRatingLine(items, i);
             if (group) {
                 group.hidden = data[i][14] !== '1';
                 getByNote('place', group).contents = data[i][0];
+                getByNote('place', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('delta', group).contents = getDelta(data[i][1]);
+                getByNote('delta', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('team', group).contents = data[i][2];
+                getByNote('team', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('group1', group).contents = '  ' + data[i][3];
                 getByNote('group1', group).textRange.justification = Justification.CENTER;
+                getByNote('group1', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('place1', group).contents = getPlaceSymbol(data[i][4]);
                 getByNote('place1', group).textRange.characterAttributes.textFont = app.textFonts.getByName('AdobePiStd');
-                getByNote('place1', group).textRange.characterAttributes.fillColor = mainBorderColor;
+                getByNote('place1', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('place1', group).contents = getPlaceSymbol(data[i][4]);
                 getByNote('rating1', group).contents = data[i][5];
+                getByNote('rating1', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('group2', group).contents = '  ' + data[i][6];
                 getByNote('group2', group).textRange.justification = Justification.CENTER;
+                getByNote('group2', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('place2', group).contents = getPlaceSymbol(data[i][7]);
                 getByNote('place2', group).textRange.characterAttributes.textFont = app.textFonts.getByName('AdobePiStd');
-                getByNote('place2', group).textRange.characterAttributes.fillColor = mainBorderColor;
+                getByNote('place2', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('rating2', group).contents = data[i][8];
+                getByNote('rating2', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('group3', group).contents = '  ' + data[i][9];
                 getByNote('group3', group).textRange.justification = Justification.CENTER;
+                getByNote('group3', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('place3', group).contents = getPlaceSymbol(data[i][10]);
                 getByNote('place3', group).textRange.characterAttributes.textFont = app.textFonts.getByName('AdobePiStd');
-                getByNote('place3', group).textRange.characterAttributes.fillColor = mainBorderColor;
+                getByNote('place3', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('rating3', group).contents = data[i][11];
+                getByNote('rating3', group).textRange.characterAttributes.fillColor = mainTextColor;
                 getByNote('rating', group).contents = data[i][12];
+                getByNote('rating', group).textRange.characterAttributes.fillColor = mainTextColor;
                 for (var j = 0; j < group.pathItems.length; j++) {
                     if (group.pathItems[j].name.startsWith('back ')) {
                         group.pathItems[j].fillColor = data[i][15] === '1' ? top6Color : mainColor;
                         // group.pathItems[j].opacity = data[i][15] === '1' ? 60 : 100;
                     }
-                    if (group.pathItems[j].name.startsWith('border')) {
-                        group.pathItems[j].strokeColor = data[i][15] === '1' ? top6BorderColor : mainBorderColor;
-                        group.pathItems[j].opacity = data[i][15] === '1' ? 50 : 20;
+                    if (group.pathItems[j].name.startsWith('border')) { //первые 6 строк
+                        group.pathItems[j].strokeColor = data[i][15] === '1' ? top6BorderColor : mainColor;
+                        group.pathItems[j].opacity = data[i][15] === '1' ? 100 : 100;
+                    } else if (group.pathItems[j].name.startsWith('rect')) { //остальные
+                        group.pathItems[j].strokeColor = mainColor;
+                        group.pathItems[j].opacity = data[i][15] === '1' ? 100 : 100;
                     }
                 }
             }
@@ -544,12 +561,16 @@ function nvlScript() {
         return this.text;
     };
 
-    function filePathInput(parent, title, dialogTitle, fileSpec, defaultValue) {
+    function filePathInput(parent, title, dialogTitle, fileSpec, defaultValue, buttonText) {
         var p = parent.add("panel", undefined, title);
         p.margins = [5, 6, 5, 4];
         p.spacing = 4;
         p.orientation = "row";
-        var b = p.add("button", undefined, decodeURIComponent("%D0%A4%D0%B0%D0%B9%D0%BB%20%D1%81%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%BC%D0%B8"));
+
+        // Используем переданный текст кнопки или значение по умолчанию
+        var buttonLabel = buttonText || decodeURIComponent("%D0%A4%D0%B0%D0%B9%D0%BB%20%D1%81%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%BC%D0%B8");
+        var b = p.add("button", undefined, buttonLabel);
+
         var disp = p.add('edittext { properties : {readonly : true}, justify : "right" }');
         disp.characters = 50;
         disp.text = defaultValue;
@@ -557,6 +578,7 @@ function nvlScript() {
             this.text = value;
             this.helpTip = value;
         };
+
         b.onClick = function () {
             var f;
             if (typeof (VI_MEMORY_SETTINGS) != "undefined") {
@@ -623,7 +645,8 @@ function nvlScript() {
             "",
             "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
             SESSION.dataFileMask(),
-            decodeURIComponent("d%3A%5CUsers%5Clevin%5CDocuments%5CNVL%5C2025%20%D0%B2%D0%B5%D1%81%D0%BD%D0%B0%5C%D0%92%D0%B5%D1%81%D0%BD%D0%B0%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%201%20%D1%82%D1%83%D1%80.csv")
+            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%201%20%D1%82%D1%83%D1%80.csv"),
+            decodeURIComponent("%D0%93%D1%80%D1%83%D0%BF%D0%BF%D1%8B")
         );
         var btn_ok = g_file.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C'));
         w.UIElements["disp_dataFile"] = disp_dataFile;
@@ -635,12 +658,23 @@ function nvlScript() {
             "",
             "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
             SESSION.dataFileMask(),
-            decodeURIComponent("D%3A%5CUsers%5Clevin%5CDocuments%5CNVL%5C2025%20%D0%B2%D0%B5%D1%81%D0%BD%D0%B0%5C%D0%A0%D0%B5%D0%B9%D1%82%D0%B8%D0%BD%D0%B3%20%D0%92%D0%B5%D1%81%D0%BD%D0%B0%202025%20generated1.csv")
+            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%A0%D0%B5%D0%B9%D1%82%D0%B8%D0%BD%D0%B3%20%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20generated1.csv"),
+            decodeURIComponent("%D0%A0%D0%B5%D0%B9%D1%82%D0%B8%D0%BD%D0%B3")
         );
-        var btn_loadRating = g_rating.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C'));
-        btn_loadRating.onClick = function () {
+        var btn_loadRating1 = g_rating.add("button", undefined, decodeURIComponent('%D0%A7%D0%B0%D1%81%D1%82%D1%8C%201'));
+        var btn_loadRating2 = g_rating.add("button", undefined, decodeURIComponent('%D0%A7%D0%B0%D1%81%D1%82%D1%8C%202'));
+        btn_loadRating1.onClick = function () {
             try {
                 loadRatingFromCsv(rating_dataFile.getValue());
+            } catch (e) {
+                alert(e);
+            }
+        }
+        btn_loadRating2.onClick = function () {
+            try {
+                var filePath = rating_dataFile.getValue();
+                filePath = filePath.replace(/generated1\.csv$/i, "generated2.csv");
+                loadRatingFromCsv(filePath);
             } catch (e) {
                 alert(e);
             }
