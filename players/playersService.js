@@ -185,6 +185,10 @@ export default class PlayersService {
         !this.#silent && console.log(`${text}: ${obj}`);
         return obj;
     };
+
+    getPlayersByTeam = teamId => this.#db.players.values().all()
+        .then(players => players.filter(player => player.team === teamId))
+        .then(players => players.sort((a, b) => a.name?.localeCompare(b.name)));
 }
 
 export class SpinnerPlayersService {

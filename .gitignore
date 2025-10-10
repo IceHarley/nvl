@@ -3,4 +3,5 @@
 !/test-output/.gitkeep
 /db/*
 !/db/.gitkeep
-./.local.env
+.local.env
+output/*
