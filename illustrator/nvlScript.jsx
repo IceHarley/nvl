@@ -199,6 +199,17 @@ function nvlScript() {
             : value.split(delimiter).pop()
     }
 
+    function setTextSize(textFrame, fontSize) {
+        try {
+            // Устанавливаем размер шрифта
+            textFrame.textRange.characterAttributes.size = fontSize;
+            return true;
+        } catch (e) {
+            alert("Ошибка при установке размера шрифта: " + e.message);
+            return false;
+        }
+    }
+
     function loadDataFromCsv(fileName) {
         var data = getData(fileName);
         const header = data[0];
@@ -228,8 +239,9 @@ function nvlScript() {
             for (var col = 0; col < header.length; col++) {
                 var item = getByNoteInGroup(group, header[col]);
                 if (item) {
-                    if (header[col].endsWith("FullName")) {
+                    if (header[col].endsWith("FullName") && item.contents !== "") {
                         item.contents = beforeLast(values[col], " ");
+                        setTextSize(item, 40);
                         var city = item.words.add(afterLast(values[col], " "));
                         city.characterAttributes.textFont = findItalicFont(item.textRange.textFont);
                     } else {

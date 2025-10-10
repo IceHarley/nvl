@@ -1,18 +1,21 @@
 import {getRosterMenuMessage, quit, rosterPlayerActions} from "./playersCliUtils.js";
 import inquirer from "inquirer";
 import PlayerActions from "./playerActions.js";
+import DocxService from "./docxService.js";
 
 export default class RosterMenu {
     choiceSources
     playersService
     addPlayerMenu
     playerActions
+    docxService
 
     constructor(playersService, choiceSources, addPlayerMenu) {
         this.playersService = playersService;
         this.choiceSources = choiceSources;
         this.addPlayerMenu = addPlayerMenu;
         this.playerActions = new PlayerActions(this.playersService, this.choiceSources);
+        this.docxService = new DocxService();
     }
 
     playersSourceWithSystemChoices = (answers, input = '') =>
@@ -27,6 +30,7 @@ export default class RosterMenu {
         .concat(choices).concat([
             new inquirer.Separator(),
             {name: '====Отметить заигранных', value: 'multipleOutcomes', short: 'Отметить заигранных'},
+            {name: '====Распечатать заявку', value: 'print', short: 'Заявка'},
             {name: '====Назад', value: 'back', short: 'Назад'},
             {name: '====Выход', value: 'quit', short: 'Выход'},
         ]);
@@ -60,9 +64,10 @@ export default class RosterMenu {
             type: 'list',
             name: 'action',
             message: getRosterMenuMessage('Выбор действия'),
-            when: answers => answers.player !== 'back' && answers.player !== 'quit'
-                && answers.team !== 'back' && answers.team !== 'quit'
-                && answers.player !== 'addPlayer' && answers.player !== 'multipleOutcomes',
+            when: answers => {
+                const isSystemAction = ['back', 'quit', 'addPlayer', 'multipleOutcomes', 'print'].includes(answers.player);
+                return !isSystemAction && answers.team !== 'back' && answers.team !== 'quit';
+            },
             choices: rosterPlayerActions,
             loop: false,
         },
@@ -143,6 +148,9 @@ export default class RosterMenu {
                     .then(() => this.choiceSources.updateList(playerIds))
                     .then(() => this.toPlayerSelection(answers, toPrevMenu));
             }
+            case 'print':
+                return this.handlePrintRoster(answers)
+                    .then(() => this.toPlayerSelection(answers, toPrevMenu));
             default:
                 return Promise.resolve(answers);
         }
@@ -156,4 +164,27 @@ export default class RosterMenu {
         throw () => this.open(undefined, toPrevMenu)
     };
 
+    handlePrintRoster = async (answers) => {
+        try {
+            console.log('Формирование заявки команды...');
+
+            // Получаем всех игроков команды
+            const players = await this.playersService.getPlayersByTeam(answers.team.id);
+
+            // Генерируем DOCX
+            const docBuffer = await this.docxService.generateRosterDoc(answers.team, players);
+
+            // Сохраняем файл
+            const filename = `заявка_${answers.team.name}_${new Date().toISOString().split('T')[0]}.docx`
+                .replace(/[^a-zA-Z0-9а-яА-Я_.]/g, '_');
+
+            const filePath = await this.docxService.saveDocToFile(docBuffer, filename);
+
+            console.log(`✅ Заявка сохранена: ${filePath}`);
+            console.log('Готово! Файл можно распечатать.');
+
+        } catch (error) {
+            console.error('❌ Ошибка при создании заявки:', error.message);
+        }
+    };
 }
