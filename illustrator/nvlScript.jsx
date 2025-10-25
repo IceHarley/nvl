@@ -114,12 +114,12 @@ function nvlScript() {
         var df = dataFile;
         var dataFileName = decodeURI(df.name);
         var type = dataFileName.match(/(\.txt$|\.csv$)/i)[0].toLowerCase();
-        var splitter = (type == '.txt') ? '\t' : ',';
+        var splitter = (type === '.txt') ? '\t' : ',';
         df.open('r');
         var fileContents = df.read();
         var firstRow = fileContents.split(/[\r\n]/g)[0];
-        if (firstRow != null && splitter != "\t") {
-            if (firstRow.indexOf(",") == -1 && firstRow.indexOf(";") > -1) {
+        if (firstRow != null && splitter !== "\t") {
+            if (firstRow.indexOf(",") === -1 && firstRow.indexOf(";") > -1) {
                 splitter = ";"; // For the .csv format: if the first row has no commas but has a semicolon, assume this is a semicolon-delimited .csv file
             }
         }
@@ -144,7 +144,7 @@ function nvlScript() {
             }
         }
         return everyRow;
-    };
+    }
 
     function getData(filePath) {
         try {
@@ -153,16 +153,16 @@ function nvlScript() {
             alert(e);
             return null;
         }
-    };
+    }
 
     function checkRowForAllBlanks(row) {
         for (var i = 0; i < row.length; i++) {
-            if (row[i] != '') {
+            if (row[i] !== '') {
                 return false;
             }
         }
         return true;
-    };
+    }
 
 
 //==================================================================================//
@@ -170,10 +170,19 @@ function nvlScript() {
     var doc = app.activeDocument;
 
     function findItalicFont(currentFont) {
-        for (var i = 0; i < app.textFonts.length; i++) {
-            if (app.textFonts[i].family === currentFont.family && app.textFonts[i].style === "Italic") {
-                return app.textFonts[i];
+        try {
+            if (!currentFont || !currentFont.family || !app.textFonts) {
+                return null;
             }
+            
+            for (var i = 0; i < app.textFonts.length; i++) {
+                if (app.textFonts[i].family === currentFont.family && app.textFonts[i].style === "Italic") {
+                    return app.textFonts[i];
+                }
+            }
+            return null;
+        } catch (e) {
+            return null;
         }
     }
 
@@ -210,6 +219,130 @@ function nvlScript() {
         }
     }
 
+    function setTextSizeWithAutoResize(textFrame, fullName, maxFontSize, minFontSize) {
+        try {
+            if (!textFrame || !fullName || !textFrame.textRange) {
+                return maxFontSize;
+            }
+
+            // Разделяем название команды и город
+            var teamName = beforeLast(fullName, " ");
+            var city = afterLast(fullName, " ");
+
+            // Устанавливаем базовое содержимое
+            textFrame.contents = teamName;
+            var currentFontSize = maxFontSize;
+
+            if (city && city.trim() !== "") {
+                var cityWord = textFrame.words.add(city);
+                if (cityWord && cityWord.characterAttributes) {
+                    var italicFont = findItalicFont(textFrame.textRange.textFont);
+                    if (italicFont) {
+                        cityWord.characterAttributes.textFont = italicFont;
+                    }
+                }
+            }
+
+            function setSizeAndRedraw(size) {
+                textFrame.textRange.characterAttributes.size = size;
+                app.redraw();
+            }
+
+            function getOverflowFlag(tf) {
+                try {
+                    if (typeof tf.overflows !== 'undefined') {
+                        return tf.overflows; // Illustrator Area Text
+                    }
+                    if (typeof tf.overflow !== 'undefined') {
+                        return tf.overflow; // Fallback just in case
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            function fitsByBounds(tf, fb) {
+                try {
+                    var tb = tf.textRange && tf.textRange.bounds;
+                    if (tb && fb) {
+                        var textWidth = tb[2] - tb[0];
+                        var textHeight = tb[1] - tb[3];
+                        var frameWidth = fb[2] - fb[0];
+                        var frameHeight = fb[1] - fb[3];
+                        return (textWidth <= frameWidth) && (textHeight <= frameHeight);
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            var frameBounds = null;
+            try { frameBounds = textFrame.geometricBounds; } catch (e) {}
+
+            // Начальная установка размера
+            setSizeAndRedraw(currentFontSize);
+
+            // Шагаем вниз по 1 пункту, пока не поместится по надежным метрикам
+            while (currentFontSize > minFontSize) {
+                var overflow = getOverflowFlag(textFrame);
+                if (overflow === false) {
+                    break; // поместилось
+                }
+                if (overflow === true) {
+                    currentFontSize -= 1;
+                    setSizeAndRedraw(currentFontSize);
+                    continue;
+                }
+
+                // Если нет overflow-флага, пробуем по bounds
+                var fits = fitsByBounds(textFrame, frameBounds);
+                if (fits === true) {
+                    break; // поместилось
+                }
+                if (fits === false) {
+                    currentFontSize -= 1;
+                    setSizeAndRedraw(currentFontSize);
+                    continue;
+                }
+
+                // Последний резерв — консервативная эвристика по ширине фрейма
+                var frameWidth = frameBounds ? (frameBounds[2] - frameBounds[0]) : 0;
+                if (frameWidth > 0) {
+                    var estimatedWidth = fullName.length * (currentFontSize * 0.52);
+                    if (estimatedWidth <= frameWidth * 0.98) {
+                        break;
+                    }
+                }
+                currentFontSize -= 1;
+                setSizeAndRedraw(currentFontSize);
+            }
+
+            // Точная доводка вниз до минимального подходящего размера
+            // Пытаемся уменьшать дальше, пока не наступит переполнение, затем откатываемся на 1
+            var testSize = currentFontSize - 1;
+            while (testSize >= minFontSize) {
+                setSizeAndRedraw(testSize);
+                var ov = getOverflowFlag(textFrame);
+                var ok = null;
+                if (ov === true) { ok = false; }
+                else if (ov === false) { ok = true; }
+                else { ok = fitsByBounds(textFrame, frameBounds); }
+
+                if (ok === true) {
+                    currentFontSize = testSize;
+                    testSize -= 1;
+                    continue;
+                }
+                // Не поместилось — возвращаем предыдущий подходящий размер
+                setSizeAndRedraw(currentFontSize);
+                break;
+            }
+
+            return currentFontSize;
+        } catch (e) {
+            alert("Ошибка при автоматическом изменении размера шрифта: " + e.message);
+            return maxFontSize;
+        }
+    }
+
     function loadDataFromCsv(fileName) {
         var data = getData(fileName);
         const header = data[0];
@@ -231,7 +364,7 @@ function nvlScript() {
 
             var group = getGroup(doc.layers.getByName("groupsLayer").groupItems, values[0]);
             if (group) {
-                group.hidden = values[1].trim() === 'true' ? false : true;
+                group.hidden = values[1].trim() !== 'true';
             } else {
                 alert(decodeURIComponent('%D0%9D%D0%B5%20%D0%BD%D0%B0%D0%B9%D0%B4%D0%B5%D0%BD%D0%B0%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D0%B0%20') + values[0]);
             }//Не найдена группа ...
@@ -239,13 +372,20 @@ function nvlScript() {
             for (var col = 0; col < header.length; col++) {
                 var item = getByNoteInGroup(group, header[col]);
                 if (item) {
-                    if (header[col].endsWith("FullName") && item.contents !== "") {
-                        item.contents = beforeLast(values[col], " ");
-                        setTextSize(item, 40);
-                        var city = item.words.add(afterLast(values[col], " "));
-                        city.characterAttributes.textFont = findItalicFont(item.textRange.textFont);
+                    if (header[col].endsWith("FullName") && values[col] && values[col].trim() !== "") {
+                        // Проверяем длину текста - если короткий, используем фиксированный размер
+                        if (values[col].length <= 20) {
+                            // Короткие названия - используем фиксированный размер
+                            item.contents = beforeLast(values[col], " ");
+                            setTextSize(item, 40);
+                            var city = item.words.add(afterLast(values[col], " "));
+                            city.characterAttributes.textFont = findItalicFont(item.textRange.textFont);
+                        } else {
+                            // Длинные названия - используем автоматическое изменение размера
+                            setTextSizeWithAutoResize(item, values[col], 40, 12);
+                        }
                     } else {
-                        item.contents = values[col];
+                        item.contents = values[col] || "";
                     }
                 }
             }
@@ -400,15 +540,6 @@ function nvlScript() {
         }
     }
 
-    function getByNameInDoc(name) {
-        for (var i = 0; i < doc.pageItems.length; i++) {
-            var item = doc.pageItems[i];
-            if (item.contents === name) {
-                return item;
-            }
-        }
-    }
-
     function getByNote(note, group) {
         for (var i = 0; i < group.pageItems.length; i++) {
             var item = group.pageItems[i];
@@ -488,39 +619,6 @@ function nvlScript() {
         };
     };
 
-    function generateVariables() {
-        var items = doc.layers[0].groupItems;
-        for (var i = 65; i <= 85; i++) {
-            var group = String.fromCharCode(i);
-            var item = getGroup(items, group);
-
-            if (item) {
-                addVariable(item, group + '_visible', VariableKind.VISIBILITY);
-                addNote(item, group + '_visible');
-                var frames = item.textFrames;
-                for (var j = 0; j < frames.length; j++) {
-                    var frame = frames[j];
-                    addVariable(frame, group + '_' + frame.contents, VariableKind.TEXTUAL);
-                    addNote(frame, group + '_' + frame.contents);
-                }
-            }
-        }
-    }
-
-    function generateRatingVariables() {
-        var items = doc.layers[0].groupItems;
-        for (var i = 1; i <= 30; i++) {
-            var item = getRatingLine(items, i);
-            if (item) {
-                var frames = item.textFrames;
-                for (var j = 0; j < frames.length; j++) {
-                    var frame = frames[j];
-                    addNote(frame, frame.contents);
-                }
-            }
-        }
-    }
-
     function getRatingLine(items, number) {
         for (var i = 0; i < items.length; i++)
             if (items[i].name === 'line' + number)
@@ -535,27 +633,326 @@ function nvlScript() {
         return undefined;
     }
 
-    function addVariable(frame, varName, kind) {
-        if (frame.contentVariable) {
-            return;
+    // Функция для форматирования команды с жирным названием и курсивным городом
+    function formatTeamName(textFrame, fullName) {
+        if (!textFrame || !fullName) return;
+        
+        // Разделяем название команды и город
+        var teamName = beforeLast(fullName, " ");
+        var city = afterLast(fullName, " ");
+        
+        // Устанавливаем название команды (жирный шрифт)
+        textFrame.contents = teamName;
+        setTextSize(textFrame, 50);
+        
+        // Добавляем город курсивом (без дополнительных скобок, так как они уже есть в city)
+        var cityWord = textFrame.words.add(city);
+        cityWord.characterAttributes.textFont = findItalicFont(textFrame.textRange.textFont);
+    }
+
+    // Функция для определения дивизиона по букве группы
+    function getDivisionName(groupName) {
+        var divisionNames = [
+            decodeURIComponent('%D0%92%D0%AB%D0%A1%D0%A8%D0%98%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D'), // ВЫСШИЙ ДИВИЗИОН
+            decodeURIComponent('%D0%9F%D0%95%D0%A0%D0%92%D0%AB%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D'), // ПЕРВЫЙ ДИВИЗИОН
+            decodeURIComponent('%D0%92%D0%A2%D0%9E%D0%A0%D0%9E%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D'), // ВТОРОЙ ДИВИЗИОН
+            decodeURIComponent('%D0%A2%D0%A0%D0%95%D0%A2%D0%98%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D'), // ТРЕТИЙ ДИВИЗИОН
+            decodeURIComponent('%D0%A7%D0%95%D0%A2%D0%92%D0%95%D0%A0%D0%A2%D0%AB%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D')  // ЧЕТВЕРТЫЙ ДИВИЗИОН
+        ];
+        
+        // Высший дивизион: A, B
+        if (groupName === 'A' || groupName === 'B') {
+            return divisionNames[0];
         }
-        var variable = doc.variables.add();
+        
+        // Первый дивизион: C, D, E, F
+        if (groupName >= 'C' && groupName <= 'F') {
+            return divisionNames[1];
+        }
+        
+        // Второй дивизион: G, H, I, J
+        if (groupName >= 'G' && groupName <= 'J') {
+            return divisionNames[2];
+        }
+        
+        // Третий дивизион: K, L, M, N
+        if (groupName >= 'K' && groupName <= 'N') {
+            return divisionNames[3];
+        }
+        
+        // Четвертый дивизион: O, P, Q, R, S, T, U, V, W, X, Y, Z
+        if (groupName >= 'O' && groupName <= 'Z') {
+            return divisionNames[4];
+        }
+        
+        // По умолчанию - высший дивизион
+        return divisionNames[0];
+    }
+
+    // Функция для парсинга даты из URL-encoded формата
+    function parseDate(dateString) {
         try {
-            variable.name = varName;
-            variable.kind = kind;
-            if (kind === VariableKind.VISIBILITY) {
-                frame.visibilityVariable = variable;
-            } else {
-                frame.contentVariable = variable;
-            }
+            // Декодируем URL-encoded строку
+            var decoded = decodeURIComponent(dateString);
+            // Парсим формат "12.10.25 11:00"
+            var parts = decoded.split(' ');
+            var datePart = parts[0]; // "12.10.25"
+            var timePart = parts[1]; // "11:00"
+            
+            var dateComponents = datePart.split('.');
+            var day = parseInt(dateComponents[0]);
+            var month = parseInt(dateComponents[1]);
+            var year = 2000 + parseInt(dateComponents[2]); // 25 -> 2025
+            
+            var timeComponents = timePart.split(':');
+            var hours = parseInt(timeComponents[0]);
+            var minutes = parseInt(timeComponents[1]);
+            
+            return new Date(year, month - 1, day, hours, minutes);
         } catch (e) {
-            alert(e);
-            variable.remove();
+            return null;
         }
     }
 
-    function addNote(item, value) {
-        item.note = value;
+    // Функция для форматирования даты в русском формате
+    function formatDate(date) {
+        var months = [
+            decodeURIComponent('%D1%8F%D0%BD%D0%B2%D0%B0%D1%80%D1%8F'), // января
+            decodeURIComponent('%D1%84%D0%B5%D0%B2%D1%80%D0%B0%D0%BB%D1%8F'), // февраля
+            decodeURIComponent('%D0%BC%D0%B0%D1%80%D1%82%D0%B0'), // марта
+            decodeURIComponent('%D0%B0%D0%BF%D1%80%D0%B5%D0%BB%D1%8F'), // апреля
+            decodeURIComponent('%D0%BC%D0%B0%D1%8F'), // мая
+            decodeURIComponent('%D0%B8%D1%8E%D0%BD%D1%8F'), // июня
+            decodeURIComponent('%D0%B8%D1%8E%D0%BB%D1%8F'), // июля
+            decodeURIComponent('%D0%B0%D0%B2%D0%B3%D1%83%D1%81%D1%82%D0%B0'), // августа
+            decodeURIComponent('%D1%81%D0%B5%D0%BD%D1%82%D1%8F%D0%B1%D1%80%D1%8F'), // сентября
+            decodeURIComponent('%D0%BE%D0%BA%D1%82%D1%8F%D0%B1%D1%80%D1%8F'), // октября
+            decodeURIComponent('%D0%BD%D0%BE%D1%8F%D0%B1%D1%80%D1%8F'), // ноября
+            decodeURIComponent('%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F') // декабря
+        ];
+        
+        var day = date.getDate();
+        var month = months[date.getMonth()];
+        var year = date.getFullYear();
+        var hours = date.getHours();
+        var minutes = date.getMinutes();
+        
+        return day + ' ' + month + ' ' + year + ', ' + 
+               (hours < 10 ? '0' : '') + hours + ':' + 
+               (minutes < 10 ? '0' : '') + minutes;
+    }
+
+    // Функция для поиска ближайших турниров
+    function findNearestTournaments(data) {
+        var currentDate = new Date();
+        var futureTournaments = [];
+        
+        // Парсим все турниры и фильтруем будущие
+        for (var i = 1; i < data.length; i++) {
+            var row = data[i];
+            var dateStr = row[2]; // groupDate
+            var tournamentDate = parseDate(dateStr);
+            
+            if (tournamentDate && tournamentDate > currentDate) {
+                futureTournaments.push({
+                    groupName: row[0],
+                    date: tournamentDate,
+                    location: decodeURIComponent(row[3]),
+                    team1FullName: decodeURIComponent(row[6]),
+                    team2FullName: decodeURIComponent(row[9]),
+                    team3FullName: decodeURIComponent(row[12])
+                });
+            }
+        }
+        
+        // Сортируем по дате
+        futureTournaments.sort(function(a, b) {
+            return a.date.getTime() - b.date.getTime();
+        });
+        
+        // Находим ближайшую дату
+        if (futureTournaments.length === 0) {
+            return [];
+        }
+        
+        var nearestDate = futureTournaments[0].date;
+        var nearestTournaments = [];
+        
+        // Собираем все турниры на ближайшую дату (сравниваем только дату, без времени)
+        var nearestDateOnly = new Date(nearestDate.getFullYear(), nearestDate.getMonth(), nearestDate.getDate());
+        for (var j = 0; j < futureTournaments.length; j++) {
+            var tournamentDateOnly = new Date(futureTournaments[j].date.getFullYear(), futureTournaments[j].date.getMonth(), futureTournaments[j].date.getDate());
+            if (tournamentDateOnly.getTime() === nearestDateOnly.getTime()) {
+                nearestTournaments.push(futureTournaments[j]);
+            }
+        }
+        
+        // Сортируем по алфавиту
+        nearestTournaments.sort(function(a, b) {
+            return a.groupName.localeCompare(b.groupName);
+        });
+        
+        
+        // Возвращаем все группы на ближайшую дату (не ограничиваемся 2)
+        return nearestTournaments;
+    }
+
+    // Функция для загрузки данных турнира
+    function loadTournamentData(fileName) {
+        var data = getData(fileName);
+        if (!data || data.length < 2) {
+            alert(decodeURIComponent('%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B0%3A%20%D0%9D%D0%B5%20%D1%83%D0%B4%D0%B0%D0%BB%D0%BE%D1%81%D1%8C%20%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5%20%D0%B8%D0%B7%20%D1%84%D0%B0%D0%B9%D0%BB%D0%B0'));
+            return;
+        }
+        
+        var allTournaments = findNearestTournaments(data);
+        if (allTournaments.length === 0) {
+            alert(decodeURIComponent('%D0%9D%D0%B5%20%D0%BD%D0%B0%D0%B9%D0%B4%D0%B5%D0%BD%D0%BE%20%D0%B1%D1%83%D0%B4%D1%83%D1%89%D0%B8%D1%85%20%D1%82%D1%83%D1%80%D0%BD%D0%B8%D1%80%D0%BE%D0%B2'));
+            return;
+        }
+        
+        // Берем первые 2 группы для первой загрузки
+        var tournaments = allTournaments.slice(0, 2);
+        tournaments.sort(function(a, b) {
+            return a.date.getTime() - b.date.getTime();
+        });
+        
+        // Заполняем данные для первой группы
+        if (tournaments.length >= 1) {
+            var tournament1 = tournaments[0];
+            var group1 = getByNoteInDoc("group1");
+            if (group1) {
+                var groupName1 = getByNoteInGroup(group1, "groupName");
+                if (groupName1) groupName1.contents = tournament1.groupName;
+                
+                var team1FullName = getByNoteInGroup(group1, "team1FullName");
+                if (team1FullName) formatTeamName(team1FullName, tournament1.team1FullName);
+                
+                var team2FullName = getByNoteInGroup(group1, "team2FullName");
+                if (team2FullName) formatTeamName(team2FullName, tournament1.team2FullName);
+                
+                var team3FullName = getByNoteInGroup(group1, "team3FullName");
+                if (team3FullName) formatTeamName(team3FullName, tournament1.team3FullName);
+                
+                var groupDate = getByNoteInGroup(group1, "groupDate");
+                if (groupDate) groupDate.contents = formatDate(tournament1.date);
+                
+                var groupLocation = getByNoteInGroup(group1, "groupLocation");
+                if (groupLocation) groupLocation.contents = decodeURIComponent('%D1%81/%D0%BA%20') + tournament1.location;
+                
+                var division = getByNoteInGroup(group1, "division");
+                if (division) division.contents = getDivisionName(tournament1.groupName);
+            }
+        }
+        
+        // Заполняем данные для второй группы
+        if (tournaments.length >= 2) {
+            var tournament2 = tournaments[1];
+            var group2 = getByNoteInDoc("group2");
+            if (group2) {
+                var groupName2 = getByNoteInGroup(group2, "groupName");
+                if (groupName2) groupName2.contents = tournament2.groupName;
+                
+                var team1FullName2 = getByNoteInGroup(group2, "team1FullName");
+                if (team1FullName2) formatTeamName(team1FullName2, tournament2.team1FullName);
+                
+                var team2FullName2 = getByNoteInGroup(group2, "team2FullName");
+                if (team2FullName2) formatTeamName(team2FullName2, tournament2.team2FullName);
+                
+                var team3FullName2 = getByNoteInGroup(group2, "team3FullName");
+                if (team3FullName2) formatTeamName(team3FullName2, tournament2.team3FullName);
+                
+                var groupDate2 = getByNoteInGroup(group2, "groupDate");
+                if (groupDate2) groupDate2.contents = formatDate(tournament2.date);
+                
+                var groupLocation2 = getByNoteInGroup(group2, "groupLocation");
+                if (groupLocation2) groupLocation2.contents = decodeURIComponent('%D1%81/%D0%BA%20') + tournament2.location;
+                
+                var division2 = getByNoteInGroup(group2, "division");
+                if (division2) division2.contents = getDivisionName(tournament2.groupName);
+            }
+        }
+        
+        redraw();
+    }
+
+    // Функция для загрузки следующих двух групп турнира
+    function loadNextTournamentData(fileName) {
+        var data = getData(fileName);
+        if (!data || data.length < 2) {
+            alert(decodeURIComponent('%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B0%3A%20%D0%9D%D0%B5%20%D1%83%D0%B4%D0%B0%D0%BB%D0%BE%D1%81%D1%8C%20%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5%20%D0%B8%D0%B7%20%D1%84%D0%B0%D0%B9%D0%BB%D0%B0'));
+            return;
+        }
+        
+        var allTournaments = findNearestTournaments(data);
+        if (allTournaments.length < 3) {
+            alert(decodeURIComponent('%D0%9D%D0%B5%20%D0%B4%D0%BE%D1%81%D1%82%D0%B0%D1%82%D0%BE%D1%87%D0%BD%D0%BE%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%20%D0%B4%D0%BB%D1%8F%20%D0%B2%D1%82%D0%BE%D1%80%D0%BE%D0%B9%20%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8'));
+            return;
+        }
+        
+        // Берем группы 3-4 для второй загрузки
+        var tournaments = allTournaments.slice(2, 4);
+        tournaments.sort(function(a, b) {
+            return a.date.getTime() - b.date.getTime();
+        });
+        
+        // Заполняем данные для первой группы (3-я по алфавиту)
+        if (tournaments.length >= 1) {
+            var tournament1 = tournaments[0];
+            var group1 = getByNoteInDoc("group1");
+            if (group1) {
+                var groupName1 = getByNoteInGroup(group1, "groupName");
+                if (groupName1) groupName1.contents = tournament1.groupName;
+                
+                var team1FullName = getByNoteInGroup(group1, "team1FullName");
+                if (team1FullName) formatTeamName(team1FullName, tournament1.team1FullName);
+                
+                var team2FullName = getByNoteInGroup(group1, "team2FullName");
+                if (team2FullName) formatTeamName(team2FullName, tournament1.team2FullName);
+                
+                var team3FullName = getByNoteInGroup(group1, "team3FullName");
+                if (team3FullName) formatTeamName(team3FullName, tournament1.team3FullName);
+                
+                var groupDate = getByNoteInGroup(group1, "groupDate");
+                if (groupDate) groupDate.contents = formatDate(tournament1.date);
+                
+                var groupLocation = getByNoteInGroup(group1, "groupLocation");
+                if (groupLocation) groupLocation.contents = decodeURIComponent('%D1%81/%D0%BA%20') + tournament1.location;
+                
+                var division = getByNoteInGroup(group1, "division");
+                if (division) division.contents = getDivisionName(tournament1.groupName);
+            }
+        }
+        
+        // Заполняем данные для второй группы (4-я по алфавиту)
+        if (tournaments.length >= 2) {
+            var tournament2 = tournaments[1];
+            var group2 = getByNoteInDoc("group2");
+            if (group2) {
+                var groupName2 = getByNoteInGroup(group2, "groupName");
+                if (groupName2) groupName2.contents = tournament2.groupName;
+                
+                var team1FullName2 = getByNoteInGroup(group2, "team1FullName");
+                if (team1FullName2) formatTeamName(team1FullName2, tournament2.team1FullName);
+                
+                var team2FullName2 = getByNoteInGroup(group2, "team2FullName");
+                if (team2FullName2) formatTeamName(team2FullName2, tournament2.team2FullName);
+                
+                var team3FullName2 = getByNoteInGroup(group2, "team3FullName");
+                if (team3FullName2) formatTeamName(team3FullName2, tournament2.team3FullName);
+                
+                var groupDate2 = getByNoteInGroup(group2, "groupDate");
+                if (groupDate2) groupDate2.contents = formatDate(tournament2.date);
+                
+                var groupLocation2 = getByNoteInGroup(group2, "groupLocation");
+                if (groupLocation2) groupLocation2.contents = decodeURIComponent('%D1%81/%D0%BA%20') + tournament2.location;
+                
+                var division2 = getByNoteInGroup(group2, "division");
+                if (division2) division2.contents = getDivisionName(tournament2.groupName);
+            }
+        }
+        
+        redraw();
     }
 
 //==========================================
@@ -563,7 +960,7 @@ function nvlScript() {
     var SESSION = {
         os: $.os.match('Windows') ? 'Windows' : 'Mac',
         dataFileMask: function () {
-            return (this.os == 'Windows') ? "*.txt;*.TXT;*.csv;*.CSV;" : function (f) {
+            return (this.os === 'Windows') ? "*.txt;*.TXT;*.csv;*.CSV;" : function (f) {
                 return f instanceof Folder || (f instanceof File && decodeURI(f.name).match(/(\.txt|\.csv)$/i));
             };
         },
@@ -609,14 +1006,14 @@ function nvlScript() {
             }
         }
         return disp;
-    };
+    }
 
     function validate(UIElements) {
         var res = {
             valid: true,
             problem: ""
         };
-        if (UIElements["disp_dataFile"].getValue() == "") {
+        if (UIElements["disp_dataFile"].getValue() === "") {
             res.problem = "Please choose a comma-delimited (.csv) or tab-delimited (.txt) data file first.";
             res.valid = false;
             return res;
@@ -631,7 +1028,6 @@ function nvlScript() {
         var g_font = w.add("group");
         g_font.orientation = "row";
         g_font.spacing = 4;
-        var maskLabel = g_font.add("statictext", undefined, decodeURIComponent("%D0%9C%D0%B0%D1%81%D0%BA%D0%B0%20%D0%B4%D0%BB%D1%8F%20note%3A%20"));
         var maskInput = g_font.add("edittext", undefined, "*_groupName");
         maskInput.size = [200, 20];
         var btn_incFont = g_font.add("button", undefined, decodeURIComponent("%D0%A8%D1%80%D0%B8%D1%84%D1%82") + " \u2795");
@@ -657,7 +1053,7 @@ function nvlScript() {
             "",
             "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
             SESSION.dataFileMask(),
-            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%201%20%D1%82%D1%83%D1%80.csv"),
+            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%203%20%D1%82%D1%83%D1%80.csv"),
             decodeURIComponent("%D0%93%D1%80%D1%83%D0%BF%D0%BF%D1%8B")
         );
         var btn_ok = g_file.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C'));
@@ -693,6 +1089,35 @@ function nvlScript() {
         }
         w.UIElements["rating_dataFile"] = rating_dataFile;
 
+        var g_tournament = w.add("group");
+
+        var tournament_dataFile = filePathInput(
+            g_tournament,
+            "",
+            "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
+            SESSION.dataFileMask(),
+            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%202%20%D1%82%D1%83%D1%80.csv"),
+            decodeURIComponent("%D0%90%D0%BD%D0%BE%D0%BD%D1%81%20%D1%82%D1%83%D1%80%D0%BD%D0%B8%D1%80%D0%B0")
+        );
+        var btn_loadTournament = g_tournament.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C%20%D0%B0%D0%BD%D0%BE%D0%BD%D1%81%20%281-2%29'));
+        btn_loadTournament.onClick = function () {
+            try {
+                loadTournamentData(tournament_dataFile.getValue());
+            } catch (e) {
+                alert(decodeURIComponent('%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B0%3A%20') + e.message);
+            }
+        }
+        
+        var btn_loadNextTournament = g_tournament.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C%20%D0%B0%D0%BD%D0%BE%D0%BD%D1%81%20%283-4%29'));
+        btn_loadNextTournament.onClick = function () {
+            try {
+                loadNextTournamentData(tournament_dataFile.getValue());
+            } catch (e) {
+                alert(decodeURIComponent('%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B0%3A%20') + e.message);
+            }
+        }
+        w.UIElements["tournament_dataFile"] = tournament_dataFile;
+
         var g_btn = w.add("group");
         g_btn.spacing = 4;
 
@@ -708,7 +1133,7 @@ function nvlScript() {
             if (validationTest.valid) {
                 alert(this.window.UIElements["disp_dataFile"].getValue());
             } else {
-                if (validationTest.problem != "") {
+                if (validationTest.problem !== "") {
                     alert(validationTest.problem);
                 }
             }
@@ -719,7 +1144,7 @@ function nvlScript() {
             this.layout.layout(true);
         };
 
-        if (w.show() == 2) {
+        if (w.show() === 2) {
             return null;
         }
         return {
