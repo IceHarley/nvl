@@ -170,10 +170,19 @@ function nvlScript() {
     var doc = app.activeDocument;
 
     function findItalicFont(currentFont) {
-        for (var i = 0; i < app.textFonts.length; i++) {
-            if (app.textFonts[i].family === currentFont.family && app.textFonts[i].style === "Italic") {
-                return app.textFonts[i];
+        try {
+            if (!currentFont || !currentFont.family || !app.textFonts) {
+                return null;
             }
+            
+            for (var i = 0; i < app.textFonts.length; i++) {
+                if (app.textFonts[i].family === currentFont.family && app.textFonts[i].style === "Italic") {
+                    return app.textFonts[i];
+                }
+            }
+            return null;
+        } catch (e) {
+            return null;
         }
     }
 
@@ -210,6 +219,130 @@ function nvlScript() {
         }
     }
 
+    function setTextSizeWithAutoResize(textFrame, fullName, maxFontSize, minFontSize) {
+        try {
+            if (!textFrame || !fullName || !textFrame.textRange) {
+                return maxFontSize;
+            }
+
+            // Разделяем название команды и город
+            var teamName = beforeLast(fullName, " ");
+            var city = afterLast(fullName, " ");
+
+            // Устанавливаем базовое содержимое
+            textFrame.contents = teamName;
+            var currentFontSize = maxFontSize;
+
+            if (city && city.trim() !== "") {
+                var cityWord = textFrame.words.add(city);
+                if (cityWord && cityWord.characterAttributes) {
+                    var italicFont = findItalicFont(textFrame.textRange.textFont);
+                    if (italicFont) {
+                        cityWord.characterAttributes.textFont = italicFont;
+                    }
+                }
+            }
+
+            function setSizeAndRedraw(size) {
+                textFrame.textRange.characterAttributes.size = size;
+                app.redraw();
+            }
+
+            function getOverflowFlag(tf) {
+                try {
+                    if (typeof tf.overflows !== 'undefined') {
+                        return tf.overflows; // Illustrator Area Text
+                    }
+                    if (typeof tf.overflow !== 'undefined') {
+                        return tf.overflow; // Fallback just in case
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            function fitsByBounds(tf, fb) {
+                try {
+                    var tb = tf.textRange && tf.textRange.bounds;
+                    if (tb && fb) {
+                        var textWidth = tb[2] - tb[0];
+                        var textHeight = tb[1] - tb[3];
+                        var frameWidth = fb[2] - fb[0];
+                        var frameHeight = fb[1] - fb[3];
+                        return (textWidth <= frameWidth) && (textHeight <= frameHeight);
+                    }
+                } catch (e) {}
+                return null;
+            }
+
+            var frameBounds = null;
+            try { frameBounds = textFrame.geometricBounds; } catch (e) {}
+
+            // Начальная установка размера
+            setSizeAndRedraw(currentFontSize);
+
+            // Шагаем вниз по 1 пункту, пока не поместится по надежным метрикам
+            while (currentFontSize > minFontSize) {
+                var overflow = getOverflowFlag(textFrame);
+                if (overflow === false) {
+                    break; // поместилось
+                }
+                if (overflow === true) {
+                    currentFontSize -= 1;
+                    setSizeAndRedraw(currentFontSize);
+                    continue;
+                }
+
+                // Если нет overflow-флага, пробуем по bounds
+                var fits = fitsByBounds(textFrame, frameBounds);
+                if (fits === true) {
+                    break; // поместилось
+                }
+                if (fits === false) {
+                    currentFontSize -= 1;
+                    setSizeAndRedraw(currentFontSize);
+                    continue;
+                }
+
+                // Последний резерв — консервативная эвристика по ширине фрейма
+                var frameWidth = frameBounds ? (frameBounds[2] - frameBounds[0]) : 0;
+                if (frameWidth > 0) {
+                    var estimatedWidth = fullName.length * (currentFontSize * 0.52);
+                    if (estimatedWidth <= frameWidth * 0.98) {
+                        break;
+                    }
+                }
+                currentFontSize -= 1;
+                setSizeAndRedraw(currentFontSize);
+            }
+
+            // Точная доводка вниз до минимального подходящего размера
+            // Пытаемся уменьшать дальше, пока не наступит переполнение, затем откатываемся на 1
+            var testSize = currentFontSize - 1;
+            while (testSize >= minFontSize) {
+                setSizeAndRedraw(testSize);
+                var ov = getOverflowFlag(textFrame);
+                var ok = null;
+                if (ov === true) { ok = false; }
+                else if (ov === false) { ok = true; }
+                else { ok = fitsByBounds(textFrame, frameBounds); }
+
+                if (ok === true) {
+                    currentFontSize = testSize;
+                    testSize -= 1;
+                    continue;
+                }
+                // Не поместилось — возвращаем предыдущий подходящий размер
+                setSizeAndRedraw(currentFontSize);
+                break;
+            }
+
+            return currentFontSize;
+        } catch (e) {
+            alert("Ошибка при автоматическом изменении размера шрифта: " + e.message);
+            return maxFontSize;
+        }
+    }
+
     function loadDataFromCsv(fileName) {
         var data = getData(fileName);
         const header = data[0];
@@ -239,13 +372,20 @@ function nvlScript() {
             for (var col = 0; col < header.length; col++) {
                 var item = getByNoteInGroup(group, header[col]);
                 if (item) {
-                    if (header[col].endsWith("FullName") && item.contents !== "") {
-                        item.contents = beforeLast(values[col], " ");
-                        setTextSize(item, 40);
-                        var city = item.words.add(afterLast(values[col], " "));
-                        city.characterAttributes.textFont = findItalicFont(item.textRange.textFont);
+                    if (header[col].endsWith("FullName") && values[col] && values[col].trim() !== "") {
+                        // Проверяем длину текста - если короткий, используем фиксированный размер
+                        if (values[col].length <= 20) {
+                            // Короткие названия - используем фиксированный размер
+                            item.contents = beforeLast(values[col], " ");
+                            setTextSize(item, 40);
+                            var city = item.words.add(afterLast(values[col], " "));
+                            city.characterAttributes.textFont = findItalicFont(item.textRange.textFont);
+                        } else {
+                            // Длинные названия - используем автоматическое изменение размера
+                            setTextSizeWithAutoResize(item, values[col], 40, 12);
+                        }
                     } else {
-                        item.contents = values[col];
+                        item.contents = values[col] || "";
                     }
                 }
             }
@@ -913,7 +1053,7 @@ function nvlScript() {
             "",
             "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
             SESSION.dataFileMask(),
-            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%201%20%D1%82%D1%83%D1%80.csv"),
+            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%203%20%D1%82%D1%83%D1%80.csv"),
             decodeURIComponent("%D0%93%D1%80%D1%83%D0%BF%D0%BF%D1%8B")
         );
         var btn_ok = g_file.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C'));
