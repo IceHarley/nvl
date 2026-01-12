@@ -9,6 +9,99 @@ main
 
 function nvlScript() {
 
+    // Load configuration
+    try {
+        // Try to load config.js from the same directory as the script
+        var scriptFile = new File($.fileName);
+        var scriptFolder = scriptFile.parent;
+        var configPath = new File(scriptFolder + "/config.js");
+
+        if (configPath.exists) {
+            $.evalFile(configPath.fsName);
+        } else {
+            // Use fallback configuration
+            var CONFIG = {
+                DEFAULT_GROUPS_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 3 тур.csv",
+                DEFAULT_RATING_FILE: "D:\\Work\\NVL\\2025 осень\\Рейтинг Осень 2025 generated1.csv",
+                DEFAULT_TOURNAMENT_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 2 тур.csv",
+                DIVISIONS: {
+                    HIGH: "ВЫСШИЙ ДИВИЗИОН",
+                    FIRST: "ПЕРВЫЙ ДИВИЗИОН",
+                    SECOND: "ВТОРОЙ ДИВИЗИОН",
+                    THIRD: "ТРЕТИЙ ДИВИЗИОН",
+                    FOURTH: "ЧЕТВЕРТЫЙ ДИВИЗИОН"
+                },
+                MONTHS: [
+                    "января", "февраля", "марта", "апреля", "мая", "июня",
+                    "июля", "августа", "сентября", "октября", "ноября", "декабря"
+                ],
+                UI_LABELS: {
+                    GROUPS_BUTTON: "Файл с данными",
+                    GROUPS_TAB: "Группы",
+                    RATING_TAB: "Рейтинг",
+                    TOURNAMENT_TAB: "Анонс турнира",
+                    LOAD_BUTTON: "Загрузить",
+                    FONT_INCREASE: "Шрифт ↑",
+                    FONT_DECREASE: "Шрифт ↓",
+                    MOVE_UP: "Вверх",
+                    MOVE_DOWN: "Вниз",
+                    LOAD_RATING_PART1: "Часть 1",
+                    LOAD_RATING_PART2: "Часть 2",
+                    LOAD_TOURNAMENT_1_2: "Загрузить анонс (1-2)",
+                    LOAD_TOURNAMENT_3_4: "Загрузить анонс (3-4)"
+                },
+                ERRORS: {
+                    INVALID_FORMAT: "Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!",
+                    GROUP_NOT_FOUND: "Не найдена группа",
+                    LOAD_DATA_ERROR: "Ошибка: Не удалось загрузить данные из файла",
+                    NO_FUTURE_TOURNAMENTS: "Не найдено будущих турниров",
+                    INSUFFICIENT_GROUPS: "Не достаточно групп для второй загрузки"
+                },
+                LOCATION_PREFIX: "с/к "
+            };
+        }
+    } catch (e) {
+        // Use fallback configuration in case of error
+        var CONFIG = {
+            DEFAULT_GROUPS_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 3 тур.csv",
+            DEFAULT_RATING_FILE: "D:\\Work\\NVL\\2025 осень\\Рейтинг Осень 2025 generated1.csv",
+            DEFAULT_TOURNAMENT_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 2 тур.csv",
+            DIVISIONS: {
+                HIGH: "ВЫСШИЙ ДИВИЗИОН",
+                FIRST: "ПЕРВЫЙ ДИВИЗИОН",
+                SECOND: "ВТОРОЙ ДИВИЗИОН",
+                THIRD: "ТРЕТИЙ ДИВИЗИОН",
+                FOURTH: "ЧЕТВЕРТЫЙ ДИВИЗИОН"
+            },
+            MONTHS: [
+                "января", "февраля", "марта", "апреля", "мая", "июня",
+                "июля", "августа", "сентября", "октября", "ноября", "декабря"
+            ],
+            UI_LABELS: {
+                GROUPS_BUTTON: "Файл с данными",
+                GROUPS_TAB: "Группы",
+                RATING_TAB: "Рейтинг",
+                TOURNAMENT_TAB: "Анонс турнира",
+                LOAD_BUTTON: "Загрузить",
+                FONT_INCREASE: "Шрифт ↑",
+                FONT_DECREASE: "Шрифт ↓",
+                MOVE_UP: "Вверх",
+                MOVE_DOWN: "Вниз",
+                LOAD_RATING_PART1: "Часть 1",
+                LOAD_RATING_PART2: "Часть 2",
+                LOAD_TOURNAMENT_1_2: "Загрузить анонс (1-2)",
+                LOAD_TOURNAMENT_3_4: "Загрузить анонс (3-4)"
+            },
+            ERRORS: {
+                INVALID_FORMAT: "Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!",
+                GROUP_NOT_FOUND: "Не найдена группа",
+                LOAD_DATA_ERROR: "Ошибка: Не удалось загрузить данные из файла",
+                NO_FUTURE_TOURNAMENTS: "Не найдено будущих турниров",
+                INSUFFICIENT_GROUPS: "Не достаточно групп для второй загрузки"
+            },
+            LOCATION_PREFIX: "с/к "
+        };
+    }
 
 //=================================== FUNCTIONS ====================================//
 
@@ -355,7 +448,7 @@ function nvlScript() {
             var values = data[i];
             if (header.length !== values.length) {
                 //Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!
-                alert(decodeURIComponent('%D0%9D%D0%B5%D0%BA%D0%BE%D1%80%D1%80%D0%B5%D0%BA%D1%82%D0%BD%D1%8B%D0%B9%20%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%82%20%D1%84%D0%B0%D0%B9%D0%BB%D0%B0%3A%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B2%20%D0%B7%D0%B0%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BA%D0%B5%20%D0%BD%D0%B5%20%D1%81%D0%BE%D0%B2%D0%BF%D0%B0%D0%B4%D0%B0%D0%B5%D1%82%20%D1%81%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%D0%BC%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85%21'));
+                alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.INVALID_FORMAT)));
             }
 
             for (var j = 0; j < values.length; j++) {
@@ -366,7 +459,7 @@ function nvlScript() {
             if (group) {
                 group.hidden = values[1].trim() !== 'true';
             } else {
-                alert(decodeURIComponent('%D0%9D%D0%B5%20%D0%BD%D0%B0%D0%B9%D0%B4%D0%B5%D0%BD%D0%B0%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D0%B0%20') + values[0]);
+                alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.GROUP_NOT_FOUND)) + ' ' + values[0]);
             }//Не найдена группа ...
 
             for (var col = 0; col < header.length; col++) {
@@ -398,7 +491,7 @@ function nvlScript() {
         const values = data[1];
         if (header.length !== values.length) {
             //Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!
-            alert(decodeURIComponent('%D0%9D%D0%B5%D0%BA%D0%BE%D1%80%D1%80%D0%B5%D0%BA%D1%82%D0%BD%D1%8B%D0%B9%20%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%82%20%D1%84%D0%B0%D0%B9%D0%BB%D0%B0%3A%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B2%20%D0%B7%D0%B0%D0%B3%D0%BE%D0%BB%D0%BE%D0%B2%D0%BA%D0%B5%20%D0%BD%D0%B5%20%D1%81%D0%BE%D0%B2%D0%BF%D0%B0%D0%B4%D0%B0%D0%B5%D1%82%20%D1%81%20%D0%BA%D0%BE%D0%BB%D0%B8%D1%87%D0%B5%D1%81%D1%82%D0%B2%D0%BE%D0%BC%20%D0%BF%D0%BE%D0%BB%D0%B5%D0%B9%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D1%85%21'));
+            alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.INVALID_FORMAT)));
         }
         if (data.length !== 31) {
             //Некорректный формат файла: должно быть 30 строк
@@ -652,41 +745,33 @@ function nvlScript() {
 
     // Функция для определения дивизиона по букве группы
     function getDivisionName(groupName) {
-        var divisionNames = [
-            decodeURIComponent('%D0%92%D0%AB%D0%A1%D0%A8%D0%98%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D'), // ВЫСШИЙ ДИВИЗИОН
-            decodeURIComponent('%D0%9F%D0%95%D0%A0%D0%92%D0%AB%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D'), // ПЕРВЫЙ ДИВИЗИОН
-            decodeURIComponent('%D0%92%D0%A2%D0%9E%D0%A0%D0%9E%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D'), // ВТОРОЙ ДИВИЗИОН
-            decodeURIComponent('%D0%A2%D0%A0%D0%95%D0%A2%D0%98%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D'), // ТРЕТИЙ ДИВИЗИОН
-            decodeURIComponent('%D0%A7%D0%95%D0%A2%D0%92%D0%95%D0%A0%D0%A2%D0%AB%D0%99%20%D0%94%D0%98%D0%92%D0%98%D0%97%D0%98%D0%9E%D0%9D')  // ЧЕТВЕРТЫЙ ДИВИЗИОН
-        ];
-        
         // Высший дивизион: A, B
         if (groupName === 'A' || groupName === 'B') {
-            return divisionNames[0];
+            return decodeURIComponent(encodeURIComponent(CONFIG.DIVISIONS.HIGH));
         }
-        
+
         // Первый дивизион: C, D, E, F
         if (groupName >= 'C' && groupName <= 'F') {
-            return divisionNames[1];
+            return decodeURIComponent(encodeURIComponent(CONFIG.DIVISIONS.FIRST));
         }
-        
+
         // Второй дивизион: G, H, I, J
         if (groupName >= 'G' && groupName <= 'J') {
-            return divisionNames[2];
+            return decodeURIComponent(encodeURIComponent(CONFIG.DIVISIONS.SECOND));
         }
-        
+
         // Третий дивизион: K, L, M, N
         if (groupName >= 'K' && groupName <= 'N') {
-            return divisionNames[3];
+            return decodeURIComponent(encodeURIComponent(CONFIG.DIVISIONS.THIRD));
         }
-        
+
         // Четвертый дивизион: O, P, Q, R, S, T, U, V, W, X, Y, Z
         if (groupName >= 'O' && groupName <= 'Z') {
-            return divisionNames[4];
+            return decodeURIComponent(encodeURIComponent(CONFIG.DIVISIONS.FOURTH));
         }
-        
+
         // По умолчанию - высший дивизион
-        return divisionNames[0];
+        return decodeURIComponent(encodeURIComponent(CONFIG.DIVISIONS.HIGH));
     }
 
     // Функция для парсинга даты из URL-encoded формата
@@ -716,29 +801,14 @@ function nvlScript() {
 
     // Функция для форматирования даты в русском формате
     function formatDate(date) {
-        var months = [
-            decodeURIComponent('%D1%8F%D0%BD%D0%B2%D0%B0%D1%80%D1%8F'), // января
-            decodeURIComponent('%D1%84%D0%B5%D0%B2%D1%80%D0%B0%D0%BB%D1%8F'), // февраля
-            decodeURIComponent('%D0%BC%D0%B0%D1%80%D1%82%D0%B0'), // марта
-            decodeURIComponent('%D0%B0%D0%BF%D1%80%D0%B5%D0%BB%D1%8F'), // апреля
-            decodeURIComponent('%D0%BC%D0%B0%D1%8F'), // мая
-            decodeURIComponent('%D0%B8%D1%8E%D0%BD%D1%8F'), // июня
-            decodeURIComponent('%D0%B8%D1%8E%D0%BB%D1%8F'), // июля
-            decodeURIComponent('%D0%B0%D0%B2%D0%B3%D1%83%D1%81%D1%82%D0%B0'), // августа
-            decodeURIComponent('%D1%81%D0%B5%D0%BD%D1%82%D1%8F%D0%B1%D1%80%D1%8F'), // сентября
-            decodeURIComponent('%D0%BE%D0%BA%D1%82%D1%8F%D0%B1%D1%80%D1%8F'), // октября
-            decodeURIComponent('%D0%BD%D0%BE%D1%8F%D0%B1%D1%80%D1%8F'), // ноября
-            decodeURIComponent('%D0%B4%D0%B5%D0%BA%D0%B0%D0%B1%D1%80%D1%8F') // декабря
-        ];
-        
         var day = date.getDate();
-        var month = months[date.getMonth()];
+        var month = decodeURIComponent(encodeURIComponent(CONFIG.MONTHS[date.getMonth()]));
         var year = date.getFullYear();
         var hours = date.getHours();
         var minutes = date.getMinutes();
-        
-        return day + ' ' + month + ' ' + year + ', ' + 
-               (hours < 10 ? '0' : '') + hours + ':' + 
+
+        return day + ' ' + month + ' ' + year + ', ' +
+               (hours < 10 ? '0' : '') + hours + ':' +
                (minutes < 10 ? '0' : '') + minutes;
     }
 
@@ -801,13 +871,13 @@ function nvlScript() {
     function loadTournamentData(fileName) {
         var data = getData(fileName);
         if (!data || data.length < 2) {
-            alert(decodeURIComponent('%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B0%3A%20%D0%9D%D0%B5%20%D1%83%D0%B4%D0%B0%D0%BB%D0%BE%D1%81%D1%8C%20%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5%20%D0%B8%D0%B7%20%D1%84%D0%B0%D0%B9%D0%BB%D0%B0'));
+            alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.LOAD_DATA_ERROR)));
             return;
         }
         
         var allTournaments = findNearestTournaments(data);
         if (allTournaments.length === 0) {
-            alert(decodeURIComponent('%D0%9D%D0%B5%20%D0%BD%D0%B0%D0%B9%D0%B4%D0%B5%D0%BD%D0%BE%20%D0%B1%D1%83%D0%B4%D1%83%D1%89%D0%B8%D1%85%20%D1%82%D1%83%D1%80%D0%BD%D0%B8%D1%80%D0%BE%D0%B2'));
+            alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.NO_FUTURE_TOURNAMENTS)));
             return;
         }
         
@@ -838,7 +908,7 @@ function nvlScript() {
                 if (groupDate) groupDate.contents = formatDate(tournament1.date);
                 
                 var groupLocation = getByNoteInGroup(group1, "groupLocation");
-                if (groupLocation) groupLocation.contents = decodeURIComponent('%D1%81/%D0%BA%20') + tournament1.location;
+                if (groupLocation) groupLocation.contents = decodeURIComponent(encodeURIComponent(CONFIG.LOCATION_PREFIX)) + tournament1.location;
                 
                 var division = getByNoteInGroup(group1, "division");
                 if (division) division.contents = getDivisionName(tournament1.groupName);
@@ -866,7 +936,7 @@ function nvlScript() {
                 if (groupDate2) groupDate2.contents = formatDate(tournament2.date);
                 
                 var groupLocation2 = getByNoteInGroup(group2, "groupLocation");
-                if (groupLocation2) groupLocation2.contents = decodeURIComponent('%D1%81/%D0%BA%20') + tournament2.location;
+                if (groupLocation2) groupLocation2.contents = decodeURIComponent(encodeURIComponent(CONFIG.LOCATION_PREFIX)) + tournament2.location;
                 
                 var division2 = getByNoteInGroup(group2, "division");
                 if (division2) division2.contents = getDivisionName(tournament2.groupName);
@@ -880,13 +950,13 @@ function nvlScript() {
     function loadNextTournamentData(fileName) {
         var data = getData(fileName);
         if (!data || data.length < 2) {
-            alert(decodeURIComponent('%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B0%3A%20%D0%9D%D0%B5%20%D1%83%D0%B4%D0%B0%D0%BB%D0%BE%D1%81%D1%8C%20%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%B5%20%D0%B8%D0%B7%20%D1%84%D0%B0%D0%B9%D0%BB%D0%B0'));
+            alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.LOAD_DATA_ERROR)));
             return;
         }
         
         var allTournaments = findNearestTournaments(data);
         if (allTournaments.length < 3) {
-            alert(decodeURIComponent('%D0%9D%D0%B5%20%D0%B4%D0%BE%D1%81%D1%82%D0%B0%D1%82%D0%BE%D1%87%D0%BD%D0%BE%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%20%D0%B4%D0%BB%D1%8F%20%D0%B2%D1%82%D0%BE%D1%80%D0%BE%D0%B9%20%D0%B7%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%BA%D0%B8'));
+            alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.INSUFFICIENT_GROUPS)));
             return;
         }
         
@@ -917,7 +987,7 @@ function nvlScript() {
                 if (groupDate) groupDate.contents = formatDate(tournament1.date);
                 
                 var groupLocation = getByNoteInGroup(group1, "groupLocation");
-                if (groupLocation) groupLocation.contents = decodeURIComponent('%D1%81/%D0%BA%20') + tournament1.location;
+                if (groupLocation) groupLocation.contents = decodeURIComponent(encodeURIComponent(CONFIG.LOCATION_PREFIX)) + tournament1.location;
                 
                 var division = getByNoteInGroup(group1, "division");
                 if (division) division.contents = getDivisionName(tournament1.groupName);
@@ -945,7 +1015,7 @@ function nvlScript() {
                 if (groupDate2) groupDate2.contents = formatDate(tournament2.date);
                 
                 var groupLocation2 = getByNoteInGroup(group2, "groupLocation");
-                if (groupLocation2) groupLocation2.contents = decodeURIComponent('%D1%81/%D0%BA%20') + tournament2.location;
+                if (groupLocation2) groupLocation2.contents = decodeURIComponent(encodeURIComponent(CONFIG.LOCATION_PREFIX)) + tournament2.location;
                 
                 var division2 = getByNoteInGroup(group2, "division");
                 if (division2) division2.contents = getDivisionName(tournament2.groupName);
@@ -977,7 +1047,7 @@ function nvlScript() {
         p.orientation = "row";
 
         // Используем переданный текст кнопки или значение по умолчанию
-        var buttonLabel = buttonText || decodeURIComponent("%D0%A4%D0%B0%D0%B9%D0%BB%20%D1%81%20%D0%B4%D0%B0%D0%BD%D0%BD%D1%8B%D0%BC%D0%B8");
+        var buttonLabel = buttonText || decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.GROUPS_BUTTON));
         var b = p.add("button", undefined, buttonLabel);
 
         var disp = p.add('edittext { properties : {readonly : true}, justify : "right" }');
@@ -1030,12 +1100,12 @@ function nvlScript() {
         g_font.spacing = 4;
         var maskInput = g_font.add("edittext", undefined, "*_groupName");
         maskInput.size = [200, 20];
-        var btn_incFont = g_font.add("button", undefined, decodeURIComponent("%D0%A8%D1%80%D0%B8%D1%84%D1%82") + " \u2795");
-        var btn_decFont = g_font.add("button", undefined, decodeURIComponent("%D0%A8%D1%80%D0%B8%D1%84%D1%82") + " \u2796");
+        var btn_incFont = g_font.add("button", undefined, decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.FONT_INCREASE)));
+        var btn_decFont = g_font.add("button", undefined, decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.FONT_DECREASE)));
         btn_incFont.onClick = changeItemsFont(maskInput, 1);
         btn_decFont.onClick = changeItemsFont(maskInput, -1);
-        var btn_moveUp = g_font.add("button", undefined, decodeURIComponent("%D0%92%D0%B2%D0%B5%D1%80%D1%85"));
-        var btn_moveDown = g_font.add("button", undefined, decodeURIComponent("%D0%92%D0%BD%D0%B8%D0%B7"));
+        var btn_moveUp = g_font.add("button", undefined, decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.MOVE_UP)));
+        var btn_moveDown = g_font.add("button", undefined, decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.MOVE_DOWN)));
         btn_moveUp.onClick = moveItems(maskInput, 1);
         btn_moveDown.onClick = moveItems(maskInput, -1);
 
@@ -1053,10 +1123,10 @@ function nvlScript() {
             "",
             "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
             SESSION.dataFileMask(),
-            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%203%20%D1%82%D1%83%D1%80.csv"),
-            decodeURIComponent("%D0%93%D1%80%D1%83%D0%BF%D0%BF%D1%8B")
+            decodeURIComponent(encodeURIComponent(CONFIG.DEFAULT_GROUPS_FILE)),
+            decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.GROUPS_TAB))
         );
-        var btn_ok = g_file.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C'));
+        var btn_ok = g_file.add("button", undefined, decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.LOAD_BUTTON)));
         w.UIElements["disp_dataFile"] = disp_dataFile;
 
         var g_rating = w.add("group");
@@ -1066,11 +1136,11 @@ function nvlScript() {
             "",
             "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
             SESSION.dataFileMask(),
-            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%A0%D0%B5%D0%B9%D1%82%D0%B8%D0%BD%D0%B3%20%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20generated1.csv"),
-            decodeURIComponent("%D0%A0%D0%B5%D0%B9%D1%82%D0%B8%D0%BD%D0%B3")
+            decodeURIComponent(encodeURIComponent(CONFIG.DEFAULT_RATING_FILE)),
+            decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.RATING_TAB))
         );
-        var btn_loadRating1 = g_rating.add("button", undefined, decodeURIComponent('%D0%A7%D0%B0%D1%81%D1%82%D1%8C%201'));
-        var btn_loadRating2 = g_rating.add("button", undefined, decodeURIComponent('%D0%A7%D0%B0%D1%81%D1%82%D1%8C%202'));
+        var btn_loadRating1 = g_rating.add("button", undefined, decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.LOAD_RATING_PART1)));
+        var btn_loadRating2 = g_rating.add("button", undefined, decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.LOAD_RATING_PART2)));
         btn_loadRating1.onClick = function () {
             try {
                 loadRatingFromCsv(rating_dataFile.getValue());
@@ -1096,24 +1166,24 @@ function nvlScript() {
             "",
             "Choose a .txt (tab-delimited) or .csv (comma-delimited) text file to import.",
             SESSION.dataFileMask(),
-            decodeURIComponent("D%3A%5CWork%5CNVL%5C2025%20%D0%BE%D1%81%D0%B5%D0%BD%D1%8C%5C%D0%9E%D1%81%D0%B5%D0%BD%D1%8C%202025%20%D0%B3%D1%80%D1%83%D0%BF%D0%BF%D1%8B%20%D0%BD%D0%B0%202%20%D1%82%D1%83%D1%80.csv"),
-            decodeURIComponent("%D0%90%D0%BD%D0%BE%D0%BD%D1%81%20%D1%82%D1%83%D1%80%D0%BD%D0%B8%D1%80%D0%B0")
+            decodeURIComponent(encodeURIComponent(CONFIG.DEFAULT_TOURNAMENT_FILE)),
+            decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.TOURNAMENT_TAB))
         );
-        var btn_loadTournament = g_tournament.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C%20%D0%B0%D0%BD%D0%BE%D0%BD%D1%81%20%281-2%29'));
+        var btn_loadTournament = g_tournament.add("button", undefined, decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.LOAD_TOURNAMENT_1_2)));
         btn_loadTournament.onClick = function () {
             try {
                 loadTournamentData(tournament_dataFile.getValue());
             } catch (e) {
-                alert(decodeURIComponent('%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B0%3A%20') + e.message);
+                alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.LOAD_DATA_ERROR)) + e.message);
             }
         }
         
-        var btn_loadNextTournament = g_tournament.add("button", undefined, decodeURIComponent('%D0%97%D0%B0%D0%B3%D1%80%D1%83%D0%B7%D0%B8%D1%82%D1%8C%20%D0%B0%D0%BD%D0%BE%D0%BD%D1%81%20%283-4%29'));
+        var btn_loadNextTournament = g_tournament.add("button", undefined, decodeURIComponent(encodeURIComponent(CONFIG.UI_LABELS.LOAD_TOURNAMENT_3_4)));
         btn_loadNextTournament.onClick = function () {
             try {
                 loadNextTournamentData(tournament_dataFile.getValue());
             } catch (e) {
-                alert(decodeURIComponent('%D0%9E%D1%88%D0%B8%D0%B1%D0%BA%D0%B0%3A%20') + e.message);
+                alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.LOAD_DATA_ERROR)) + e.message);
             }
         }
         w.UIElements["tournament_dataFile"] = tournament_dataFile;
