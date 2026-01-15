@@ -63,8 +63,8 @@ export default class AddPlayerMenu {
         },
         {
             type: 'input',
-            name: 'newPlayer.instagram',
-            message: 'Instagram',
+            name: 'newPlayer.birthYear',
+            message: 'Год рождения',
             when: answers => typeof answers.addPlayer === 'string' && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
         },
         {

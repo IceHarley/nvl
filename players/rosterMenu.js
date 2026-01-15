@@ -73,10 +73,10 @@ export default class RosterMenu {
         },
         {
             type: 'input',
-            name: 'newInstagram',
-            message: getRosterMenuMessage('Instagram'),
-            default: answers => answers?.player?.instagram,
-            when: answers => answers.action === 'changeInstagram',
+            name: 'newBirthYear',
+            message: getRosterMenuMessage('Год рождения'),
+            default: answers => answers?.player?.birthYear,
+            when: answers => answers.action === 'changeBirthYear',
         },
         {
             type: 'input',

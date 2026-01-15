@@ -34,7 +34,7 @@ export class DocxService {
                     allPlayers.push({
                         number: index + 1,
                         name: player.name,
-                        instagram: player.instagram || '-',
+                        birthYear: player.birthYear || '-',
                         hasOutcome: player.currentOutcome ? '✓' : ''
                     });
                 });
@@ -43,7 +43,7 @@ export class DocxService {
                     allPlayers.push({
                         number: i + 1,
                         name: '',
-                        instagram: '',
+                        birthYear: '',
                         hasOutcome: ''
                     });
                 }
