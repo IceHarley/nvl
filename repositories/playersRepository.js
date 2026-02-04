@@ -29,7 +29,7 @@ export default class PlayersRepository {
     normalCreateList = records => Promise.all(chunkArray(records)
         .map(chunk => asyncAirtable.bulkCreate(TABLE, chunk.map(record => ({
             "Имя": record.name,
-            "Instagram": record.instagram,
+            "Год рождения": record.birthYear,
             "Команда": record.team ? [record.team] : [],
             "Турниры": record.tournaments,
         })))));
@@ -44,7 +44,7 @@ export default class PlayersRepository {
             id: record.id,
             fields: {
                 "Имя": record.name,
-                "Instagram": record.instagram,
+                "Год рождения": record.birthYear,
                 "Команда": record.team ? [record.team] : [],
                 "Турниры": record.tournaments,
             }
@@ -55,7 +55,7 @@ export default class PlayersRepository {
             id: record.id,
             fields: {
                 "Имя": null,
-                "Instagram": null,
+                "Год рождения": null,
                 "Команда": null,
                 "Турниры": null,
             }
@@ -65,7 +65,7 @@ export default class PlayersRepository {
 export const minify = record => ({
     id: record.id,
     name: record.fields['Имя'],
-    instagram: record.fields['Instagram'],
+    birthYear: record.fields['Год рождения'],
     team: record.fields['Команда'] && record.fields['Команда'].length > 0
         ? record.fields['Команда'][0] : undefined,
     tournaments: record.fields['Турниры'] || [],

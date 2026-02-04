@@ -21,7 +21,7 @@ export default class MockPlayersRepository {
             "Имя": record.name,
             "Турниры": record.tournaments,
             "Изменен": new Date().toISOString(),
-            "Instagram": record.instagram,
+            "Год рождения": record.birthYear,
         }
     }));
 
@@ -31,7 +31,7 @@ export default class MockPlayersRepository {
             "Имя": record.name,
             "Турниры": record.tournaments,
             "Изменен": new Date().toISOString(),
-            "Instagram": record.instagram,
+            "Год рождения": record.birthYear,
         }
     }));
 
@@ -45,7 +45,7 @@ const players = [
         "createdTime": "2022-03-06T20:56:47.000Z",
         "fields": {
             "Имя": "Дмитрий Малоок",
-            "Instagram": "sssss",
+            "Год рождения": "1984",
             "Турниры": [
                 "rectNBFGJnls8sUGo"
             ],
@@ -60,7 +60,7 @@ const players = [
         "createdTime": "2022-03-07T12:48:48.000Z",
         "fields": {
             "Имя": "Ника Давыденко",
-            "Instagram": "nnnnnn",
+            "Год рождения": "2014",
             "Турниры": [
                 "rec6pxHXiYHqvqTsp"
             ],
@@ -75,7 +75,7 @@ const players = [
         "createdTime": "2022-03-07T12:46:57.000Z",
         "fields": {
             "Имя": "Мария Ченцова",
-            "Instagram": "mari_chenc_06_06",
+            "Год рождения": "2006",
             "Турниры": [
                 "rec6pxHXiYHqvqTsp"
             ],
@@ -104,7 +104,7 @@ const players = [
         "createdTime": "2022-03-07T17:47:55.000Z",
         "fields": {
             "Имя": "Наталья Костенко",
-            "Instagram": "kkkkk",
+            "Год рождения": "1990",
             "Турниры": [
                 "rectNBFGJnls8sUGo"
             ],

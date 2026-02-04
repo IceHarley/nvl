@@ -24,8 +24,8 @@ export default class PlayerActions {
                 return this.playersService.addCurrentOutcome(answers.player.id)
                     .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => toPrevMenu());
-            case 'changeInstagram':
-                return this.playersService.editPlayer({...answers.player, instagram: answers.newInstagram})
+            case 'changeBirthYear':
+                return this.playersService.editPlayer({...answers.player, birthYear: answers.newBirthYear})
                     .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => toPrevMenu());
             case 'rename':

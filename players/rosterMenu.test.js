@@ -171,13 +171,13 @@ test.serial('меню Состав команды: Выбор действия �
     t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'addCurrentOutcome'});
 });
 
-test.serial('меню Состав команды: Выбор действия с игроком - отредактировать инстаграм', async t => {
+test.serial('меню Состав команды: Выбор действия с игроком - отредактировать год рождения', async t => {
     prompt.withArgs(menu.rosterMenuPrompt)
         .onFirstCall().resolves({
         team: {id: 'teamId'},
         player: {id: 'playerId', name: 'playerName', team: 'teamId', tournaments: []},
-        newInstagram: 'newInstagram',
-        action: 'changeInstagram'
+        newBirthYear: '1990',
+        action: 'changeBirthYear'
     })
         .onSecondCall().resolves({team: 'quit'});
 
@@ -186,11 +186,11 @@ test.serial('меню Состав команды: Выбор действия �
     t.true(menu.open.calledTwice);
     t.deepEqual(menu.open.secondCall.args[0], {team: {id: 'teamId'}});
     t.true(service.editPlayer.calledOnce);
-    t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', instagram: 'newInstagram'});
+    t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', birthYear: '1990'});
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
     t.true(applyPlayerActionFake.calledOnce);
-    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'changeInstagram'});
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'changeBirthYear'});
 });
 
 test.serial('меню Состав команды: Выбор действия с игроком - отредактировать имя', async t => {

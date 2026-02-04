@@ -12,7 +12,7 @@ export const formatPlayer = player => new cli.Line()
     .padding(2)
     .column(player.teamName || '', 20, [])
     .padding(2)
-    .column(player.instagram || '', 20, [])
+    .column(player.birthYear || '', 20, [])
     .padding(2)
     .column(!player.currentOutcome ? 'не заигран' : `заигран за ${player.outcomeTeam}`, 40, [])
     .contents();
@@ -46,9 +46,9 @@ export const rosterPlayerActions = answers => {
         short: 'Переименовать'
     })
     actions.push({
-        name: new cli.Line().column('Редактировать instagram', 28).padding(2).column(answers.player.instagram || '', 40).contents(),
-        value: 'changeInstagram',
-        short: 'instagram'
+        name: new cli.Line().column('Редактировать год рождения', 28).padding(2).column(answers.player.birthYear || '', 40).contents(),
+        value: 'changeBirthYear',
+        short: 'год рождения'
     })
     actions.push({
         name: 'Удалить игрока',

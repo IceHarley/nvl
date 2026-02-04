@@ -93,12 +93,12 @@ test.serial('меню Список игроков: Выбор игрока - р�
     t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'rename'});
 });
 
-test.serial('меню Список игроков: Выбор игрока - редактирование Instagram', async t => {
+test.serial('меню Список игроков: Выбор игрока - редактирование года рождения', async t => {
     prompt.withArgs(menu.playersListPrompt)
         .onFirstCall().resolves({
         player: {id: 'playerId', name: 'playerName'},
-        newInstagram: 'newInstagram',
-        action: 'changeInstagram'
+        newBirthYear: '1990',
+        action: 'changeBirthYear'
     })
         .onSecondCall().resolves({player: 'quit'});
 
@@ -106,11 +106,11 @@ test.serial('меню Список игроков: Выбор игрока - р�
 
     t.true(menu.open.calledTwice);
     t.true(service.editPlayer.calledOnce);
-    t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', instagram: 'newInstagram'});
+    t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', birthYear: '1990'});
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
     t.true(applyPlayerActionFake.calledOnce);
-    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'changeInstagram'});
+    t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'changeBirthYear'});
 });
 
 test.serial('меню Список игроков: Выбор игрока - отметить как заигранного', async t => {
