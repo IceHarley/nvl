@@ -10,7 +10,7 @@ export class DocxService {
 
     /**
      * Генерирует DOCX файл с заявкой команды
-     * @param {Object} team - Объект команды
+     * @param {Object} team - Объект команды (name, city и др.)
      * @param {Array} players - Массив игроков
      * @returns {Promise<Buffer>} - Buffer с содержимым DOCX файла
      */
@@ -51,6 +51,7 @@ export class DocxService {
                 // Подготовка данных для шаблона
                 const data = {
                     teamName: team.name,
+                    teamCity: team.city ?? '',
                     players: allPlayers, // Используем массив с пустыми строками
                     totalPlayers: players.length, // Реальное количество игроков
                     date: new Date().toLocaleDateString('ru-RU')

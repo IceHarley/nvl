@@ -59,5 +59,35 @@ var CONFIG = {
     },
 
     // Префикс места проведения
-    LOCATION_PREFIX: "с/к "
+    LOCATION_PREFIX: "с/к ",
+
+    // Цвета и градиенты для рейтинговой таблицы
+    COLORS: {
+        MAIN: { red: 255, green: 255, blue: 255, opacity: 50 },        // Основной цвет фона
+        MAIN_BORDER: { red: 255, green: 160, blue: 185, opacity: 50 }, // Цвет границ основных строк
+        MAIN_TEXT: { red: 0, green: 0, blue: 0 },        // Цвет текста
+        TOP6: { red: 241, green: 21, blue: 59, opacity: 15 },        // Цвет фона топ-6 команд
+        TOP6_BORDER: { red: 255, green: 255, blue: 255 }     // Цвет границ топ-6 команд
+    },
+
+    // Градиенты для фонов (опционально, раскомментируйте и настройте при необходимости)
+    // Если GRADIENTS определены, они будут использоваться вместо COLORS для фонов
+    
+    GRADIENTS: {
+        /*MAIN_BACKGROUND: {  // Градиент для фона основных команд
+            type: "linear",    // "linear" или "radial"
+            angle: 45,         // угол для линейного градиента (0-360)
+            stops: [           // остановки градиента
+                { position: 0, color: { red: 255, green: 255, blue: 255, opacity: 50 } },
+                { position: 100, color: { red: 240, green: 240, blue: 240, opacity: 30 } }
+            ]
+        },*/
+        TOP6_BACKGROUND: { // Градиент для фона топ-6 команд
+            type: "linear",    // радиальный градиент
+            stops: [
+                { position: 0, color: { red: 255, green: 255, blue: 255, opacity: 50 } },
+                { position: 100, color: { red: 241, green: 26, blue: 59, opacity: 70 } }
+            ]
+        }
+    }
 };

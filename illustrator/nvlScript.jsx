@@ -9,6 +9,54 @@ main
 
 function nvlScript() {
 
+    // Fallback configuration
+    var CONFIG = {
+        DEFAULT_GROUPS_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 3 тур.csv",
+        DEFAULT_RATING_FILE: "D:\\Work\\NVL\\2025 осень\\Рейтинг Осень 2025 generated1.csv",
+        DEFAULT_TOURNAMENT_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 2 тур.csv",
+        DIVISIONS: {
+            HIGH: "ВЫСШИЙ ДИВИЗИОН",
+            FIRST: "ПЕРВЫЙ ДИВИЗИОН",
+            SECOND: "ВТОРОЙ ДИВИЗИОН",
+            THIRD: "ТРЕТИЙ ДИВИЗИОН",
+            FOURTH: "ЧЕТВЕРТЫЙ ДИВИЗИОН"
+        },
+        MONTHS: [
+            "января", "февраля", "марта", "апреля", "мая", "июня",
+            "июля", "августа", "сентября", "октября", "ноября", "декабря"
+        ],
+        UI_LABELS: {
+            GROUPS_BUTTON: "Файл с данными",
+            GROUPS_TAB: "Группы",
+            RATING_TAB: "Рейтинг",
+            TOURNAMENT_TAB: "Анонс турнира",
+            LOAD_BUTTON: "Загрузить",
+            FONT_INCREASE: "Шрифт ↑",
+            FONT_DECREASE: "Шрифт ↓",
+            MOVE_UP: "Вверх",
+            MOVE_DOWN: "Вниз",
+            LOAD_RATING_PART1: "Часть 1",
+            LOAD_RATING_PART2: "Часть 2",
+            LOAD_TOURNAMENT_1_2: "Загрузить анонс (1-2)",
+            LOAD_TOURNAMENT_3_4: "Загрузить анонс (3-4)"
+        },
+        ERRORS: {
+            INVALID_FORMAT: "Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!",
+            GROUP_NOT_FOUND: "Не найдена группа",
+            LOAD_DATA_ERROR: "Ошибка: Не удалось загрузить данные из файла",
+            NO_FUTURE_TOURNAMENTS: "Не найдено будущих турниров",
+            INSUFFICIENT_GROUPS: "Не достаточно групп для второй загрузки"
+        },
+        LOCATION_PREFIX: "с/к ",
+        COLORS: {
+            MAIN: { red: 254, green: 133, blue: 53, opacity: 100 },
+            MAIN_BORDER: { red: 255, green: 255, blue: 255 },
+            MAIN_TEXT: { red: 0, green: 0, blue: 0 },
+            TOP6: { red: 254, green: 133, blue: 53, opacity: 60 },
+            TOP6_BORDER: { red: 178, green: 0, blue: 0 }
+        }
+    };
+
     // Load configuration
     try {
         // Try to load config.js from the same directory as the script
@@ -18,89 +66,10 @@ function nvlScript() {
 
         if (configPath.exists) {
             $.evalFile(configPath.fsName);
-        } else {
-            // Use fallback configuration
-            var CONFIG = {
-                DEFAULT_GROUPS_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 3 тур.csv",
-                DEFAULT_RATING_FILE: "D:\\Work\\NVL\\2025 осень\\Рейтинг Осень 2025 generated1.csv",
-                DEFAULT_TOURNAMENT_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 2 тур.csv",
-                DIVISIONS: {
-                    HIGH: "ВЫСШИЙ ДИВИЗИОН",
-                    FIRST: "ПЕРВЫЙ ДИВИЗИОН",
-                    SECOND: "ВТОРОЙ ДИВИЗИОН",
-                    THIRD: "ТРЕТИЙ ДИВИЗИОН",
-                    FOURTH: "ЧЕТВЕРТЫЙ ДИВИЗИОН"
-                },
-                MONTHS: [
-                    "января", "февраля", "марта", "апреля", "мая", "июня",
-                    "июля", "августа", "сентября", "октября", "ноября", "декабря"
-                ],
-                UI_LABELS: {
-                    GROUPS_BUTTON: "Файл с данными",
-                    GROUPS_TAB: "Группы",
-                    RATING_TAB: "Рейтинг",
-                    TOURNAMENT_TAB: "Анонс турнира",
-                    LOAD_BUTTON: "Загрузить",
-                    FONT_INCREASE: "Шрифт ↑",
-                    FONT_DECREASE: "Шрифт ↓",
-                    MOVE_UP: "Вверх",
-                    MOVE_DOWN: "Вниз",
-                    LOAD_RATING_PART1: "Часть 1",
-                    LOAD_RATING_PART2: "Часть 2",
-                    LOAD_TOURNAMENT_1_2: "Загрузить анонс (1-2)",
-                    LOAD_TOURNAMENT_3_4: "Загрузить анонс (3-4)"
-                },
-                ERRORS: {
-                    INVALID_FORMAT: "Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!",
-                    GROUP_NOT_FOUND: "Не найдена группа",
-                    LOAD_DATA_ERROR: "Ошибка: Не удалось загрузить данные из файла",
-                    NO_FUTURE_TOURNAMENTS: "Не найдено будущих турниров",
-                    INSUFFICIENT_GROUPS: "Не достаточно групп для второй загрузки"
-                },
-                LOCATION_PREFIX: "с/к "
-            };
         }
+        // CONFIG will be overridden if config.js defines it
     } catch (e) {
-        // Use fallback configuration in case of error
-        var CONFIG = {
-            DEFAULT_GROUPS_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 3 тур.csv",
-            DEFAULT_RATING_FILE: "D:\\Work\\NVL\\2025 осень\\Рейтинг Осень 2025 generated1.csv",
-            DEFAULT_TOURNAMENT_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 2 тур.csv",
-            DIVISIONS: {
-                HIGH: "ВЫСШИЙ ДИВИЗИОН",
-                FIRST: "ПЕРВЫЙ ДИВИЗИОН",
-                SECOND: "ВТОРОЙ ДИВИЗИОН",
-                THIRD: "ТРЕТИЙ ДИВИЗИОН",
-                FOURTH: "ЧЕТВЕРТЫЙ ДИВИЗИОН"
-            },
-            MONTHS: [
-                "января", "февраля", "марта", "апреля", "мая", "июня",
-                "июля", "августа", "сентября", "октября", "ноября", "декабря"
-            ],
-            UI_LABELS: {
-                GROUPS_BUTTON: "Файл с данными",
-                GROUPS_TAB: "Группы",
-                RATING_TAB: "Рейтинг",
-                TOURNAMENT_TAB: "Анонс турнира",
-                LOAD_BUTTON: "Загрузить",
-                FONT_INCREASE: "Шрифт ↑",
-                FONT_DECREASE: "Шрифт ↓",
-                MOVE_UP: "Вверх",
-                MOVE_DOWN: "Вниз",
-                LOAD_RATING_PART1: "Часть 1",
-                LOAD_RATING_PART2: "Часть 2",
-                LOAD_TOURNAMENT_1_2: "Загрузить анонс (1-2)",
-                LOAD_TOURNAMENT_3_4: "Загрузить анонс (3-4)"
-            },
-            ERRORS: {
-                INVALID_FORMAT: "Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!",
-                GROUP_NOT_FOUND: "Не найдена группа",
-                LOAD_DATA_ERROR: "Ошибка: Не удалось загрузить данные из файла",
-                NO_FUTURE_TOURNAMENTS: "Не найдено будущих турниров",
-                INSUFFICIENT_GROUPS: "Не достаточно групп для второй загрузки"
-            },
-            LOCATION_PREFIX: "с/к "
-        };
+        // Use fallback configuration (already defined above)
     }
 
 //=================================== FUNCTIONS ====================================//
@@ -241,9 +210,14 @@ function nvlScript() {
 
     function getData(filePath) {
         try {
-            return getTextData(File(filePath));
+            var file = File(filePath);
+            if (!file.exists) {
+                alert("Файл не найден: " + filePath + "\nПроверьте путь к файлу в config.js");
+                return null;
+            }
+            return getTextData(file);
         } catch (e) {
-            alert(e);
+            alert("Ошибка при чтении файла: " + e.message);
             return null;
         }
     }
@@ -333,6 +307,7 @@ function nvlScript() {
                     if (italicFont) {
                         cityWord.characterAttributes.textFont = italicFont;
                     }
+                    cityWord.characterAttributes.stroked = false;
                 }
             }
 
@@ -487,17 +462,26 @@ function nvlScript() {
 
     function loadRatingFromCsv(fileName) {
         var data = getData(fileName);
+        if (!data || data.length === 0) {
+            return;
+        }
+
         const header = data[0];
         const values = data[1];
-        if (header.length !== values.length) {
-            //Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!
-            alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.INVALID_FORMAT)));
+
+        if (!header || !values) {
+            alert("Некорректная структура CSV файла. Отсутствует заголовок или данные.");
+            return;
         }
-        if (data.length !== 31) {
-            //Некорректный формат файла: должно быть 30 строк
-            alert('csv should contain header + 30 records! Actual: ' + data.length);
-        }
-        var items = doc.layers[0].groupItems;
+            if (header.length !== values.length) {
+                //Некорректный формат файла: количество полей в заголовке не совпадает с количеством полей данных!
+                alert(decodeURIComponent(encodeURIComponent(CONFIG.ERRORS.INVALID_FORMAT)));
+            }
+            if (data.length !== 31) {
+                //Некорректный формат файла: должно быть 30 строк
+                alert('csv should contain header + 30 records! Actual: ' + data.length);
+            }
+            var items = doc.layers[0].groupItems;
 
         function getDelta(delta) {
             if (delta === '0') {
@@ -520,26 +504,124 @@ function nvlScript() {
             return '';
         }
 
-        var top6Color = new RGBColor();
-        top6Color.red = 254;
-        top6Color.green = 133;
-        top6Color.blue = 53;
-        var top6BorderColor = new RGBColor();
-        top6BorderColor.red = 178;
-        top6BorderColor.green = 0;
-        top6BorderColor.blue = 0;
-        var mainColor = new RGBColor();
-        mainColor.red = 254;
-        mainColor.green = 133;
-        mainColor.blue = 53;
-        var mainBorderColor = new RGBColor();
-        mainBorderColor.red = 255;
-        mainBorderColor.green = 255;
-        mainBorderColor.blue = 255;
-        var mainTextColor = new RGBColor();
-        mainBorderColor.red = 0;
-        mainBorderColor.green = 0;
-        mainBorderColor.blue = 0;
+        // Create color objects from config
+        function createRGBColor(colorConfig) {
+            if (!colorConfig) {
+                // Fallback color if config is missing
+                var color = new RGBColor();
+                color.red = 254;
+                color.green = 133;
+                color.blue = 53;
+                return color;
+            }
+            var color = new RGBColor();
+            color.red = (colorConfig.red !== undefined) ? colorConfig.red : 254;
+            color.green = (colorConfig.green !== undefined) ? colorConfig.green : 133;
+            color.blue = (colorConfig.blue !== undefined) ? colorConfig.blue : 53;
+            return color;
+        }
+
+
+        // Create gradient objects from config
+        function createGradient(gradientConfig) {
+            if (!gradientConfig || !gradientConfig.stops || gradientConfig.stops.length === 0) {
+                alert("Некорректная конфигурация градиента: отсутствуют остановки или пустой массив остановок");
+                return null;
+            }
+
+            try {
+                // Create new gradient without name to avoid conflicts
+                var newGradient = app.activeDocument.gradients.add();
+
+                // Set gradient type
+                if (gradientConfig.type === "radial") {
+                    newGradient.type = GradientType.RADIAL;
+                } else {
+                    newGradient.type = GradientType.LINEAR;
+                }
+
+                // Create gradient stops
+                for (var i = 0; i < gradientConfig.stops.length; i++) {
+                    var stop = gradientConfig.stops[i];
+                    if (!stop || !stop.color) {
+                        continue;
+                    }
+
+                    var gradientStop = newGradient.gradientStops.add();
+
+                    // Set color
+                    var stopColor = new RGBColor();
+                    stopColor.red = (stop.color.red !== undefined) ? stop.color.red : 0;
+                    stopColor.green = (stop.color.green !== undefined) ? stop.color.green : 0;
+                    stopColor.blue = (stop.color.blue !== undefined) ? stop.color.blue : 0;
+                    gradientStop.color = stopColor;
+
+                    // Set position (0-100)
+                    gradientStop.rampPoint = (stop.position !== undefined) ? stop.position : (i * 100 / (gradientConfig.stops.length - 1));
+
+                    // Set opacity if specified
+                    if (stop.color.opacity !== undefined) {
+                        gradientStop.opacity = stop.color.opacity;
+                    }
+                }
+
+                // Create GradientColor object
+                var gradient = new GradientColor();
+                gradient.gradient = newGradient;
+
+                // Set angle if specified for linear gradients
+                if (gradientConfig.angle !== undefined && gradientConfig.type !== "radial") {
+                    gradient.angle = gradientConfig.angle;
+                }
+
+                return gradient;
+            } catch (e) {
+                alert("Ошибка при создании градиента: " + e.message);
+                return null;
+            }
+        }
+
+        // Helper function to apply color or gradient to fill
+        function applyFill(item, fillConfig) {
+            if (!item || !fillConfig) {
+                alert("applyFill: invalid parameters - item or fillConfig is null/undefined");
+                return;
+            }
+
+            try {
+                // Check if it's a gradient config
+                if (fillConfig.type && fillConfig.stops) {
+                    var gradient = createGradient(fillConfig);
+                    if (gradient && gradient.gradient) {
+                        item.fillColor = gradient;
+                        // For gradients, don't set item opacity as gradient stops already have opacity
+                    } else {
+                        alert("Failed to create gradient, falling back to solid color");
+                        // Fallback to solid color from first gradient stop
+                        var fallbackColor = fillConfig.stops && fillConfig.stops[0] ? fillConfig.stops[0].color : { red: 255, green: 255, blue: 255 };
+                        item.fillColor = createRGBColor(fallbackColor);
+                        if (fallbackColor.opacity !== undefined) {
+                            item.opacity = fallbackColor.opacity;
+                        }
+                    }
+                } else {
+                    // Solid color
+                    item.fillColor = createRGBColor(fillConfig);
+                    // Set opacity if specified for solid colors
+                    if (fillConfig.opacity !== undefined) {
+                        item.opacity = fillConfig.opacity;
+                    }
+                }
+            } catch (e) {
+                alert("Error in applyFill: " + e.message);
+            }
+        }
+
+        var top6Color = createRGBColor(CONFIG.COLORS.TOP6);
+        var top6BorderColor = createRGBColor(CONFIG.COLORS.TOP6_BORDER);
+        var mainColor = createRGBColor(CONFIG.COLORS.MAIN);
+        var mainBorderColor = createRGBColor(CONFIG.COLORS.MAIN_BORDER);
+        var mainTextColor = createRGBColor(CONFIG.COLORS.MAIN_TEXT);
 
         for (var i = 1; i < data.length; i++) {
             var group = getRatingLine(items, i);
@@ -547,48 +629,99 @@ function nvlScript() {
                 group.hidden = data[i][14] !== '1';
                 getByNote('place', group).contents = data[i][0];
                 getByNote('place', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('place', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('place', group).stroked = false; } catch (e) {}
                 getByNote('delta', group).contents = getDelta(data[i][1]);
                 getByNote('delta', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('delta', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('delta', group).textRange.characterAttributes.strokeWidth = 0; } catch (e) {}
+                try { getByNote('delta', group).stroked = false; } catch (e) {}
+                try { getByNote('delta', group).strokeWidth = 0; } catch (e) {}
                 getByNote('team', group).contents = data[i][2];
                 getByNote('team', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('team', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('team', group).stroked = false; } catch (e) {}
                 getByNote('group1', group).contents = '  ' + data[i][3];
                 getByNote('group1', group).textRange.justification = Justification.CENTER;
                 getByNote('group1', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('group1', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('group1', group).stroked = false; } catch (e) {}
                 getByNote('place1', group).contents = getPlaceSymbol(data[i][4]);
                 getByNote('place1', group).textRange.characterAttributes.textFont = app.textFonts.getByName('AdobePiStd');
                 getByNote('place1', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('place1', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('place1', group).stroked = false; } catch (e) {}
                 getByNote('place1', group).contents = getPlaceSymbol(data[i][4]);
                 getByNote('rating1', group).contents = data[i][5];
                 getByNote('rating1', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('rating1', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('rating1', group).stroked = false; } catch (e) {}
                 getByNote('group2', group).contents = '  ' + data[i][6];
                 getByNote('group2', group).textRange.justification = Justification.CENTER;
                 getByNote('group2', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('group2', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('group2', group).stroked = false; } catch (e) {}
                 getByNote('place2', group).contents = getPlaceSymbol(data[i][7]);
                 getByNote('place2', group).textRange.characterAttributes.textFont = app.textFonts.getByName('AdobePiStd');
                 getByNote('place2', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('place2', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('place2', group).stroked = false; } catch (e) {}
                 getByNote('rating2', group).contents = data[i][8];
                 getByNote('rating2', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('rating2', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('rating2', group).stroked = false; } catch (e) {}
                 getByNote('group3', group).contents = '  ' + data[i][9];
                 getByNote('group3', group).textRange.justification = Justification.CENTER;
                 getByNote('group3', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('group3', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('group3', group).stroked = false; } catch (e) {}
                 getByNote('place3', group).contents = getPlaceSymbol(data[i][10]);
                 getByNote('place3', group).textRange.characterAttributes.textFont = app.textFonts.getByName('AdobePiStd');
                 getByNote('place3', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('place3', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('place3', group).stroked = false; } catch (e) {}
                 getByNote('rating3', group).contents = data[i][11];
                 getByNote('rating3', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('rating3', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('rating3', group).stroked = false; } catch (e) {}
                 getByNote('rating', group).contents = data[i][12];
                 getByNote('rating', group).textRange.characterAttributes.fillColor = mainTextColor;
+                try { getByNote('rating', group).textRange.characterAttributes.stroked = false; } catch (e) {}
+                try { getByNote('rating', group).stroked = false; } catch (e) {}
                 for (var j = 0; j < group.pathItems.length; j++) {
                     if (group.pathItems[j].name.startsWith('back ')) {
-                        group.pathItems[j].fillColor = data[i][15] === '1' ? top6Color : mainColor;
-                        // group.pathItems[j].opacity = data[i][15] === '1' ? 60 : 100;
+                        // Check if gradients are defined and use them, otherwise fall back to colors
+                        // Check if gradients are defined and use them, otherwise fall back to colors
+                        if (data[i][15] === '1') {
+                            if (CONFIG.GRADIENTS && CONFIG.GRADIENTS.TOP6_BACKGROUND) {
+                                applyFill(group.pathItems[j], CONFIG.GRADIENTS.TOP6_BACKGROUND);
+                            } else {
+                                group.pathItems[j].fillColor = top6Color;
+                                group.pathItems[j].opacity = (CONFIG.COLORS && CONFIG.COLORS.TOP6 && CONFIG.COLORS.TOP6.opacity) ? CONFIG.COLORS.TOP6.opacity : 60;
+                            }
+                        } else {
+                            if (CONFIG.GRADIENTS && CONFIG.GRADIENTS.MAIN_BACKGROUND) {
+                                applyFill(group.pathItems[j], CONFIG.GRADIENTS.MAIN_BACKGROUND);
+                            } else {
+                                group.pathItems[j].fillColor = mainColor;
+                                group.pathItems[j].opacity = (CONFIG.COLORS && CONFIG.COLORS.MAIN && CONFIG.COLORS.MAIN.opacity) ? CONFIG.COLORS.MAIN.opacity : 100;
+                            }
+                        }
                     }
                     if (group.pathItems[j].name.startsWith('border')) { //первые 6 строк
-                        group.pathItems[j].strokeColor = data[i][15] === '1' ? top6BorderColor : mainColor;
-                        group.pathItems[j].opacity = data[i][15] === '1' ? 100 : 100;
+                        group.pathItems[j].strokeColor = data[i][15] === '1' ? top6BorderColor : mainBorderColor;
+                        var borderOpacity = 100; // default opacity for borders
+                        if (data[i][15] === '1') {
+                            borderOpacity = (CONFIG.COLORS && CONFIG.COLORS.TOP6_BORDER && CONFIG.COLORS.TOP6_BORDER.opacity) ? CONFIG.COLORS.TOP6_BORDER.opacity : 100;
+                        } else {
+                            borderOpacity = (CONFIG.COLORS && CONFIG.COLORS.MAIN_BORDER && CONFIG.COLORS.MAIN_BORDER.opacity) ? CONFIG.COLORS.MAIN_BORDER.opacity : 100;
+                        }
+                        group.pathItems[j].opacity = borderOpacity;
                     } else if (group.pathItems[j].name.startsWith('rect')) { //остальные
-                        group.pathItems[j].strokeColor = mainColor;
-                        group.pathItems[j].opacity = data[i][15] === '1' ? 100 : 100;
+                        group.pathItems[j].strokeColor = mainBorderColor;
+                        var rectOpacity = 100; // default opacity for rect borders
+                        rectOpacity = (CONFIG.COLORS && CONFIG.COLORS.MAIN_BORDER && CONFIG.COLORS.MAIN_BORDER.opacity) ? CONFIG.COLORS.MAIN_BORDER.opacity : 100;
+                        group.pathItems[j].opacity = rectOpacity;
                     }
                 }
             }
@@ -729,15 +862,15 @@ function nvlScript() {
     // Функция для форматирования команды с жирным названием и курсивным городом
     function formatTeamName(textFrame, fullName) {
         if (!textFrame || !fullName) return;
-        
+
         // Разделяем название команды и город
         var teamName = beforeLast(fullName, " ");
         var city = afterLast(fullName, " ");
-        
+
         // Устанавливаем название команды (жирный шрифт)
         textFrame.contents = teamName;
         setTextSize(textFrame, 50);
-        
+
         // Добавляем город курсивом (без дополнительных скобок, так как они уже есть в city)
         var cityWord = textFrame.words.add(city);
         cityWord.characterAttributes.textFont = findItalicFont(textFrame.textRange.textFont);
@@ -894,22 +1027,22 @@ function nvlScript() {
             if (group1) {
                 var groupName1 = getByNoteInGroup(group1, "groupName");
                 if (groupName1) groupName1.contents = tournament1.groupName;
-                
+
                 var team1FullName = getByNoteInGroup(group1, "team1FullName");
                 if (team1FullName) formatTeamName(team1FullName, tournament1.team1FullName);
-                
+
                 var team2FullName = getByNoteInGroup(group1, "team2FullName");
                 if (team2FullName) formatTeamName(team2FullName, tournament1.team2FullName);
-                
+
                 var team3FullName = getByNoteInGroup(group1, "team3FullName");
                 if (team3FullName) formatTeamName(team3FullName, tournament1.team3FullName);
-                
+
                 var groupDate = getByNoteInGroup(group1, "groupDate");
                 if (groupDate) groupDate.contents = formatDate(tournament1.date);
-                
+
                 var groupLocation = getByNoteInGroup(group1, "groupLocation");
                 if (groupLocation) groupLocation.contents = decodeURIComponent(encodeURIComponent(CONFIG.LOCATION_PREFIX)) + tournament1.location;
-                
+
                 var division = getByNoteInGroup(group1, "division");
                 if (division) division.contents = getDivisionName(tournament1.groupName);
             }
@@ -922,22 +1055,22 @@ function nvlScript() {
             if (group2) {
                 var groupName2 = getByNoteInGroup(group2, "groupName");
                 if (groupName2) groupName2.contents = tournament2.groupName;
-                
+
                 var team1FullName2 = getByNoteInGroup(group2, "team1FullName");
                 if (team1FullName2) formatTeamName(team1FullName2, tournament2.team1FullName);
-                
+
                 var team2FullName2 = getByNoteInGroup(group2, "team2FullName");
                 if (team2FullName2) formatTeamName(team2FullName2, tournament2.team2FullName);
-                
+
                 var team3FullName2 = getByNoteInGroup(group2, "team3FullName");
                 if (team3FullName2) formatTeamName(team3FullName2, tournament2.team3FullName);
-                
+
                 var groupDate2 = getByNoteInGroup(group2, "groupDate");
                 if (groupDate2) groupDate2.contents = formatDate(tournament2.date);
-                
+
                 var groupLocation2 = getByNoteInGroup(group2, "groupLocation");
                 if (groupLocation2) groupLocation2.contents = decodeURIComponent(encodeURIComponent(CONFIG.LOCATION_PREFIX)) + tournament2.location;
-                
+
                 var division2 = getByNoteInGroup(group2, "division");
                 if (division2) division2.contents = getDivisionName(tournament2.groupName);
             }
@@ -973,22 +1106,22 @@ function nvlScript() {
             if (group1) {
                 var groupName1 = getByNoteInGroup(group1, "groupName");
                 if (groupName1) groupName1.contents = tournament1.groupName;
-                
+
                 var team1FullName = getByNoteInGroup(group1, "team1FullName");
                 if (team1FullName) formatTeamName(team1FullName, tournament1.team1FullName);
-                
+
                 var team2FullName = getByNoteInGroup(group1, "team2FullName");
                 if (team2FullName) formatTeamName(team2FullName, tournament1.team2FullName);
-                
+
                 var team3FullName = getByNoteInGroup(group1, "team3FullName");
                 if (team3FullName) formatTeamName(team3FullName, tournament1.team3FullName);
-                
+
                 var groupDate = getByNoteInGroup(group1, "groupDate");
                 if (groupDate) groupDate.contents = formatDate(tournament1.date);
-                
+
                 var groupLocation = getByNoteInGroup(group1, "groupLocation");
                 if (groupLocation) groupLocation.contents = decodeURIComponent(encodeURIComponent(CONFIG.LOCATION_PREFIX)) + tournament1.location;
-                
+
                 var division = getByNoteInGroup(group1, "division");
                 if (division) division.contents = getDivisionName(tournament1.groupName);
             }
@@ -1001,22 +1134,22 @@ function nvlScript() {
             if (group2) {
                 var groupName2 = getByNoteInGroup(group2, "groupName");
                 if (groupName2) groupName2.contents = tournament2.groupName;
-                
+
                 var team1FullName2 = getByNoteInGroup(group2, "team1FullName");
                 if (team1FullName2) formatTeamName(team1FullName2, tournament2.team1FullName);
-                
+
                 var team2FullName2 = getByNoteInGroup(group2, "team2FullName");
                 if (team2FullName2) formatTeamName(team2FullName2, tournament2.team2FullName);
-                
+
                 var team3FullName2 = getByNoteInGroup(group2, "team3FullName");
                 if (team3FullName2) formatTeamName(team3FullName2, tournament2.team3FullName);
-                
+
                 var groupDate2 = getByNoteInGroup(group2, "groupDate");
                 if (groupDate2) groupDate2.contents = formatDate(tournament2.date);
-                
+
                 var groupLocation2 = getByNoteInGroup(group2, "groupLocation");
                 if (groupLocation2) groupLocation2.contents = decodeURIComponent(encodeURIComponent(CONFIG.LOCATION_PREFIX)) + tournament2.location;
-                
+
                 var division2 = getByNoteInGroup(group2, "division");
                 if (division2) division2.contents = getDivisionName(tournament2.groupName);
             }
