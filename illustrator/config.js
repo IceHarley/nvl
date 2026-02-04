@@ -1,6 +1,7 @@
 // Configuration file for NVL Script
 // Edit this file to change default values for different seasons
 
+// eslint-disable-next-line no-unused-vars
 var CONFIG = {
     // Пути к файлам по умолчанию (изменяйте при смене сезона)
     DEFAULT_GROUPS_FILE: "D:\\Work\\NVL\\2026 весна\\Весна 2026 группы на 1 тур.csv",

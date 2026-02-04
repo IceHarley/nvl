@@ -10,7 +10,7 @@ main
 function nvlScript() {
 
     // Fallback configuration
-    var CONFIG = {
+    var fallbackConfig = {
         DEFAULT_GROUPS_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 3 тур.csv",
         DEFAULT_RATING_FILE: "D:\\Work\\NVL\\2025 осень\\Рейтинг Осень 2025 generated1.csv",
         DEFAULT_TOURNAMENT_FILE: "D:\\Work\\NVL\\2025 осень\\Осень 2025 группы на 2 тур.csv",
@@ -57,19 +57,42 @@ function nvlScript() {
         }
     };
 
-    // Load configuration
+    // Load configuration from external file
+    // This will create a global CONFIG variable if config.js exists and loads successfully
     try {
-        // Try to load config.js from the same directory as the script
         var scriptFile = new File($.fileName);
         var scriptFolder = scriptFile.parent;
         var configPath = new File(scriptFolder + "/config.js");
 
         if (configPath.exists) {
             $.evalFile(configPath.fsName);
+            // config.js creates a global CONFIG variable if it loads successfully
         }
-        // CONFIG will be overridden if config.js defines it
     } catch (e) {
-        // Use fallback configuration (already defined above)
+        // Error loading config file, will use fallback
+    }
+
+    // Use external CONFIG if it exists (created by config.js), otherwise use fallback
+    // We use eval to check the global scope without creating a local variable that would shadow it
+    var CONFIG;
+    try {
+        // Check if global CONFIG exists (created by config.js)
+        // Using eval to access global scope without declaring a local variable first
+        if (eval('typeof CONFIG !== "undefined"')) {
+            // Access the global CONFIG variable created by config.js
+            CONFIG = eval('CONFIG');
+        } else {
+            // No external config found, use fallback
+            CONFIG = fallbackConfig;
+        }
+    } catch (e) {
+        // If there's any error accessing global CONFIG, use fallback
+        CONFIG = fallbackConfig;
+    }
+    
+    // Final safety check: ensure CONFIG is valid
+    if (typeof CONFIG === 'undefined' || CONFIG === null) {
+        CONFIG = fallbackConfig;
     }
 
 //=================================== FUNCTIONS ====================================//
@@ -522,11 +545,49 @@ function nvlScript() {
         }
 
 
-        // Create gradient objects from config
+        // Gradient cache to avoid creating duplicate gradients
+        var gradientCache = {};
+
+        // Generate a unique key from gradient configuration
+        function getGradientKey(gradientConfig) {
+            if (!gradientConfig || !gradientConfig.stops) {
+                return null;
+            }
+            var key = (gradientConfig.type || "linear") + "_";
+            if (gradientConfig.angle !== undefined) {
+                key += gradientConfig.angle + "_";
+            }
+            for (var i = 0; i < gradientConfig.stops.length; i++) {
+                var stop = gradientConfig.stops[i];
+                if (stop && stop.color) {
+                    key += stop.position + "_" +
+                           (stop.color.red || 0) + "_" +
+                           (stop.color.green || 0) + "_" +
+                           (stop.color.blue || 0) + "_" +
+                           (stop.color.opacity !== undefined ? stop.color.opacity : 100) + "_";
+                }
+            }
+            return key;
+        }
+
+        // Create gradient objects from config (with caching)
         function createGradient(gradientConfig) {
             if (!gradientConfig || !gradientConfig.stops || gradientConfig.stops.length === 0) {
                 alert("Некорректная конфигурация градиента: отсутствуют остановки или пустой массив остановок");
                 return null;
+            }
+
+            // Check cache first
+            var cacheKey = getGradientKey(gradientConfig);
+            if (cacheKey && gradientCache[cacheKey]) {
+                // Reuse cached gradient - create a new GradientColor object with the cached gradient
+                var cachedGradient = new GradientColor();
+                cachedGradient.gradient = gradientCache[cacheKey];
+                // Set angle if specified for linear gradients
+                if (gradientConfig.angle !== undefined && gradientConfig.type !== "radial") {
+                    cachedGradient.angle = gradientConfig.angle;
+                }
+                return cachedGradient;
             }
 
             try {
@@ -563,6 +624,11 @@ function nvlScript() {
                     if (stop.color.opacity !== undefined) {
                         gradientStop.opacity = stop.color.opacity;
                     }
+                }
+
+                // Cache the gradient object (not the GradientColor, as that includes angle)
+                if (cacheKey) {
+                    gradientCache[cacheKey] = newGradient;
                 }
 
                 // Create GradientColor object
