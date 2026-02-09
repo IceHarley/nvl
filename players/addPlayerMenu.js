@@ -68,6 +68,14 @@ export default class AddPlayerMenu {
             when: answers => typeof answers.addPlayer === 'string' && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
         },
         {
+            type: 'input',
+            name: 'newBirthYear',
+            message: 'Год рождения (не указан у игрока)',
+            when: answers => typeof answers.addPlayer === 'object' && answers.addPlayer != null
+                && !answers.addPlayer.birthYear
+                && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
+        },
+        {
             type: 'list',
             name: 'confirmSwitchTeam',
             message: answers => `Игрок уже числится в составе команды ${answers.addPlayer.teamName}. Точно перевести в команду ${answers.newPlayer.teamName}`,
@@ -125,6 +133,7 @@ export default class AddPlayerMenu {
             answers.addPlayer
                 ? this.playersService.editPlayer({
                     ...answers.addPlayer,
+                    ...(answers.newBirthYear !== undefined && answers.newBirthYear !== '' ? { birthYear: answers.newBirthYear } : {}),
                     team: answers.team.id,
                     tournaments: answers.addPlayer.tournaments || [],
                 }).then(() => answers.addPlayer)
