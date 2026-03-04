@@ -6,7 +6,6 @@ import TournamentOutcomesRepository from "../repositories/tournamentOutcomesRepo
 import {withSpinner} from "../common/utils.js";
 import TeamsRepository from "../repositories/teamsRepository.js";
 import {FORMAT_CSV, FORMAT_EXCEL} from "../common/constants.js";
-import PlayersRepository from "../repositories/playersRepository.js";
 import ScheduleRepository from "../repositories/scheduleRepository.js";
 
 const paramsRepository = new DistributionParamsRepository();
@@ -15,7 +14,6 @@ const distributionRepository = new DistributionRepository();
 const tournamentsRepository = new TournamentsRepository();
 const tournamentOutcomesRepository = new TournamentOutcomesRepository();
 const teamsRepository = new TeamsRepository();
-const playersRepository = new PlayersRepository();
 const scheduleRepository = new ScheduleRepository();
 
 const paramsChoices = state => () => paramsRepository.getByState(state)
@@ -135,6 +133,5 @@ export const repositories = {
     tournaments: tournamentsRepository,
     tournamentOutcomes: tournamentOutcomesRepository,
     teams: teamsRepository,
-    players: playersRepository,
     schedule: scheduleRepository,
 };

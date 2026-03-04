@@ -1,5 +1,5 @@
 import {clone} from "../common/utils.js";
-import {minify} from "../repositories/playersRepository.js";
+import {minify} from "../players/playerFormat.js";
 
 export default class MockPlayersRepository {
     #data

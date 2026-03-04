@@ -5,20 +5,20 @@ import ChoiceSources from "./choiceSources.js";
 import AddPlayerMenu from "./addPlayerMenu.js";
 import PlayersListMenu from "./playersListMenu.js";
 import RosterMenu from "./rosterMenu.js";
+import {apiEnv} from "../common/apiClient.js";
 
 inquirer.registerPrompt('autocomplete', inquirerPrompt);
-
 
 export const menuPrompt = [
     {
         type: 'list',
         name: 'operation',
-        message: 'Выбор операции с базой игроков',
+        message: `Выбор операции с базой игроков [${apiEnv}]`,
         choices: [
             {name: 'Состав команды', value: 'roster', short: 'Состав команды'},
             {name: 'Список игроков', value: 'playersList', short: 'Список игроков'},
-            {name: 'Загрузка данных из airtable', value: 'loadFromAirtable', short: 'Загрузка из airtable'},
-            {name: 'Выгрузка данных в airtable', value: 'uploadToAirtable', short: 'Выгрузка в airtable'},
+            {name: 'Загрузка данных из БД', value: 'loadFromDb', short: 'Загрузка из БД'},
+            {name: 'Выгрузка данных в БД', value: 'uploadToDb', short: 'Выгрузка в БД'},
             new inquirer.Separator(),
             {name: 'Выход', value: 'quit', short: 'Выход'},
         ]
@@ -26,12 +26,12 @@ export const menuPrompt = [
     {
         type: 'list',
         name: 'loadType',
-        message: 'Выбор действия',
-        when: answers => answers.operation === 'loadFromAirtable',
+        message: `Выбор действия [${apiEnv}]`,
+        when: answers => answers.operation === 'loadFromDb',
         choices: [
-            {name: 'Только загрузка изменений по игрокам из airtable', value: 'onlyChanges', short: 'Только изменения'},
-            {name: 'Очистка локальной БД и полная загрузка из airtable', value: 'full', short: 'Полная загрузка'},
-            {name: 'Загрузка активных команд из airtable', value: 'activeTeams', short: 'Активные команды'},
+            {name: 'Только загрузка изменений по игрокам из БД', value: 'onlyChanges', short: 'Только изменения'},
+            {name: 'Очистка локальной БД и полная загрузка из БД', value: 'full', short: 'Полная загрузка'},
+            {name: 'Загрузка активных команд из БД', value: 'activeTeams', short: 'Активные команды'},
         ]
     },
 ];
@@ -59,9 +59,9 @@ export default class PlayersManager {
 
     menu = () => inquirer.prompt(menuPrompt)
         .then(answers => {
-            if (answers.operation === 'loadFromAirtable') {
-                return this.loadFromAirtable(answers.loadType, this.playersService);
-            } else if (answers.operation === 'uploadToAirtable') {
+            if (answers.operation === 'loadFromDb') {
+                return this.loadFromDb(answers.loadType, this.playersService);
+            } else if (answers.operation === 'uploadToDb') {
                 return this.playersService.uploadLocalChanges()
                     .then(() => this.choiceSources.init());
             }
@@ -85,7 +85,7 @@ export default class PlayersManager {
         throw () => this.menu()
     };
 
-    loadFromAirtable = (loadType, playersService) => {
+    loadFromDb = (loadType, playersService) => {
         switch (loadType) {
             case 'onlyChanges':
                 return playersService.loadOnlyChanges()

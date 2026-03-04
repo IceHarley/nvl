@@ -102,7 +102,6 @@ test.serial('Загрузка локальных изменений в airtable 
 
 test.serial('Загрузка локальных изменений в airtable - общие действия', async t => {
     await playersService.uploadLocalChanges();
-    t.is(await db.meta.get(SYNC_DATETIME), now.toISOString());
     t.true(db.modifications.clear.calledOnce);
 });
 
