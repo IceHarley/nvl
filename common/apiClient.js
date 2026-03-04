@@ -81,5 +81,6 @@ export const apiDelete = async (path, body) => {
         body: JSON.stringify(body),
     });
     if (!res.ok) await apiError(res, 'DELETE', url, body);
-    return res.json();
+    const text = await res.text();
+    return text ? JSON.parse(text) : null;
 };

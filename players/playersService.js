@@ -1,6 +1,5 @@
 import {getMethods, resolvePromisesSeq, toOperation, toRecords, verifyLength, withSpinner} from "../common/utils.js";
 import {minify} from "./playerFormat.js";
-import {CHUNK_SIZE} from "../repositories/playersApiRepository.js";
 
 export const SYNC_DATETIME = 'Synchronization datetime';
 export const SEQUENCE = 'SEQUENCE';
@@ -51,9 +50,8 @@ export default class PlayersService {
 
     loadOnlyChanges = () => this.#db.meta.get(SYNC_DATETIME)
         .catch(() => Promise.resolve(new Date(2021, 1).toISOString()))
-        .then(syncDatetime => Promise.resolve(this.#repositories.players.getList({syncedSince: syncDatetime}))
-            .then(records => ({records, syncDatetime})))
-        .then(({records}) => Promise.all([
+        .then(syncDatetime => this.#repositories.players.getList({syncedSince: syncDatetime}))
+        .then(records => Promise.all([
             records.length,
             this.#db.players.batch(records.map(player => toOperation(player))),
             records.length > 0
@@ -68,31 +66,10 @@ export default class PlayersService {
 
     uploadLocalChanges = async () => {
         const {deletedIds, newRecords, updatedRecords} = await this.#fetchLocalChanges();
-        if (!this.#silent) {
-            console.log('\n--- Локальные изменения для выгрузки ---');
-            if (deletedIds.length > 0) {
-                console.log(`Удаление (${deletedIds.length}): ${deletedIds.join(', ')}`);
-            }
-            if (newRecords.length > 0) {
-                console.log(`Создание (${newRecords.length}): ${newRecords.map(r => `${r.name} [${r.id}]`).join('; ')}`);
-            }
-            if (updatedRecords.length > 0) {
-                console.log(`Обновление (${updatedRecords.length}): ${updatedRecords.map(r => `${r.name} [${r.id}]`).join('; ')}`);
-            }
-            if (deletedIds.length === 0 && newRecords.length === 0 && updatedRecords.length === 0) {
-                console.log('Нет изменений');
-            }
-            const chunk = CHUNK_SIZE;
-            const requests = (deletedIds.length > 0 ? 1 : 0) + Math.ceil(newRecords.length / chunk) + Math.ceil(updatedRecords.length / chunk);
-            if (requests > 0) {
-                console.log(`Ожидается запросов к API: ${requests} (удаление: ${deletedIds.length > 0 ? 1 : 0}, создание: ${Math.ceil(newRecords.length / chunk)}, обновление: ${Math.ceil(updatedRecords.length / chunk)})`);
-            }
-            console.log('---\n');
-        }
         return resolvePromisesSeq([
-            this.#removeDeletedRecords(deletedIds),
-            this.#insertNewRecords(newRecords),
-            this.#updateModifiedRecords(updatedRecords),
+            () => this.#removeDeletedRecords(deletedIds),
+            () => this.#insertNewRecords(newRecords),
+            () => this.#updateModifiedRecords(updatedRecords),
         ])
         .then(([removed, inserted, updated]) => Promise.all([
             {removed, inserted, updated},
