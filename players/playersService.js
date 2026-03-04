@@ -53,7 +53,7 @@ export default class PlayersService {
         .catch(() => Promise.resolve(new Date(2021, 1).toISOString()))
         .then(syncDatetime => Promise.resolve(this.#repositories.players.getList({syncedSince: syncDatetime}))
             .then(records => ({records, syncDatetime})))
-        .then(({records, syncDatetime}) => Promise.all([
+        .then(({records}) => Promise.all([
             records.length,
             this.#db.players.batch(records.map(player => toOperation(player))),
             records.length > 0
@@ -67,11 +67,7 @@ export default class PlayersService {
         });
 
     uploadLocalChanges = async () => {
-        const [deletedIds, newRecords, updatedRecords] = await resolvePromisesSeq([
-            this.#getDeletedIds(),
-            this.#getNewRecords(),
-            this.#getUpdatedRecords(),
-        ]);
+        const {deletedIds, newRecords, updatedRecords} = await this.#fetchLocalChanges();
         if (!this.#silent) {
             console.log('\n--- Локальные изменения для выгрузки ---');
             if (deletedIds.length > 0) {
@@ -94,9 +90,9 @@ export default class PlayersService {
             console.log('---\n');
         }
         return resolvePromisesSeq([
-            this.#removeDeletedRecords(),
-            this.#insertNewRecords(),
-            this.#updateModifiedRecords(),
+            this.#removeDeletedRecords(deletedIds),
+            this.#insertNewRecords(newRecords),
+            this.#updateModifiedRecords(updatedRecords),
         ])
         .then(([removed, inserted, updated]) => Promise.all([
             {removed, inserted, updated},
@@ -105,38 +101,36 @@ export default class PlayersService {
         .then(([result]) => result);
     };
 
-    #getDeletedIds = () => this.#db.modifications.iterator().all()
-        .then(mods => mods.filter(([, value]) => value === DEL).map(([key]) => key));
+    #fetchLocalChanges = async () => {
+        const [mods, newEntries] = await Promise.all([
+            this.#db.modifications.iterator().all(),
+            this.#db.players.iterator({lte: LTE_INS}).all(),
+        ]);
+        const deletedIds = mods.filter(([, value]) => value === DEL).map(([key]) => key);
+        const updKeys = mods.filter(([, value]) => value === UPD).map(([key]) => key);
+        const newRecords = newEntries.map(([key, value]) => ({id: key, ...value}));
+        const updatedRecords = updKeys.length > 0
+            ? (await this.#db.players.getMany(updKeys)).map((record, index) => ({id: updKeys[index], ...(record || {})}))
+            : [];
+        return {deletedIds, newRecords, updatedRecords};
+    };
 
-    #getNewRecords = () => this.#db.players.iterator({lte: LTE_INS}).all()
-        .then(entries => entries.map(([key, value]) => ({id: key, ...value})));
+    #removeDeletedRecords = (ids) => Promise.all([
+        ids.length,
+        ids.length > 0 ? this.#repositories.players.deleteList(ids) : undefined,
+    ]).then(([count]) => this.logAndReturn('Удалено игроков в БД', count));
 
-    #getUpdatedRecords = () => this.#db.modifications.iterator().all()
-        .then(mods => mods.filter(([, value]) => value === UPD).map(([key]) => key))
-        .then(keys => Promise.all([keys, keys.length > 0 ? this.#db.players.getMany(keys) : []]))
-        .then(([keys, records]) => keys.map((key, index) => ({id: key, ...(records[index] || {})})));
+    #updateModifiedRecords = (records) => records.length === 0
+        ? Promise.resolve(this.logAndReturn('Обновлено игроков в БД', 0))
+        : Promise.resolve(this.#repositories.players.updateList(records))
+            .then(res => this.logAndReturn('Обновлено игроков в БД', res.flat().length));
 
-    #removeDeletedRecords = () => this.#db.modifications.iterator().all() //получаем измененные локально записи в таблице модификаций
-        .then(mods => mods.filter(([, value]) => value === DEL).map(([key]) => key)) //находим идентификаторы удаленных
-        .then(ids => Promise.all([ids.length, this.#repositories.players.deleteList(ids)])) //удаляем в БД
-        .then(([count]) => this.logAndReturn('Удалено игроков в БД', count));
-
-    #updateModifiedRecords = () => this.#db.modifications.iterator().all() //получаем измененные локально записи в таблице модификаций
-        .then(mods => mods.filter(([, value]) => value === UPD).map(([key]) => key)) //находим идентификаторы обновленных
-        .then(keys => Promise.all([keys, this.#db.players.getMany(keys)])) //получаем обновленные записи
-        .then(([keys, records]) => records.map((record, index) => ({id: keys[index], ...record}))) //объединяем записи с идентификаторами
-        .then(records => this.#repositories.players.updateList(records)) //обновляем в БД
-        .then(records => this.logAndReturn('Обновлено игроков в БД', records.flat().length));
-
-    #insertNewRecords = () => this.#db.players.values({lte: LTE_INS}).all() //получаем добавленные локально записи (c идентификаторами на ins...)
-        .then(records => this.#repositories.players.createList(records)) //создаем их в БД
-        .then(records => this.#db.players.batch(records.flat().map(record => toOperation(minify(record))))) //созданные в БД записи сохраняем локально
-        .then(() => this.#db.players.keys({lte: LTE_INS}).all()) //добавленные локально записи
-        .then(records => Promise.all([
-            records.length,
-            this.#db.players.batch(records.map(r => ({type: DEL, key: r}))) //удаляем из локальной БД
-        ]))
-        .then(([count]) => this.logAndReturn('Создано игроков в БД', count));
+    #insertNewRecords = (records) => records.length === 0
+        ? Promise.resolve(this.logAndReturn('Создано игроков в БД', 0))
+        : Promise.resolve(this.#repositories.players.createList(records))
+            .then(created => this.#db.players.batch(created.flat().map(record => toOperation(minify(record)))))
+            .then(() => this.#db.players.batch(records.map(r => ({type: DEL, key: r.id}))))
+            .then(() => this.logAndReturn('Создано игроков в БД', records.length));
 
     editPlayer = player => this.validate(player)
         .then(player => this.#db.players.put(player.id, player))
