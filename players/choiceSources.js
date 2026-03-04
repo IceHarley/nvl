@@ -62,10 +62,17 @@ export default class ChoiceSources {
     delete = playerId => this.#db.playersSource.del(playerId);
 
     teamsSource = (answers, input = '') => this.#db.teamsSource.iterator().all()
-        .then(teams => fuzzy
-            .filter(input, toRecords(teams), {extract: t => t.name})
+        .then(teams => {
+            const recs = toRecords(teams);
+            recs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'));
+            const filtered = fuzzy.filter(input, recs, {extract: t => t.name});
+            filtered.sort((a, b) => (a.original.name || '').localeCompare(b.original.name || '', 'ru'));
+            return filtered;
+        })
+        .then(filtered => filtered
             .map(el => ({name: el.string, value: el.original, short: `${el.original.name} (${el.original.city})`}))
-            .concat([
+        )
+        .then(mapped => mapped.concat([
                 new inquirer.Separator(),
                 {name: '====Назад', value: 'back', short: 'Назад'},
                 {name: '====Выход', value: 'quit', short: 'Выход'},
@@ -76,8 +83,11 @@ export default class ChoiceSources {
             .then(players => toRecords(players).filter(filter));
 
     playersSource = filter => (answers, input = '') => this.getPlayersForSelection(filter)
-        .then(players => fuzzy
-            .filter(input, players, {extract: p => p.name})
+        .then(players => {
+            players.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'));
+            return fuzzy.filter(input, players, {extract: p => p.name});
+        })
+        .then(filtered => filtered
             .map(el => ({
                 name: formatPlayer(el.original),
                 value: el.original,
