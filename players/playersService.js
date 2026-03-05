@@ -51,17 +51,19 @@ export default class PlayersService {
     loadOnlyChanges = () => this.#db.meta.get(SYNC_DATETIME)
         .catch(() => Promise.resolve(new Date(2021, 1).toISOString()))
         .then(syncDatetime => this.#repositories.players.getList({syncedSince: syncDatetime}))
-        .then(records => Promise.all([
-            records.length,
-            this.#db.players.batch(records.map(player => toOperation(player))),
-            records.length > 0
-                ? this.#db.meta.put(SYNC_DATETIME, new Date().toISOString())
-                : Promise.resolve(),
-            this.#db.modifications.clear(),
-        ]))
+        .then(records =>
+            this.#db.players.batch(records.map(player => toOperation(player)))
+                .then(() => Promise.all([
+                    records.length,
+                    records.length > 0
+                        ? this.#db.meta.put(SYNC_DATETIME, new Date().toISOString())
+                        : Promise.resolve(),
+                    this.#db.modifications.clear(),
+                ]))
+        )
         .then(([count]) => {
             !this.#silent && console.log(`Обновлено игроков: ${count}`);
-            return Promise.resolve(count);
+            return count;
         });
 
     uploadLocalChanges = async () => {
