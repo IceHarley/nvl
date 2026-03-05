@@ -65,9 +65,7 @@ export default class ChoiceSources {
         .then(teams => {
             const recs = toRecords(teams);
             recs.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'));
-            const filtered = fuzzy.filter(input, recs, {extract: t => t.name});
-            filtered.sort((a, b) => (a.original.name || '').localeCompare(b.original.name || '', 'ru'));
-            return filtered;
+            return fuzzy.filter(input, recs, {extract: t => t.name});
         })
         .then(filtered => filtered
             .map(el => ({name: el.string, value: el.original, short: `${el.original.name} (${el.original.city})`}))
