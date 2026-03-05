@@ -33,8 +33,8 @@ test.serial('Открытие и закрытие БД', async t => {
     t.true(db.main.close.calledOnce);
 });
 
-test.serial('Загрузка из Airtable без указания типа', async t => {
-    prompt.onFirstCall().resolves({operation: 'loadFromAirtable'})
+test.serial('Загрузка из БД без указания типа', async t => {
+    prompt.onFirstCall().resolves({operation: 'loadFromDb'})
         .onSecondCall().resolves({operation: 'quit'});
     sinon.replace(service, 'loadOnlyChanges', sinon.fake.resolves(1));
     sinon.replace(service, 'fullLoad', sinon.fake.resolves(1));
@@ -48,8 +48,8 @@ test.serial('Загрузка из Airtable без указания типа', a
     t.true(sources.init.calledOnce);
 });
 
-test.serial('Загрузка из Airtable только изменений', async t => {
-    prompt.onFirstCall().resolves({operation: 'loadFromAirtable', loadType: 'onlyChanges'})
+test.serial('Загрузка из БД только изменений', async t => {
+    prompt.onFirstCall().resolves({operation: 'loadFromDb', loadType: 'onlyChanges'})
         .onSecondCall().resolves({operation: 'quit'});
     sinon.replace(service, 'loadOnlyChanges', sinon.fake.resolves(1));
 
@@ -59,8 +59,8 @@ test.serial('Загрузка из Airtable только изменений', as
     t.true(sources.init.calledTwice);
 });
 
-test.serial('Полная загрузка из Airtable', async t => {
-    prompt.onFirstCall().resolves({operation: 'loadFromAirtable', loadType: 'full'})
+test.serial('Полная загрузка из БД', async t => {
+    prompt.onFirstCall().resolves({operation: 'loadFromDb', loadType: 'full'})
         .onSecondCall().resolves({operation: 'quit'});
     sinon.replace(service, 'fullLoad', sinon.fake.resolves(1));
 
@@ -70,8 +70,8 @@ test.serial('Полная загрузка из Airtable', async t => {
     t.true(sources.init.calledTwice);
 });
 
-test.serial('Загрузка из Airtable команд', async t => {
-    prompt.onFirstCall().resolves({operation: 'loadFromAirtable', loadType: 'activeTeams'})
+test.serial('Загрузка из БД команд', async t => {
+    prompt.onFirstCall().resolves({operation: 'loadFromDb', loadType: 'activeTeams'})
         .onSecondCall().resolves({operation: 'quit'});
     sinon.replace(service, 'loadActiveTeams', sinon.fake.resolves(1));
     sinon.replace(service, 'loadActiveTournamentOutcomes', sinon.fake.resolves(1));
@@ -83,8 +83,8 @@ test.serial('Загрузка из Airtable команд', async t => {
     t.true(sources.init.calledTwice);
 });
 
-test.serial('Выгрузка изменений в Airtable', async t => {
-    prompt.onFirstCall().resolves({operation: 'uploadToAirtable'})
+test.serial('Выгрузка изменений в БД', async t => {
+    prompt.onFirstCall().resolves({operation: 'uploadToDb'})
         .onSecondCall().resolves({operation: 'quit'});
     sinon.replace(service, 'uploadLocalChanges', sinon.fake.resolves({}));
 

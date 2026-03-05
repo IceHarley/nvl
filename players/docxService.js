@@ -28,9 +28,10 @@ export class DocxService {
 
                 // Создаем массив из 18 элементов: сначала игроки, затем пустые строки
                 const allPlayers = [];
+                const sortedPlayers = [...players].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'));
 
                 // Добавляем реальных игроков
-                players.forEach((player, index) => {
+                sortedPlayers.forEach((player, index) => {
                     allPlayers.push({
                         number: index + 1,
                         name: player.name,
@@ -39,7 +40,7 @@ export class DocxService {
                     });
                 });
 
-                for (let i = players.length; i < 20; i++) {
+                for (let i = sortedPlayers.length; i < 20; i++) {
                     allPlayers.push({
                         number: i + 1,
                         name: '',
@@ -53,7 +54,7 @@ export class DocxService {
                     teamName: team.name,
                     teamCity: team.city ?? '',
                     players: allPlayers, // Используем массив с пустыми строками
-                    totalPlayers: players.length, // Реальное количество игроков
+                    totalPlayers: sortedPlayers.length, // Реальное количество игроков
                     date: new Date().toLocaleDateString('ru-RU')
                 };
 

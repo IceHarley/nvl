@@ -9,6 +9,7 @@ import {ratingDataSaverBuilder} from "./rating/ratingSaver.js";
 import {SpinnerDataLoader} from "./distribution/dataLoader.js";
 import PlayersManager from "./players/playersManager.js";
 import {provideDb} from "./players/localDbProvider.js";
+import {createPlayersApiRepositories} from "./players/playersApiRepositories.js";
 import {exportRating} from "./rating/ratingExporter.js";
 import {processSchedule, scheduleSaverBuilder} from "./distribution/scheduleProcessor.js";
 
@@ -29,7 +30,7 @@ inquirer.prompt(questions)
             new RatingMaker(dataLoader, dataSaver).makeRating(answers.rating.tournamentId)
                 .then(ratingData => exportRating(answers, ratingData))
         } else if (answers.action === 'players') {
-            new PlayersManager(repositories, provideDb()).process();
+            new PlayersManager(createPlayersApiRepositories(), provideDb()).process();
         } else {
             console.log(answers);
         }

@@ -1,5 +1,5 @@
 import {getMethods, resolvePromisesSeq, toOperation, toRecords, verifyLength, withSpinner} from "../common/utils.js";
-import {minify} from "../repositories/playersRepository.js";
+import {minify} from "./playerFormat.js";
 
 export const SYNC_DATETIME = 'Synchronization datetime';
 export const SEQUENCE = 'SEQUENCE';
@@ -50,56 +50,67 @@ export default class PlayersService {
 
     loadOnlyChanges = () => this.#db.meta.get(SYNC_DATETIME)
         .catch(() => Promise.resolve(new Date(2021, 1).toISOString()))
-        .then(syncDatetime => this.#repositories.players.getList({
-            filterByFormula: `AND(NOT({Имя} = ''), {Изменен} >= '${syncDatetime}')`,
-        }))
-        .then(records => Promise.all([
-            records.length,
+        .then(syncDatetime => this.#repositories.players.getList({syncedSince: syncDatetime}))
+        .then(records =>
             this.#db.players.batch(records.map(player => toOperation(player)))
-        ]))
-        .then(([count]) => Promise.all([
-            count,
+                .then(() => Promise.all([
+                    records.length,
+                    records.length > 0
+                        ? this.#db.meta.put(SYNC_DATETIME, new Date().toISOString())
+                        : Promise.resolve(),
+                    this.#db.modifications.clear(),
+                ]))
+        )
+        .then(([count]) => {
+            !this.#silent && console.log(`Обновлено игроков: ${count}`);
+            return count;
+        });
+
+    uploadLocalChanges = async () => {
+        const {deletedIds, newRecords, updatedRecords} = await this.#fetchLocalChanges();
+        return resolvePromisesSeq([
+            () => this.#removeDeletedRecords(deletedIds),
+            () => this.#insertNewRecords(newRecords),
+            () => this.#updateModifiedRecords(updatedRecords),
+        ])
+        .then(([removed, inserted, updated]) => Promise.all([
+            {removed, inserted, updated},
             this.#db.meta.put(SYNC_DATETIME, new Date().toISOString()),
             this.#db.modifications.clear(),
         ]))
-        .then(([count]) => {
-            !this.#silent && console.log(`Обновлено игроков: ${count}`);
-            return Promise.resolve(count);
-        });
-
-    uploadLocalChanges = async () => resolvePromisesSeq([
-        this.#removeDeletedRecords(),
-        this.#insertNewRecords(),
-        this.#updateModifiedRecords(),
-    ])
-        .then(([removed, inserted, updated]) => Promise.all([
-            {removed, inserted, updated},
-            this.#db.meta.put(SYNC_DATETIME, new Date().toISOString()), //устанавливаем время последней синхронизации - считаем что все обновлено
-            this.#db.modifications.clear(),  //очищаем локальную таблицу изменений
-        ]))
         .then(([result]) => result);
+    };
 
-    #removeDeletedRecords = () => this.#db.modifications.iterator().all() //получаем измененные локально записи в таблице модификаций
-        .then(mods => mods.filter(([, value]) => value === DEL).map(([key]) => key)) //находим идентификаторы удаленных
-        .then(ids => Promise.all([ids.length, this.#repositories.players.deleteList(ids)])) //удаляем в airtable
-        .then(([count]) => this.logAndReturn('Удалено игроков в airtable', count));
+    #fetchLocalChanges = async () => {
+        const [mods, newEntries] = await Promise.all([
+            this.#db.modifications.iterator().all(),
+            this.#db.players.iterator({lte: LTE_INS}).all(),
+        ]);
+        const deletedIds = mods.filter(([, value]) => value === DEL).map(([key]) => key);
+        const updKeys = mods.filter(([, value]) => value === UPD).map(([key]) => key);
+        const newRecords = newEntries.map(([key, value]) => ({id: key, ...value}));
+        const updatedRecords = updKeys.length > 0
+            ? (await this.#db.players.getMany(updKeys)).map((record, index) => ({id: updKeys[index], ...(record || {})}))
+            : [];
+        return {deletedIds, newRecords, updatedRecords};
+    };
 
-    #updateModifiedRecords = () => this.#db.modifications.iterator().all() //получаем измененные локально записи в таблице модификаций
-        .then(mods => mods.filter(([, value]) => value === UPD).map(([key]) => key)) //находим идентификаторы обновленных
-        .then(keys => Promise.all([keys, this.#db.players.getMany(keys)])) //получаем обновленные записи
-        .then(([keys, records]) => records.map((record, index) => ({id: keys[index], ...record}))) //объединяем записи с идентификаторами
-        .then(records => this.#repositories.players.updateList(records)) //обновляем в airtable
-        .then(records => this.logAndReturn('Обновлено игроков в airtable', records.flat().length));
+    #removeDeletedRecords = (ids) => Promise.all([
+        ids.length,
+        ids.length > 0 ? this.#repositories.players.deleteList(ids) : undefined,
+    ]).then(([count]) => this.logAndReturn('Удалено игроков в БД', count));
 
-    #insertNewRecords = () => this.#db.players.values({lte: LTE_INS}).all() //получаем добавленные локально записи (c идентификаторами на ins...)
-        .then(records => this.#repositories.players.createList(records)) //создаем их в airtable
-        .then(records => this.#db.players.batch(records.flat().map(record => toOperation(minify(record))))) //созданные в airtable записи сохраняем локально
-        .then(() => this.#db.players.keys({lte: LTE_INS}).all()) //добавленные локально записи
-        .then(records => Promise.all([
-            records.length,
-            this.#db.players.batch(records.map(r => ({type: DEL, key: r}))) //удаляем из локальной БД
-        ]))
-        .then(([count]) => this.logAndReturn('Создано игроков в airtable', count));
+    #updateModifiedRecords = (records) => records.length === 0
+        ? Promise.resolve(this.logAndReturn('Обновлено игроков в БД', 0))
+        : Promise.resolve(this.#repositories.players.updateList(records))
+            .then(res => this.logAndReturn('Обновлено игроков в БД', res.flat().length));
+
+    #insertNewRecords = (records) => records.length === 0
+        ? Promise.resolve(this.logAndReturn('Создано игроков в БД', 0))
+        : Promise.resolve(this.#repositories.players.createList(records))
+            .then(created => this.#db.players.batch(created.flat().map(record => toOperation(minify(record)))))
+            .then(() => this.#db.players.batch(records.map(r => ({type: DEL, key: r.id}))))
+            .then(() => this.logAndReturn('Создано игроков в БД', records.length));
 
     editPlayer = player => this.validate(player)
         .then(player => this.#db.players.put(player.id, player))
@@ -116,14 +127,14 @@ export default class PlayersService {
         .then(() => this.#db.modifications.get(playerId))
         .catch(err => {
             if (err.code === 'LEVEL_NOT_FOUND') {
-                return UPD; // если нет в таблице модификаций, то игрок существует в airtable но локально не менялся
+                return UPD; // если нет в таблице модификаций, то игрок существует в БД но локально не менялся
             } else {
                 throw err;
             }
         })
         .then(modification => modification === INS
             ? this.#db.modifications.del(playerId) :    //для добавленных только локально игроков просто удаляем запись в модификациях
-            this.#db.modifications.put(playerId, DEL))  //для существующих в airtable игроков проставляем модификацию удаления
+            this.#db.modifications.put(playerId, DEL))  //для существующих в БД игроков проставляем модификацию удаления
         .then(() => this.#db.players.del(playerId));
 
     validate = player => {

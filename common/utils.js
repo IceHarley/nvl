@@ -75,7 +75,8 @@ export const isRegularTour = tour => Number.isInteger(parseFloat(tour));
 export const resolvePromisesSeq = async (tasks) => {
     const results = [];
     for (const task of tasks) {
-        results.push(await task);
+        const promise = typeof task === 'function' ? task() : task;
+        results.push(await promise);
     }
     return results;
 };

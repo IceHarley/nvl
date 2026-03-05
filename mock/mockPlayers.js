@@ -1,5 +1,5 @@
 import {clone} from "../common/utils.js";
-import {minify} from "../repositories/playersRepository.js";
+import {minify} from "../players/playerFormat.js";
 
 export default class MockPlayersRepository {
     #data
@@ -16,23 +16,18 @@ export default class MockPlayersRepository {
 
     createList = records => clone(records).map((record, index) => ({
         id: `rec1000000000${index}`,
-        createdTime: new Date().toISOString(),
-        fields: {
-            "Имя": record.name,
-            "Турниры": record.tournaments,
-            "Изменен": new Date().toISOString(),
-            "Год рождения": record.birthYear,
-        }
+        name: record.name,
+        birthYear: record.birthYear ?? null,
+        team: record.team,
+        tournaments: record.tournaments || [],
     }));
 
     updateList = records => clone(records).map(record => ({
         id: record.id,
-        fields: {
-            "Имя": record.name,
-            "Турниры": record.tournaments,
-            "Изменен": new Date().toISOString(),
-            "Год рождения": record.birthYear,
-        }
+        name: record.name,
+        birthYear: record.birthYear ?? null,
+        team: record.team,
+        tournaments: record.tournaments || [],
     }));
 
     deleteList = () => {
