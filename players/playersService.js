@@ -73,6 +73,7 @@ export default class PlayersService {
         ])
         .then(([removed, inserted, updated]) => Promise.all([
             {removed, inserted, updated},
+            this.#db.meta.put(SYNC_DATETIME, new Date().toISOString()),
             this.#db.modifications.clear(),
         ]))
         .then(([result]) => result);
