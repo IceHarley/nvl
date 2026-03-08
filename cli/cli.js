@@ -3,6 +3,7 @@ import DistributionRepository from "../repositories/distributionRepository.js";
 import TournamentsRepository from "../repositories/tournamentsRepository.js";
 import DistributionParamsRepository from "../repositories/distributionParamsRepository.js";
 import TournamentOutcomesRepository from "../repositories/tournamentOutcomesRepository.js";
+import RatingApiRepository from "../repositories/ratingApiRepository.js";
 import {withSpinner} from "../common/utils.js";
 import TeamsRepository from "../repositories/teamsRepository.js";
 import {FORMAT_CSV, FORMAT_EXCEL} from "../common/constants.js";
@@ -13,6 +14,7 @@ const resultsRepository = new ResultsRepository();
 const distributionRepository = new DistributionRepository();
 const tournamentsRepository = new TournamentsRepository();
 const tournamentOutcomesRepository = new TournamentOutcomesRepository();
+const ratingApiRepository = new RatingApiRepository();
 const teamsRepository = new TeamsRepository();
 const scheduleRepository = new ScheduleRepository();
 
@@ -84,20 +86,6 @@ export const questions = [
     },
     {
         type: 'list',
-        name: 'rating.tournamentId',
-        message: 'Выбор турнира',
-        when: answers => answers.action === 'rating',
-        choices: tournamentsChoices("В процессе")
-    },
-    {
-        type: 'confirm',
-        name: 'rating.saveResults',
-        message: 'Сохранить рейтинг и места команд в БД?',
-        when: answers => answers.action === 'rating',
-        default: true
-    },
-    {
-        type: 'list',
         name: 'rating.exportFormat',
         message: 'Формат экспорта рейтинговой таблицы',
         when: answers => answers.action === 'rating',
@@ -132,6 +120,7 @@ export const repositories = {
     distribution: distributionRepository,
     tournaments: tournamentsRepository,
     tournamentOutcomes: tournamentOutcomesRepository,
+    ratingApi: ratingApiRepository,
     teams: teamsRepository,
     schedule: scheduleRepository,
 };
