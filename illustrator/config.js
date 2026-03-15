@@ -5,7 +5,7 @@
 var CONFIG = {
     // Пути к файлам по умолчанию (изменяйте при смене сезона)
     DEFAULT_GROUPS_FILE: "D:\\Work\\NVL\\2026 весна\\Весна 2026 группы на 1 тур.csv",
-    DEFAULT_RATING_FILE: "D:\\Work\\NVL\\2026 весна\\Рейтинг Весна 2026 generated1.csv",
+    DEFAULT_RATING_FILE: "D:\\Work\\NVL\\2026 весна\\Рейтинг Текущий турнир generated1.csv",
     DEFAULT_TOURNAMENT_FILE: "D:\\Work\\NVL\\2026 весна\\Весна 2026 группы на 1 тур.csv",
 
     // Названия дивизионов
