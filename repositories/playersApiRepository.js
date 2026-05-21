@@ -7,21 +7,21 @@ const toRecord = p => ({
     id: p.id,
     name: p.name || '',
     birthYear: p.birth_year ?? null,
-    team: p.team_airtable_id || undefined,
+    team: p.team_id || undefined,
     tournaments: p.tournament_results || [],
 });
 
 // API присваивает id сам (rec* — переиспользование пустой записи, loc_* — новая)
 const toApiCreate = r => ({
     name: r.name,
-    team_airtable_id: r.team ?? null,
+    team_id: r.team ?? null,
     birth_year: r.birthYear ?? null,
     tournament_results: r.tournaments || [],
 });
 
 const toApiUpdate = r => ({
     id: r.id,
-    team_airtable_id: r.team ?? null,
+    team_id: r.team ?? null,
     name: r.name,
     birth_year: r.birthYear ?? null,
     tournament_results: r.tournaments || [],
