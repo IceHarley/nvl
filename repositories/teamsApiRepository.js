@@ -7,10 +7,10 @@ const toRecord = t => ({
     registrationDate: t.registration_date ?? null,
 });
 
+const toRecords = data => (Array.isArray(data) ? data : (data.data || [])).map(toRecord);
+
 export default class TeamsApiRepository {
-    getActiveTeams = async () => {
-        const data = await apiGet('/teams/active');
-        const arr = Array.isArray(data) ? data : (data.data || []);
-        return arr.map(toRecord);
-    };
+    getActiveTeams = async () => toRecords(await apiGet('/teams/active'));
+
+    getByTournament = async tournamentId => toRecords(await apiGet('/teams/active', {tournament_id: tournamentId}));
 }

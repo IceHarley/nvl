@@ -12,9 +12,10 @@ export class DocxService {
      * Генерирует DOCX файл с заявкой команды
      * @param {Object} team - Объект команды (name, city и др.)
      * @param {Array} players - Массив игроков
+     * @param {Object|null} tournament - Турнир заявки (code, name); в шаблоне доступны {tournamentCode} и {tournamentName}
      * @returns {Promise<Buffer>} - Buffer с содержимым DOCX файла
      */
-    async generateRosterDoc(team, players) {
+    async generateRosterDoc(team, players, tournament = null) {
         return new Promise((resolve, reject) => {
             try {
                 // Чтение шаблона
@@ -53,6 +54,8 @@ export class DocxService {
                 const data = {
                     teamName: team.name,
                     teamCity: team.city ?? '',
+                    tournamentCode: tournament?.code ?? '',
+                    tournamentName: tournament?.name ?? '',
                     players: allPlayers, // Используем массив с пустыми строками
                     totalPlayers: sortedPlayers.length, // Реальное количество игроков
                     date: new Date().toLocaleDateString('ru-RU')

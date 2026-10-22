@@ -23,7 +23,7 @@ test.beforeEach(() => {
     prompt = sinon.stub(inquirer, "prompt");
     sinon.replace(service, 'editPlayer', sinon.fake.resolves());
     sinon.replace(service, 'deletePlayer', sinon.fake.resolves());
-    sinon.replace(service, 'addCurrentOutcome', sinon.fake.resolves());
+    sinon.replace(service, 'addOutcome', sinon.fake.resolves());
     sinon.replace(service, 'removeCurrentOutcome', sinon.fake.resolves());
     sinon.replace(sources, 'update', sinon.fake.resolves());
     sinon.replace(sources, 'delete', sinon.fake.resolves());
@@ -124,8 +124,8 @@ test.serial('меню Список игроков: Выбор игрока - о�
     await menu.open({}, toPrevMenu);
 
     t.true(menu.open.calledTwice);
-    t.true(service.addCurrentOutcome.calledOnce);
-    t.is(service.addCurrentOutcome.firstCall.args[0], 'playerId');
+    t.true(service.addOutcome.calledOnce);
+    t.deepEqual(service.addOutcome.firstCall.args, ['playerId', undefined]);
     t.true(sources.update.calledOnce);
     t.is(sources.update.firstCall.args[0], 'playerId');
     t.true(applyPlayerActionFake.calledOnce);

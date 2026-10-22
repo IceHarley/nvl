@@ -1,5 +1,6 @@
 import {getMethods, resolvePromisesSeq, toOperation, toRecords, verifyLength, withSpinner} from "../common/utils.js";
 import {minify} from "./playerFormat.js";
+import {readRosterTournament, ROSTER_TOURNAMENT} from "./rosterContext.js";
 
 export const SYNC_DATETIME = 'Synchronization datetime';
 export const SEQUENCE = 'SEQUENCE';
@@ -32,22 +33,49 @@ export default class PlayersService {
         ]))
         .then(() => this.#db.players.keys().all())
         .then(keys => keys.length)
-        .then(count => this.logAndReturn('Загружено игроков', count));
+        .then(count => this.logAndReturn('Загружено игроков', count))
+        .then(count => this.refreshRosterTournament().then(() => count));
 
-    loadActiveTeams = () => this.#db.teams.clear()
-        .then(() => this.#repositories.teams.getActiveTeams())
-        .then(records => this.#db.teams.batch(records.map(player => toOperation(player))))
-        .then(() => this.#db.teams.keys().all())
-        .then(keys => keys.length)
-        .then(count => this.logAndReturn('Загружено команд', count));
+    getRosterOpenTournaments = () => this.#repositories.tournaments.getRosterOpen();
 
-    loadActiveTournamentOutcomes = () => this.#db.outcomes.clear()
-        .then(() => this.#repositories.tournamentOutcomes.getByActiveTournament())
-        .then(records => this.#db.outcomes.batch(records.map(outcome => toOperation(outcome))))
-        .then(() => this.#db.outcomes.keys().all())
-        .then(keys => keys.length)
-        .then(count => this.logAndReturn('Загружено результатов турниров', count));
+    getRosterTournament = () => readRosterTournament(this.#db.meta);
 
+    // Команды и outcomes выбранного турнира заменяют локальные: все отметки «заигран» дальше относятся к нему
+    selectTournament = tournament => this.#replaceTournamentData(tournament)
+        .then(({teamsCount, outcomesCount}) => {
+            this.logAndReturn('Турнир', `${tournament.code} ${tournament.name}`);
+            this.logAndReturn('Загружено команд', teamsCount);
+            return this.logAndReturn('Загружено результатов турниров', outcomesCount);
+        });
+
+    // Перечитывает команды и outcomes уже выбранного турнира вместе с игроками
+    refreshRosterTournament = () => this.getRosterTournament()
+        .then(tournament => tournament && this.#replaceTournamentData(tournament)
+            .then(({teamsCount}) => this.logAndReturn(`Обновлено команд турнира ${tournament.code}`, teamsCount))
+            .catch(err => console.error(`Команды турнира ${tournament.code} не обновлены (остались прежние): ${err.message}`)));
+
+    // Одним batch по корню базы: при сбое остаются прежние команды, outcomes и мета турнира
+    #replaceTournamentData = async tournament => {
+        const [teams, outcomes, oldTeamIds, oldOutcomeIds] = await Promise.all([
+            this.#repositories.teams.getByTournament(tournament.id),
+            this.#repositories.tournamentOutcomes.getByTournament(tournament.id),
+            this.#db.teams.keys().all(),
+            this.#db.outcomes.keys().all(),
+        ]);
+        const replace = (sublevel, oldIds, records) => {
+            const newIds = new Set(records.map(r => r.id));
+            return oldIds.filter(id => !newIds.has(id)).map(key => ({type: DEL, sublevel, key}))
+                .concat(records.map(record => ({...toOperation(record), sublevel})));
+        };
+        await this.#db.teams.db.batch([
+            ...replace(this.#db.teams, oldTeamIds, teams),
+            ...replace(this.#db.outcomes, oldOutcomeIds, outcomes),
+            {type: 'put', sublevel: this.#db.meta, key: ROSTER_TOURNAMENT, value: tournament, valueEncoding: 'json'},
+        ]);
+        return {teamsCount: teams.length, outcomesCount: outcomes.length};
+    };
+
+    // Флаги модификаций снимаются только с игроков, перезаписанных серверной версией
     loadOnlyChanges = () => this.#db.meta.get(SYNC_DATETIME)
         .catch(() => Promise.resolve(new Date(2021, 1).toISOString()))
         .then(syncDatetime => this.#repositories.players.getList({syncedSince: syncDatetime}))
@@ -58,14 +86,16 @@ export default class PlayersService {
                     records.length > 0
                         ? this.#db.meta.put(SYNC_DATETIME, new Date().toISOString())
                         : Promise.resolve(),
-                    this.#db.modifications.clear(),
+                    this.#db.modifications.batch(records.map(r => ({type: DEL, key: r.id}))),
                 ]))
         )
         .then(([count]) => {
             !this.#silent && console.log(`Обновлено игроков: ${count}`);
             return count;
-        });
+        })
+        .then(count => this.refreshRosterTournament().then(() => count));
 
+    // Модификации снимаются только с принятых сервером записей: отклонённые остаются в очереди до следующей выгрузки
     uploadLocalChanges = async () => {
         const {deletedIds, newRecords, updatedRecords} = await this.#fetchLocalChanges();
         return resolvePromisesSeq([
@@ -74,12 +104,15 @@ export default class PlayersService {
             () => this.#updateModifiedRecords(updatedRecords),
         ])
         .then(([removed, inserted, updated]) => Promise.all([
-            {removed, inserted, updated},
+            {removed, inserted: inserted.saved, updated: updated.saved, rejected: inserted.rejected + updated.rejected},
             this.#db.meta.put(SYNC_DATETIME, new Date().toISOString()),
-            this.#db.modifications.clear(),
         ]))
         .then(([result]) => result);
     };
+
+    #reportRejected = rejected => rejected.forEach(r => console.error(
+        `Сервер отклонил игрока ${r.name || r.id}: ${r.error}. `
+        + 'Изменение осталось в очереди выгрузки — исправьте его и выгрузите повторно.'));
 
     #fetchLocalChanges = async () => {
         const [mods, newEntries] = await Promise.all([
@@ -95,22 +128,52 @@ export default class PlayersService {
         return {deletedIds, newRecords, updatedRecords};
     };
 
-    #removeDeletedRecords = (ids) => Promise.all([
-        ids.length,
-        ids.length > 0 ? this.#repositories.players.deleteList(ids) : undefined,
-    ]).then(([count]) => this.logAndReturn('Удалено игроков в БД', count));
+    #removeDeletedRecords = async ids => {
+        if (ids.length > 0) {
+            await this.#repositories.players.deleteList(ids);
+            await this.#db.modifications.batch(ids.map(id => ({type: DEL, key: id})));
+        }
+        return this.logAndReturn('Удалено игроков в БД', ids.length);
+    };
 
-    #updateModifiedRecords = (records) => records.length === 0
-        ? Promise.resolve(this.logAndReturn('Обновлено игроков в БД', 0))
-        : Promise.resolve(this.#repositories.players.updateList(records))
-            .then(res => this.logAndReturn('Обновлено игроков в БД', res.flat().length));
+    // Флаг снимается только с id, которые сервер вернул в updated; остальные (отклонённые или неподтверждённые) остаются в очереди
+    #updateModifiedRecords = async records => {
+        let savedCount = 0;
+        let rejectedCount = 0;
+        if (records.length > 0) {
+            const sentIds = new Set(records.map(r => r.id));
+            await this.#repositories.players.updateList(records, async ({saved, rejected}) => {
+                const savedIds = saved.map(r => r.id).filter(id => sentIds.has(id));
+                await this.#db.modifications.batch(savedIds.map(id => ({type: DEL, key: id})));
+                this.#reportRejected(rejected);
+                savedCount += savedIds.length;
+                rejectedCount += rejected.length;
+            });
+            const unconfirmed = records.length - savedCount - rejectedCount;
+            unconfirmed > 0 && console.error(`Сервер не подтвердил обновление ${unconfirmed} игрок(ов) без указания причины. `
+                + 'Изменения остались в очереди выгрузки.');
+        }
+        return {saved: this.logAndReturn('Обновлено игроков в БД', savedCount), rejected: rejectedCount};
+    };
 
-    #insertNewRecords = (records) => records.length === 0
-        ? Promise.resolve(this.logAndReturn('Создано игроков в БД', 0))
-        : Promise.resolve(this.#repositories.players.createList(records))
-            .then(created => this.#db.players.batch(created.flat().map(record => toOperation(minify(record)))))
-            .then(() => this.#db.players.batch(records.map(r => ({type: DEL, key: r.id}))))
-            .then(() => this.logAndReturn('Создано игроков в БД', records.length));
+    // Локальная ins*-запись заменяется серверной только для созданных игроков — сразу после каждой пачки, одним batch
+    #insertNewRecords = async records => {
+        let savedCount = 0;
+        let rejectedCount = 0;
+        if (records.length > 0) {
+            await this.#repositories.players.createList(records, async ({saved, rejected}) => {
+                await this.#db.players.db.batch(saved.flatMap(({localId, record}) => [
+                    {type: DEL, sublevel: this.#db.players, key: localId},
+                    {type: DEL, sublevel: this.#db.modifications, key: localId},
+                    {...toOperation(minify(record)), sublevel: this.#db.players},
+                ]));
+                this.#reportRejected(rejected);
+                savedCount += saved.length;
+                rejectedCount += rejected.length;
+            });
+        }
+        return {saved: this.logAndReturn('Создано игроков в БД', savedCount), rejected: rejectedCount};
+    };
 
     editPlayer = player => this.validate(player)
         .then(player => this.#db.players.put(player.id, player))
@@ -166,21 +229,35 @@ export default class PlayersService {
             tournaments: player.tournaments.filter(t => t !== outcome)
         }));
 
-    addCurrentOutcome = playerId => Promise.all([this.#db.players.get(playerId), this.#db.outcomes.iterator().all()])
-        .then(([player, outcomes]) => {
+    /**
+     * Отметка «заигран» за команду teamId в выбранном турнире.
+     * Сезон: только за команду, в которую игрок заявлен (team). Кубок: за любую команду турнира, team не меняется.
+     */
+    addOutcome = (playerId, teamId) => Promise.all([
+        this.#db.players.get(playerId),
+        this.#db.outcomes.iterator().all(),
+        this.getRosterTournament(),
+    ])
+        .then(([player, outcomes, tournament]) => {
             outcomes = toRecords(outcomes);
-            if (!player.team) {
+            const isCup = tournament?.isSeason === false;
+            const targetTeamId = teamId || player.team;
+            if (!targetTeamId) {
                 throw new Error('Игрок не числится в команде');
             }
-            const outcomeId = outcomes.find(outcome => outcome.teamId === player.team)?.id;
+            if (!isCup && player.team !== targetTeamId) {
+                throw new Error('Игрок не заявлен за команду');
+            }
+            const outcomeId = outcomes.find(outcome => outcome.teamId === targetTeamId)?.id;
             if (!outcomeId) {
-                throw new Error('Команда игрока не участвует в текущем турнире');
+                throw new Error('Команда не участвует в выбранном турнире');
             }
             if (player.tournaments?.includes(outcomeId)) {
                 throw new Error(`Список турниров игрока [${player.tournaments}] уже содержит ${outcomeId}`);
             }
-            if (outcomes.some(outcome => player.tournaments?.includes(outcome.id))) {
-                throw new Error(`Список турниров игрока [${player.tournaments}] уже содержит другую запись для текущего турнира`);
+            const otherOutcome = outcomes.find(outcome => player.tournaments?.includes(outcome.id));
+            if (otherOutcome) {
+                throw new Error(`Игрок уже заигран в этом турнире за команду ${otherOutcome.teamName || otherOutcome.teamId}`);
             }
             return this.editPlayer({
                 ...player,
@@ -189,17 +266,13 @@ export default class PlayersService {
             });
         });
 
-    addCurrentOutcomes = playerIds => Promise.all(playerIds
-        .map(id => this.addCurrentOutcome(id)));
+    addOutcomes = (playerIds, teamId) => Promise.all(playerIds
+        .map(id => this.addOutcome(id, teamId)));
 
     logAndReturn = (text, obj) => {
         !this.#silent && console.log(`${text}: ${obj}`);
         return obj;
     };
-
-    getPlayersByTeam = teamId => this.#db.players.values().all()
-        .then(players => players.filter(player => player.team === teamId))
-        .then(players => players.sort((a, b) => a.name?.localeCompare(b.name)));
 }
 
 export class SpinnerPlayersService {

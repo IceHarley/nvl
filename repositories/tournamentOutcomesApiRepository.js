@@ -8,10 +8,11 @@ const toRecord = o => ({
     place: o.result_place ?? null,
 });
 
+const toRecords = data => (Array.isArray(data) ? data : (data.data || [])).map(toRecord);
+
 export default class TournamentOutcomesApiRepository {
-    getByActiveTournament = async () => {
-        const data = await apiGet('/tournament-outcomes/active');
-        const arr = Array.isArray(data) ? data : (data.data || []);
-        return arr.map(toRecord);
-    };
+    getByActiveTournament = async () => toRecords(await apiGet('/tournament-outcomes/active'));
+
+    getByTournament = async tournamentId =>
+        toRecords(await apiGet('/tournament-outcomes/active', {tournament_id: tournamentId}));
 }
