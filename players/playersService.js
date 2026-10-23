@@ -48,11 +48,35 @@ export default class PlayersService {
             return this.logAndReturn('Загружено результатов турниров', outcomesCount);
         });
 
-    // Перечитывает команды и outcomes уже выбранного турнира вместе с игроками
+    // Перечитывает команды и outcomes уже выбранного турнира вместе с игроками.
+    // Id турнира на сервере — loc_+ULID и меняется при пересоздании записи: тогда ищем тот же code.
     refreshRosterTournament = () => this.getRosterTournament()
-        .then(tournament => tournament && this.#replaceTournamentData(tournament)
-            .then(({teamsCount}) => this.logAndReturn(`Обновлено команд турнира ${tournament.code}`, teamsCount))
-            .catch(err => console.error(`Команды турнира ${tournament.code} не обновлены (остались прежние): ${err.message}`)));
+        .then(async tournament => {
+            if (!tournament) return;
+            const resolved = await this.#resolveRosterTournament(tournament);
+            return this.#replaceTournamentData(resolved)
+                .then(({teamsCount}) => this.logAndReturn(`Обновлено команд турнира ${resolved.code}`, teamsCount))
+                .catch(err => console.error(`Команды турнира ${resolved.code} не обновлены (остались прежние): ${err.message}`));
+        });
+
+    #resolveRosterTournament = async stored => {
+        const getOpen = this.#repositories.tournaments?.getRosterOpen;
+        if (!getOpen) return stored;
+        let open;
+        try {
+            open = await getOpen();
+        } catch {
+            return stored;
+        }
+        const sameId = open.find(t => t.id === stored.id);
+        if (sameId) return sameId;
+        const sameCode = stored.code && open.find(t => t.code === stored.code);
+        if (sameCode) {
+            this.logAndReturn(`Турнир ${stored.code} на сервере пересоздан, id обновлён`, sameCode.id);
+            return sameCode;
+        }
+        return stored;
+    };
 
     // Одним batch по корню базы: при сбое остаются прежние команды, outcomes и мета турнира
     #replaceTournamentData = async tournament => {

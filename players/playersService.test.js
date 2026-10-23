@@ -531,6 +531,25 @@ test.serial('Выбор турнира: при сбое загрузки ост�
     await db.teams.clear();
 });
 
+test.serial('Загрузка игроков подхватывает новый id турнира с тем же кодом', async t => {
+    const stored = {id: 'loc_old', code: '26.3', name: 'Кубок', isSeason: false};
+    const fresh = {id: 'loc_new', code: '26.3', name: 'Кубок', isSeason: false};
+    const teams = {getByTournament: sinon.fake.resolves([{id: 'teamA', name: 'A'}])};
+    const service = new PlayersService(db, {
+        players: mockPlayersRepository,
+        teams,
+        tournamentOutcomes: {getByTournament: sinon.fake.resolves([{id: 'cup_teamA', teamId: 'teamA'}])},
+        tournaments: {getRosterOpen: sinon.fake.resolves([fresh])},
+    }, true);
+    await db.meta.put(ROSTER_TOURNAMENT, stored, {valueEncoding: 'json'});
+
+    await service.fullLoad();
+
+    t.is(teams.getByTournament.firstCall.args[0], 'loc_new');
+    t.deepEqual(await service.getRosterTournament(), fresh);
+    await db.teams.clear();
+});
+
 test.serial('Загрузка игроков обновляет команды и outcomes выбранного турнира', async t => {
     const cup = {id: 'cup', code: '26.3', name: 'Кубок', isSeason: false};
     const teams = {getByTournament: sinon.fake.resolves([{id: 'teamA'}, {id: 'teamNew'}])};
