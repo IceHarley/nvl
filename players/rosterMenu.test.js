@@ -258,6 +258,22 @@ test.serial('меню Состав команды: Выбор действия �
     t.like(applyPlayerActionFake.getCall(0).args[0], { action: 'rename'});
 });
 
+test.serial('меню Состав команды: кубок — записать сезонной команду, за которую игрок заигран', async t => {
+    setRosterTournament(CUP);
+    prompt.withArgs(menu.rosterMenuPrompt)
+        .onFirstCall().resolves({
+        team: {id: 'teamA', name: 'A'},
+        player: {id: 'playerId', name: 'playerName', team: 'teamB', teamName: 'B', tournaments: ['outA']},
+        action: 'setSeasonTeam',
+    })
+        .onSecondCall().resolves({team: 'quit'});
+
+    await menu.open({}, toPrevMenu);
+
+    t.like(service.editPlayer.firstCall.args[0], {id: 'playerId', team: 'teamA'});
+    t.is(sources.update.firstCall.args[0], 'playerId');
+});
+
 test.serial('меню Состав команды: Выбор действия с игроком - исключить из состава', async t => {
     prompt.withArgs(menu.rosterMenuPrompt)
         .onFirstCall().resolves({
@@ -399,6 +415,7 @@ test.serial('Действия в кубке: заигранный за кома�
     });
 
     t.true(actionValues(actions).includes('removeCurrentOutcome'));
+    t.true(actionValues(actions).includes('setSeasonTeam'));
     t.false(actionValues(actions).includes('addCurrentOutcome'));
 });
 
@@ -425,6 +442,7 @@ test.serial('Действия в сезоне: игрок команды заи�
     const remove = actions.find(a => a.value === 'removeCurrentOutcome');
     t.truthy(remove);
     t.true(remove.name.includes('за B'));
+    t.false(actionValues(actions).includes('setSeasonTeam'));
 });
 
 test.serial('Список игроков в кубке: действия по команде игрока, исключение из состава доступно', t => {
@@ -456,4 +474,17 @@ test.serial('Список игроков: заигранный игрок - сн
 
     t.true(actions.find(a => a.value === 'removeCurrentOutcome').name.includes('за A'));
     t.false(actionValues(actions).includes('addCurrentOutcome'));
+    t.false(actionValues(actions).includes('setSeasonTeam'));
+});
+
+test.serial('Список игроков в кубке: сезонную команду можно заменить на ту, за которую игрок заигран', t => {
+    setRosterTournament(CUP);
+    const actions = rosterPlayerActions({
+        player: {id: 'p2', name: 'Борис', team: 'teamB', teamName: 'B', outcomeTeamId: 'teamA', outcomeTeam: 'A', currentOutcome: 'outA'},
+    });
+
+    const align = actions.find(a => a.value === 'setSeasonTeam');
+    t.truthy(align);
+    t.true(align.name.includes('B'));
+    t.true(align.name.includes('A'));
 });

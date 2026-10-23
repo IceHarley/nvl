@@ -50,6 +50,7 @@ export default class ChoiceSources {
             players.map(player => ({
                 ...player,
                 outcomeTeam: teams.find(team => player.currentOutcome && player.currentOutcome === team.outcome)?.name,
+                outcomeTeamId: teams.find(team => player.currentOutcome && player.currentOutcome === team.outcome)?.id,
             })),
             teams
         ]);
@@ -65,6 +66,7 @@ export default class ChoiceSources {
             teamOutcome: teams.find(team => player.team === team.id)?.outcome,
             currentOutcome: teams.find(team => team.outcome && player.tournaments?.includes(team.outcome))?.outcome,
             outcomeTeam: teams.find(team => team.outcome && player.tournaments?.includes(team.outcome))?.name,
+            outcomeTeamId: teams.find(team => team.outcome && player.tournaments?.includes(team.outcome))?.id,
         }));
 
     updateList = playerIds => Promise.all(playerIds.map(id => this.update(id)));

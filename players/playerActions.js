@@ -34,6 +34,13 @@ export default class PlayerActions {
                 return this.playersService.editPlayer({...answers.player, name: answers.newName})
                     .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => toPrevMenu());
+            case 'setSeasonTeam':
+                return this.playersService.editPlayer({
+                    ...answers.player,
+                    team: answers.team?.id || answers.player.outcomeTeamId,
+                })
+                    .then(() => this.choiceSources.update(answers.player.id))
+                    .then(() => toPrevMenu());
             case 'removeFromRoster':
                 return this.playersService.editPlayer({...answers.player, team: undefined})
                     .then(() => this.choiceSources.update(answers.player.id))

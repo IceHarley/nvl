@@ -37,12 +37,29 @@ const removeFromRosterAction = teamName => ({
 
 const removeOutcomeAction = name => ({name, value: 'removeCurrentOutcome', short: 'Убрать заигранность'});
 
+// Кубок мог прописать сезонную команду, если игрока не было ни в одной. После переноса заявки её можно поправить.
+const alignSeasonTeamAction = (fromName, toName) => ({
+    name: new cli.Line()
+        .column('Сезонная команда', 28)
+        .padding(2)
+        .column(fromName ? `${fromName} → ${toName}` : toName, 40)
+        .contents(),
+    value: 'setSeasonTeam',
+    short: `Сезон: ${toName}`,
+});
+
+const seasonTeamMismatch = (player, cupTeamId, cupTeamName) =>
+    isCupContext() && cupTeamId && player.team !== cupTeamId
+        ? [alignSeasonTeamAction(player.teamName, cupTeamName)]
+        : [];
+
 const hint = text => ({name: text, value: 'hint', disabled: ' '});
 
 // «Список игроков» (без команды): действия относятся к команде игрока (team_id) — как в сезоне, при любом турнире
 const playerListOutcomeActions = player => {
     if (player.currentOutcome) {
-        return [removeOutcomeAction(`Снять отметку «заигран» за ${player.outcomeTeam}`)];
+        return [removeOutcomeAction(`Снять отметку «заигран» за ${player.outcomeTeam}`)]
+            .concat(seasonTeamMismatch(player, player.outcomeTeamId, player.outcomeTeam));
     }
     if (!player.team) {
         return [];
@@ -61,7 +78,8 @@ const rosterOutcomeActions = (team, player) => {
         return isCupContext() ? actions : actions.concat([removeFromRosterAction(player.teamName)]);
     }
     if (player.currentOutcome === team.outcome) {
-        return [removeOutcomeAction(isCupContext() ? 'Отзаявить (снять отметку заигранности)' : 'Отметить как незаигранного')];
+        return [removeOutcomeAction(isCupContext() ? 'Отзаявить (снять отметку заигранности)' : 'Отметить как незаигранного')]
+            .concat(seasonTeamMismatch(player, team.id, team.name));
     }
     // В кубке игрок виден в составе команды, за которую заигран, — отзаявляют там.
     // В сезоне такого состава у игрока нет (фильтр по team_id), поэтому снять отметку можно отсюда.
