@@ -36,6 +36,16 @@ export const extractMutationList = (res, key) => {
     return null;
 };
 
+// Сервер отклоняет записи поштучно (например, вторую отметку «заигран» в одном турнире), остальные сохраняет.
+// errors[].index — позиция в отправленной пачке.
+const mutationErrors = res => res?.errors || res?.data?.errors || [];
+
+const rejectedOf = (res, chunk) => mutationErrors(res).map(e => ({
+    id: chunk[e.index]?.id ?? e.id,
+    name: chunk[e.index]?.name,
+    error: e.error,
+}));
+
 export default class PlayersApiRepository {
     getList = async (options = {}) => {
         const params = {};
@@ -44,36 +54,44 @@ export default class PlayersApiRepository {
         return Array.isArray(data) ? data.map(toRecord) : (data.data || []).map(toRecord);
     };
 
-    createList = async records => {
-        const chunks = chunkArray(records.map(toApiCreate), CHUNK_SIZE);
-        const allCreated = [];
-        for (const chunk of chunks) {
-            const res = await apiPost('/players', {players: chunk});
+    /**
+     * onChunk вызывается после каждой пачки: принятое сервером нужно зафиксировать локально сразу,
+     * иначе сбой следующей пачки приведёт к повторной отправке (и дубликатам) уже созданных игроков.
+     * @param records
+     * @param {function({saved: {localId: string, record: object}[], rejected: {id: string, name: string, error: string}[]}): Promise} onChunk
+     */
+    createList = async (records, onChunk) => {
+        for (const chunk of chunkArray(records, CHUNK_SIZE)) {
+            const res = await apiPost('/players', {players: chunk.map(toApiCreate)});
+            // created идут в порядке отправки без отклонённых — по нему восстанавливаем локальный id
+            const rejectedIndexes = new Set(mutationErrors(res).map(e => e.index));
+            const accepted = chunk.filter((r, index) => !rejectedIndexes.has(index));
             const created = extractMutationList(res, 'created');
-            if (!created?.length) {
-                throw new Error(
-                    'API POST /players: в ответе нет списка созданных игроков (поле created или массив data).'
-                );
+            if (!Array.isArray(created) || created.length !== accepted.length) {
+                throw new Error(`Ответ сервера на создание игроков не сопоставляется с отправленными: `
+                    + `принято ${accepted.length}, вернулось ${created?.length}. `
+                    + `Проверьте на сервере игроков: ${accepted.map(r => r.name).join(', ')}`);
             }
-            allCreated.push(...created.map(toRecord));
+            await onChunk({
+                saved: created.map((record, index) => ({localId: accepted[index].id, record: toRecord(record)})),
+                rejected: rejectedOf(res, chunk),
+            });
         }
-        return allCreated;
     };
 
-    updateList = async records => {
-        const chunks = chunkArray(records.map(toApiUpdate), CHUNK_SIZE);
-        const allUpdated = [];
-        for (const chunk of chunks) {
+    /**
+     * @param records
+     * @param {function({saved: object[], rejected: {id: string, name: string, error: string}[]}): Promise} onChunk
+     */
+    updateList = async (records, onChunk) => {
+        for (const chunk of chunkArray(records.map(toApiUpdate), CHUNK_SIZE)) {
             const res = await apiPut('/players', {players: chunk});
             const updated = extractMutationList(res, 'updated');
-            if (!updated?.length) {
-                throw new Error(
-                    'API PUT /players: в ответе нет списка обновлённых игроков (поле updated или массив data).'
-                );
-            }
-            allUpdated.push(...updated.map(toRecord));
+            await onChunk({
+                saved: Array.isArray(updated) ? updated.map(toRecord) : [],
+                rejected: rejectedOf(res, chunk),
+            });
         }
-        return allUpdated;
     };
 
     deleteList = async ids => {

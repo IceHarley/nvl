@@ -24,7 +24,7 @@ export const buildUrl = (path, params = {}) => {
 };
 
 const headers = () => {
-    const h = {'Content-Type': 'application/json'};
+    const h = {'Accept': 'application/json', 'Content-Type': 'application/json'};
     if (token) {
         h['X-Api-Token'] = token;
     }

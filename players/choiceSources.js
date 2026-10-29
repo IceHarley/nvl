@@ -2,6 +2,13 @@ import {toOperation, toRecords} from "../common/utils.js";
 import fuzzy from "fuzzy";
 import inquirer from "inquirer";
 import {formatPlayer} from "./playersCliUtils.js";
+import {readRosterTournament, setRosterTournament} from "./rosterContext.js";
+
+const replaceOperations = (sublevel, oldIds, records) => {
+    const newIds = new Set(records.map(r => r.id));
+    return oldIds.filter(id => !newIds.has(id)).map(key => ({type: 'del', sublevel, key}))
+        .concat(records.map(record => ({...toOperation(record), sublevel})));
+};
 
 export default class ChoiceSources {
     #db
@@ -10,40 +17,43 @@ export default class ChoiceSources {
         this.#db = db;
     }
 
+    // Списки выбора и контекст турнира меняются только после успешного чтения всех данных — при сбое остаются прежние
     init = () => Promise.all([
         this.#db.players.iterator().all(),
         this.#db.teams.iterator().all(),
         this.#db.outcomes.iterator().all(),
-        this.#db.playersSource.clear(),
-        this.#db.teamsSource.clear(),
+        readRosterTournament(this.#db.meta),
+        this.#db.playersSource.keys().all(),
+        this.#db.teamsSource.keys().all(),
     ])
-        .then(([players, teams, outcomes]) => ([
-            toRecords(players),
-            toRecords(teams),
-            toRecords(outcomes)
-        ]))
-        .then(([players, teams, outcomes]) => [players
+        .then(([players, teams, outcomes, tournament, oldPlayerIds, oldTeamIds]) =>
+            this.#buildSources(toRecords(players), toRecords(teams), toRecords(outcomes))
+                .then(([players, teams]) => this.#db.playersSource.db.batch([
+                    ...replaceOperations(this.#db.playersSource, oldPlayerIds, players),
+                    ...replaceOperations(this.#db.teamsSource, oldTeamIds, teams),
+                ]))
+                .then(() => setRosterTournament(tournament)));
+
+    #buildSources = (players, teams, outcomes) => Promise.resolve([players
             .map(player => ({
                 ...player,
                 teamName: teams.find(team => player.team === team.id)?.name,
+                teamOutcome: player.team && outcomes.find(outcome => outcome.teamId === player.team)?.id,
                 currentOutcome: outcomes.find(outcome => player.tournaments?.includes(outcome.id))?.id,
             })),
             teams.map(team => ({
                 ...team,
-                outcome: outcomes.find(outcome => outcome.teamId === team.id).id
+                outcome: outcomes.find(outcome => outcome.teamId === team.id)?.id
             }))
         ])
         .then(([players, teams]) => [
             players.map(player => ({
                 ...player,
                 outcomeTeam: teams.find(team => player.currentOutcome && player.currentOutcome === team.outcome)?.name,
+                outcomeTeamId: teams.find(team => player.currentOutcome && player.currentOutcome === team.outcome)?.id,
             })),
             teams
-        ])
-        .then(([players, teams]) => Promise.all([
-            this.#db.playersSource.batch(players.map(player => toOperation(player))),
-            this.#db.teamsSource.batch(teams.map(team => toOperation(team))),
-        ]));
+        ]);
 
     update = playerId => Promise.all([
         this.#db.players.get(playerId),
@@ -53,8 +63,10 @@ export default class ChoiceSources {
         .then(([player, teams]) => this.#db.playersSource.put(playerId, {
             ...player,
             teamName: teams.find(team => player.team === team.id)?.name,
-            currentOutcome: teams.find(team => player.tournaments?.includes(team.outcome))?.outcome,
-            outcomeTeam: teams.find(team => player.tournaments?.includes(team.outcome))?.name,
+            teamOutcome: teams.find(team => player.team === team.id)?.outcome,
+            currentOutcome: teams.find(team => team.outcome && player.tournaments?.includes(team.outcome))?.outcome,
+            outcomeTeam: teams.find(team => team.outcome && player.tournaments?.includes(team.outcome))?.name,
+            outcomeTeamId: teams.find(team => team.outcome && player.tournaments?.includes(team.outcome))?.id,
         }));
 
     updateList = playerIds => Promise.all(playerIds.map(id => this.update(id)));

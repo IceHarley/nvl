@@ -1,3 +1,5 @@
+import {isInTeamRoster} from "./playersCliUtils.js";
+
 export default class PlayerActions {
     choiceSources
     playersService
@@ -8,7 +10,7 @@ export default class PlayerActions {
     }
 
     applyPlayerAction = (answers, toPrevMenu) => this.selectPlayerAction(answers, toPrevMenu)
-        .then(() => this.choiceSources.getPlayersForSelection(p => !answers.team || p.team === answers.team.id))
+        .then(() => this.choiceSources.getPlayersForSelection(p => !answers.team || isInTeamRoster(answers.team)(p)))
         .then(players => ({
             ...answers,
             player: players.find(player => player.id === answers.player?.id),
@@ -21,7 +23,7 @@ export default class PlayerActions {
                     .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => toPrevMenu());
             case 'addCurrentOutcome':
-                return this.playersService.addCurrentOutcome(answers.player.id)
+                return this.playersService.addOutcome(answers.player.id, answers.team?.id)
                     .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => toPrevMenu());
             case 'changeBirthYear':
@@ -30,6 +32,13 @@ export default class PlayerActions {
                     .then(() => toPrevMenu());
             case 'rename':
                 return this.playersService.editPlayer({...answers.player, name: answers.newName})
+                    .then(() => this.choiceSources.update(answers.player.id))
+                    .then(() => toPrevMenu());
+            case 'setSeasonTeam':
+                return this.playersService.editPlayer({
+                    ...answers.player,
+                    team: answers.team?.id || answers.player.outcomeTeamId,
+                })
                     .then(() => this.choiceSources.update(answers.player.id))
                     .then(() => toPrevMenu());
             case 'removeFromRoster':

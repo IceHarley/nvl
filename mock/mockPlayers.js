@@ -14,21 +14,30 @@ export default class MockPlayersRepository {
 
     getList = () => this.#data;
 
-    createList = records => clone(records).map((record, index) => ({
-        id: `rec1000000000${index}`,
-        name: record.name,
-        birthYear: record.birthYear ?? null,
-        team: record.team,
-        tournaments: record.tournaments || [],
-    }));
+    createList = (records, onChunk) => onChunk({
+        saved: clone(records).map((record, index) => ({
+            localId: record.id,
+            record: {
+                id: `rec1000000000${index}`,
+                name: record.name,
+                birthYear: record.birthYear ?? null,
+                team: record.team,
+                tournaments: record.tournaments || [],
+            },
+        })),
+        rejected: [],
+    });
 
-    updateList = records => clone(records).map(record => ({
-        id: record.id,
-        name: record.name,
-        birthYear: record.birthYear ?? null,
-        team: record.team,
-        tournaments: record.tournaments || [],
-    }));
+    updateList = (records, onChunk) => onChunk({
+        saved: clone(records).map(record => ({
+            id: record.id,
+            name: record.name,
+            birthYear: record.birthYear ?? null,
+            team: record.team,
+            tournaments: record.tournaments || [],
+        })),
+        rejected: [],
+    });
 
     deleteList = () => {
     };

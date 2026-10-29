@@ -1,4 +1,5 @@
-import {getRosterMenuMessage, quit, rosterPlayerActions} from "./playersCliUtils.js";
+import {getRosterMenuMessage, isInTeamRoster, quit, rosterPlayerActions} from "./playersCliUtils.js";
+import {getRosterTournament, isCupContext} from "./rosterContext.js";
 import inquirer from "inquirer";
 import PlayerActions from "./playerActions.js";
 import DocxService from "./docxService.js";
@@ -19,8 +20,14 @@ export default class RosterMenu {
     }
 
     playersSourceWithSystemChoices = (answers, input = '') =>
-        this.choiceSources.playersSource(p => p.team === answers.team.id)(answers, input)
-            .then(players => this.addSystemChoices(players));
+        this.choiceSources.playersSource(isInTeamRoster(answers.team))(answers, input)
+            .then(players => this.addSystemChoices(this.playedForTeamFirst(players, answers.team)));
+
+    // В кубке сначала заигранные за команду, ниже — её сезонные игроки без отметки
+    playedForTeamFirst = (choices, team) => !isCupContext() || !team?.outcome
+        ? choices
+        : choices.filter(c => c.value.currentOutcome === team.outcome)
+            .concat(choices.filter(c => c.value.currentOutcome !== team.outcome));
 
     playersSourceNoCurrentOutcome = answers =>
         this.choiceSources.playersSource(p => p.team === answers.team.id && !p.currentOutcome)(answers, '');
@@ -144,7 +151,7 @@ export default class RosterMenu {
                     .then(() => this.toPlayerSelection(answers, toPrevMenu));
             case 'multipleOutcomes': {
                 const playerIds = answers.multipleOutcomes.map(player => player.id);
-                return this.playersService.addCurrentOutcomes(playerIds)
+                return this.playersService.addOutcomes(playerIds, answers.team.id)
                     .then(() => this.choiceSources.updateList(playerIds))
                     .then(() => this.toPlayerSelection(answers, toPrevMenu));
             }
@@ -168,14 +175,16 @@ export default class RosterMenu {
         try {
             console.log('Формирование заявки команды...');
 
-            // Получаем всех игроков команды
-            const players = await this.playersService.getPlayersByTeam(answers.team.id);
+            // Сезон: все заявленные в команду; кубок: только заигранные за неё
+            const team = answers.team;
+            const players = await this.choiceSources.getPlayersForSelection(isCupContext()
+                ? p => !!team.outcome && p.currentOutcome === team.outcome
+                : p => p.team === team.id);
 
-            // Генерируем DOCX
-            const docBuffer = await this.docxService.generateRosterDoc(answers.team, players);
+            const tournament = getRosterTournament();
+            const docBuffer = await this.docxService.generateRosterDoc(team, players, tournament);
 
-            // Сохраняем файл
-            const filename = `заявка_${answers.team.name}_${new Date().toISOString().split('T')[0]}.docx`
+            const filename = `заявка_${tournament?.code ? `${tournament.code}_` : ''}${team.name}_${new Date().toISOString().split('T')[0]}.docx`
                 .replace(/[^a-zA-Z0-9а-яА-Я_.]/g, '_');
 
             const filePath = await this.docxService.saveDocToFile(docBuffer, filename);

@@ -1,5 +1,6 @@
 import inquirer from "inquirer";
 import {getRosterMenuMessage, quit} from "./playersCliUtils.js";
+import {isCupContext} from "./rosterContext.js";
 
 export default class AddPlayerMenu {
     choiceSources
@@ -87,7 +88,8 @@ export default class AddPlayerMenu {
                 },
                 {name: 'Нет', value: 'back', short: 'Отмена добавления игрока'},
             ],
-            when: answers => typeof answers.addPlayer !== 'string' && answers.addPlayer?.teamName
+            when: answers => !isCupContext()
+                && typeof answers.addPlayer !== 'string' && answers.addPlayer?.teamName
                 && answers.addPlayer?.teamName !== answers.newPlayer.teamName
                 && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
         },
@@ -99,10 +101,20 @@ export default class AddPlayerMenu {
                 {name: 'Да', value: true, short: 'Заигран за ' + answers.newPlayer.teamName},
                 {name: 'Нет', value: false, short: 'Не заигран'},
             ],
-            when: answers => answers.newPlayer?.team && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
+            when: answers => !isCupContext()
+                && answers.newPlayer?.team && answers.addPlayer !== 'back' && answers.addPlayer !== 'quit'
                 && !answers.addPlayer?.outcomeTeam && answers.confirmSwitchTeam !== 'back'
         }
     ];
+
+    // Кубок: заявить = сразу заиграть, основная (сезонная) команда игрока не меняется
+    shouldAddOutcome = answers => isCupContext()
+        ? !!answers.team && !(answers.addPlayer && answers.addPlayer.outcomeTeam)
+        : !!answers.addCurrentOutcome;
+
+    teamForExistingPlayer = answers => isCupContext()
+        ? answers.addPlayer.team || answers.team.id
+        : answers.team.id;
 
     open = ({team, createPlayerOnly}, toPrevMenu) => inquirer.prompt(this.addPlayerMenuPrompt, {
         team,
@@ -134,12 +146,12 @@ export default class AddPlayerMenu {
                 ? this.playersService.editPlayer({
                     ...answers.addPlayer,
                     ...(answers.newBirthYear !== undefined && answers.newBirthYear !== '' ? { birthYear: answers.newBirthYear } : {}),
-                    team: answers.team.id,
+                    team: this.teamForExistingPlayer(answers),
                     tournaments: answers.addPlayer.tournaments || [],
                 }).then(() => answers.addPlayer)
                 : this.playersService.createPlayer(answers.newPlayer)
         ]))
         .then(([answers, player]) => Promise.all([{...answers, playerId: player.id},
-            answers.addCurrentOutcome ? this.playersService.addCurrentOutcome(player.id) : null]))
+            this.shouldAddOutcome(answers) ? this.playersService.addOutcome(player.id, answers.team.id) : null]))
         .then(([answers]) => this.choiceSources.update(answers.playerId));
 }
