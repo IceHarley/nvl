@@ -44,11 +44,27 @@ const apiError = async (res, method, url, body) => {
     throw new Error(msg);
 };
 
+const readJsonResponse = async (res, {allowEmpty = false, method, url} = {}) => {
+    const text = (await res.text()).trim();
+    if (!text) {
+        if (allowEmpty) return null;
+        const target = method && url ? `${method} ${url}` : 'ответ API';
+        throw new Error(
+            `Пустое тело ${target} (HTTP ${res.status}). Ожидался JSON.${res.status === 204 ? ' Проверьте, что сервер возвращает созданные записи в теле ответа.' : ''}`
+        );
+    }
+    try {
+        return JSON.parse(text);
+    } catch {
+        throw new Error(`Некорректный JSON в ответе API (HTTP ${res.status}): ${text.slice(0, 300)}`);
+    }
+};
+
 export const apiGet = async (path, params = {}) => {
     const url = buildUrl(path, params);
     const res = await fetch(url, {headers: headers()});
     if (!res.ok) await apiError(res, 'GET', url);
-    return res.json();
+    return readJsonResponse(res, {method: 'GET', url});
 };
 
 export const apiPost = async (path, body) => {
@@ -59,7 +75,7 @@ export const apiPost = async (path, body) => {
         body: JSON.stringify(body),
     });
     if (!res.ok) await apiError(res, 'POST', url, body);
-    return res.json();
+    return readJsonResponse(res, {method: 'POST', url});
 };
 
 export const apiPut = async (path, body) => {
@@ -70,7 +86,7 @@ export const apiPut = async (path, body) => {
         body: JSON.stringify(body),
     });
     if (!res.ok) await apiError(res, 'PUT', url, body);
-    return res.json();
+    return readJsonResponse(res, {method: 'PUT', url});
 };
 
 export const apiDelete = async (path, body) => {
@@ -81,6 +97,5 @@ export const apiDelete = async (path, body) => {
         body: JSON.stringify(body),
     });
     if (!res.ok) await apiError(res, 'DELETE', url, body);
-    const text = await res.text();
-    return text ? JSON.parse(text) : null;
+    return readJsonResponse(res, {allowEmpty: true, method: 'DELETE', url});
 };
