@@ -27,6 +27,15 @@ const toApiUpdate = r => ({
     tournament_results: r.tournaments || [],
 });
 
+export const extractMutationList = (res, key) => {
+    if (res == null) return null;
+    if (Array.isArray(res)) return res;
+    if (Array.isArray(res[key])) return res[key];
+    if (Array.isArray(res.data)) return res.data;
+    if (Array.isArray(res.data?.[key])) return res.data[key];
+    return null;
+};
+
 export default class PlayersApiRepository {
     getList = async (options = {}) => {
         const params = {};
@@ -39,8 +48,13 @@ export default class PlayersApiRepository {
         const chunks = chunkArray(records.map(toApiCreate), CHUNK_SIZE);
         const allCreated = [];
         for (const chunk of chunks) {
-            const res = await apiPost('/players', chunk);
-            const created = res.created || res.data || res;
+            const res = await apiPost('/players', {players: chunk});
+            const created = extractMutationList(res, 'created');
+            if (!created?.length) {
+                throw new Error(
+                    'API POST /players: в ответе нет списка созданных игроков (поле created или массив data).'
+                );
+            }
             allCreated.push(...created.map(toRecord));
         }
         return allCreated;
@@ -50,8 +64,13 @@ export default class PlayersApiRepository {
         const chunks = chunkArray(records.map(toApiUpdate), CHUNK_SIZE);
         const allUpdated = [];
         for (const chunk of chunks) {
-            const res = await apiPut('/players', chunk);
-            const updated = res.updated || res.data || res;
+            const res = await apiPut('/players', {players: chunk});
+            const updated = extractMutationList(res, 'updated');
+            if (!updated?.length) {
+                throw new Error(
+                    'API PUT /players: в ответе нет списка обновлённых игроков (поле updated или массив data).'
+                );
+            }
             allUpdated.push(...updated.map(toRecord));
         }
         return allUpdated;
