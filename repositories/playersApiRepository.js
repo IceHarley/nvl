@@ -62,7 +62,7 @@ export default class PlayersApiRepository {
      */
     createList = async (records, onChunk) => {
         for (const chunk of chunkArray(records, CHUNK_SIZE)) {
-            const res = await apiPost('/players', {players: chunk.map(toApiCreate)});
+            const res = await apiPost('/players', chunk.map(toApiCreate));
             // created идут в порядке отправки без отклонённых — по нему восстанавливаем локальный id
             const rejectedIndexes = new Set(mutationErrors(res).map(e => e.index));
             const accepted = chunk.filter((r, index) => !rejectedIndexes.has(index));
@@ -85,7 +85,7 @@ export default class PlayersApiRepository {
      */
     updateList = async (records, onChunk) => {
         for (const chunk of chunkArray(records.map(toApiUpdate), CHUNK_SIZE)) {
-            const res = await apiPut('/players', {players: chunk});
+            const res = await apiPut('/players', chunk);
             const updated = extractMutationList(res, 'updated');
             await onChunk({
                 saved: Array.isArray(updated) ? updated.map(toRecord) : [],
