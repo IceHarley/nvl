@@ -1,7 +1,11 @@
 import {Level} from "level";
+import {apiEnv} from "../common/apiClient.js";
+
+// Отдельный каталог на окружение: турнир и игроки develop не должны попадать в test/prod.
+const dbPath = `./db/${/^[a-z0-9_-]+$/.test(apiEnv) ? apiEnv : 'prod'}`;
 
 export const provideDb = () => {
-    const db = new Level('./db', {valueEncoding: 'json'});
+    const db = new Level(dbPath, {valueEncoding: 'json'});
     return {
         main: db,
         meta: db.sublevel('meta'),
